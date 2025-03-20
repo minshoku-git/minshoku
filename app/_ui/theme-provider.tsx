@@ -3,7 +3,7 @@
 import { useMediaQuery } from '@mui/material';
 import CssBaseline from '@mui/material/CssBaseline';
 import type { Palette } from '@mui/material/styles';
-import { ThemeProvider } from '@mui/material/styles';
+import { ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
 import { createTheme } from '@mui/material/styles';
 import type { TypographyOptions } from '@mui/material/styles/createTypography';
 
@@ -33,11 +33,11 @@ const darkTheme = createTheme({
 });
 
 /**
- * ThemeRegistry
+ * ThemeProvider
  * @param {React.ReactNode} children
  * @returns
  */
-const ThemeRegistry = ({ children }: Readonly<{ children: React.ReactNode }>) => {
+const ThemeProvider = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   /* カラースキーム
   ---------------------------------------------------------------------------------------------------- */
   const mode = useMediaQuery('(prefers-color-scheme: dark)') ? 'dark' : 'light';
@@ -45,11 +45,11 @@ const ThemeRegistry = ({ children }: Readonly<{ children: React.ReactNode }>) =>
   /* jsx
   ---------------------------------------------------------------------------------------------------- */
   return (
-    // <ThemeProvider theme={lightTheme}>
-    <ThemeProvider theme={mode === 'dark' ? darkTheme : lightTheme}>
+    // <MuiThemeProvider theme={lightTheme}>
+    <MuiThemeProvider theme={mode === 'dark' ? darkTheme : lightTheme}>
       <CssBaseline />
       {children}
-    </ThemeProvider>
+    </MuiThemeProvider>
   );
 };
-export default ThemeRegistry;
+export default ThemeProvider;

@@ -5,7 +5,7 @@ import type { Metadata } from 'next';
 import React from 'react';
 
 import { notoSansJp } from './_ui/fonts';
-import ThemeRegistry from './_ui/theme-registry';
+import ThemeProvider from './_ui/theme-provider';
 
 /** @type {Metadata} metadata */
 export const metadata: Metadata = {
@@ -25,7 +25,7 @@ const Layout = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     <html lang="ja">
       <body className={notoSansJp.variable}>
         <AppRouterCacheProvider>
-          <ThemeRegistry>{children}</ThemeRegistry>
+          <ThemeProvider>{children}</ThemeProvider>
         </AppRouterCacheProvider>
       </body>
     </html>
