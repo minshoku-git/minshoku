@@ -1,9 +1,13 @@
 import 'modern-css-reset/dist/reset.min.css';
 import './globals.css';
 
+import { ThemeProvider } from '@mui/material/styles';
+import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import type { Metadata } from 'next';
+import React from 'react';
 
 import { notoSansJp } from './_ui/fonts';
+import theme from './_ui/theme';
 
 /** @type {Metadata} metadata */
 export const metadata: Metadata = {
@@ -16,14 +20,17 @@ export const metadata: Metadata = {
  * @param {React.ReactNode} children
  * @returns
  */
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+const Layout = ({ children }: Readonly<{ children: React.ReactNode }>) => {
+  /* jsx
+  ---------------------------------------------------------------------------------------------------- */
   return (
     <html lang="ja" className={notoSansJp.variable}>
-      <body>{children}</body>
+      <body>
+        <AppRouterCacheProvider>
+          <ThemeProvider theme={theme}>{children}</ThemeProvider>
+        </AppRouterCacheProvider>
+      </body>
     </html>
   );
-}
+};
+export default Layout;
