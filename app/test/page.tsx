@@ -14,7 +14,7 @@ const Page = () => {
     <div style={styles.container}>
       <main style={styles.main}>
         <Image src="/next.svg" alt="Next.js logo" width={180} height={38} priority />
-        <Typography variant="h1">みんなの社食</Typography>
+        <Typography variant="h1">みんなの社食 - エブリイ</Typography>
         <ol>
           <li>
             <Typography variant="body1">運のつく5つの経営姿勢</Typography>
