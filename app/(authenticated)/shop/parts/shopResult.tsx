@@ -90,16 +90,36 @@ const UserResult = (props: ShopSearchResultProps): React.JSX.Element => {
                   props.linkHandler(row.id);
                 }}
               >
-                <TableCell sx={{ whiteSpace: 'pre' }}>{row.shopName}</TableCell>
-                <TableCell>{row.companyName}</TableCell>
-                <TableCell>{row.address}</TableCell>
-                <TableCell>{row.status}</TableCell>
+                <TableCell sx={{ whiteSpace: 'pre' }} width={'20%'}>
+                  {row.shopName}
+                </TableCell>
+                <TableCell width={'20%'}>{row.companyName}</TableCell>
+                <TableCell
+                  width={'50%'}
+                  sx={{
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-all',
+                    overflowWrap: 'break-word',
+                  }}
+                >
+                  {row.address}
+                </TableCell>
+                <TableCell width={'10%'}>{row.status}</TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </TableContainer>
-      <Pagination color="primary" count={pageCount} page={currentPage} onChange={changePage} />
+      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+        <Pagination
+          color="primary"
+          shape="rounded"
+          size="large"
+          count={pageCount}
+          page={currentPage}
+          onChange={changePage}
+        />
+      </Box>
     </>
   );
 };

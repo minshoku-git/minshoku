@@ -131,7 +131,16 @@ const ScheduleResult = (props: CompanySearchResultProps): React.JSX.Element => {
           </TableBody>
         </Table>
       </TableContainer>
-      <Pagination color="primary" count={pageCount} page={currentPage} onChange={changePage} />
+      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+        <Pagination
+          color="primary"
+          shape="rounded"
+          size="large"
+          count={pageCount}
+          page={currentPage}
+          onChange={changePage}
+        />
+      </Box>
     </>
   );
 };

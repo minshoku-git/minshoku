@@ -47,6 +47,25 @@ const lightTheme = createTheme({
         root: {},
       },
     },
+    MuiListSubheader: {
+      defaultProps: {
+        color: 'primary',
+      },
+      styleOverrides: {
+        root: {
+          fontSize: '16px',
+          backgroundColor: '#fafafa',
+          marginTop: 0,
+        },
+      },
+    },
+    MuiListItemButton: {
+      styleOverrides: {
+        root: {
+          paddingLeft: 32,
+        },
+      },
+    },
   },
 });
 

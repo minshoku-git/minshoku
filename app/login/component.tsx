@@ -22,7 +22,7 @@ export const LoginComponent = () => {
   };
 
   const loginHandler = () => {
-    router.push('/user');
+    router.push('/schedule');
   };
 
   const { register, reset, handleSubmit, formState, control } = useForm<LoginFormValues>({
