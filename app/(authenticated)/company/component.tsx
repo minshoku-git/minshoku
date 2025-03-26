@@ -11,14 +11,14 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { FormContainer, SelectElement, TextFieldElement } from 'react-hook-form-mui';
 
-import { MockDataCreate_CompanySearchResult, MockDataCreate_OrderResult } from '@/app/_lib/mockDataCreate';
+import { MockDataCreate_CompanySearchResult, MockDataCreate_OrderResult } from '@/app/_lib/createMockData';
 
 import { OrderSearchFormValues } from '../../_types/types';
 import ItemBase from '../../_ui/shared/ItemBase';
 import CompanyResult from './parts/companyResult';
 
 /** ページ名 */
-const pageName = 'オーダー一覧';
+const pageName = '会社一覧';
 const resultHeader = ['会社名', '支店名', '住所', '契約ステータス'];
 
 export const CompanyComponent = () => {
@@ -126,9 +126,19 @@ export const CompanyComponent = () => {
                   }}
                 >
                   <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ja}>
-                    <DatePicker name={'dateFrom'} value={dateFrom} sx={{ minWidth: '150px' }} />
+                    <DatePicker
+                      name={'dateFrom'}
+                      value={dateFrom}
+                      sx={{ minWidth: '150px' }}
+                      slotProps={{ textField: { size: 'small' } }}
+                    />
                     <Typography sx={{ mx: 1 }}>{' ～ '}</Typography>
-                    <DatePicker name={'dateTo'} value={dateTo} sx={{ minWidth: '150px' }} />
+                    <DatePicker
+                      name={'dateTo'}
+                      value={dateTo}
+                      sx={{ minWidth: '150px' }}
+                      slotProps={{ textField: { size: 'small' } }}
+                    />
                   </LocalizationProvider>
                   <Button
                     onClick={onLastMonthClick}

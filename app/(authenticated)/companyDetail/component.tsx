@@ -1,6 +1,6 @@
 'use client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Add, CheckBox, Delete } from '@mui/icons-material';
+import { Add, Delete } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -8,7 +8,6 @@ import {
   Divider,
   IconButton,
   Paper,
-  Stack,
   Table,
   TableBody,
   TableCell,
@@ -22,13 +21,13 @@ import Grid from '@mui/material/Grid2';
 import { LocalizationProvider, TimePicker } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
 import { ja } from 'date-fns/locale/ja';
-import { useRouter } from 'next/router';
-import { ChangeEvent, useMemo, useRef, useState } from 'react';
+import { useMemo } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { SelectElement, TextareaAutosizeElement, TextFieldElement } from 'react-hook-form-mui';
 
 import { AlertType } from '@/app/_types/enum';
 import { CompanyDetailFormValues, CompanyDetailSchema } from '@/app/_types/types';
+import { DepartmentInput } from '@/app/_ui/shared/departmentInput';
 import ItemBase from '@/app/_ui/shared/ItemBase';
 import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
 
@@ -249,7 +248,6 @@ export const CompanyComponent = () => {
                   color={'primary'}
                   name="houseNumber"
                   fullWidth
-                  placeholder="番地"
                   slotProps={{ htmlInput: { maxLength: 128 } }}
                 />
               </ItemBase>
@@ -260,7 +258,7 @@ export const CompanyComponent = () => {
                   color={'primary'}
                   name="buildingName"
                   fullWidth
-                  placeholder="番地・建物名・階数など"
+                  placeholder="建物名・階数など"
                   slotProps={{ htmlInput: { maxLength: 128 } }}
                 />
               </ItemBase>
@@ -271,7 +269,6 @@ export const CompanyComponent = () => {
                   color={'primary'}
                   name="location"
                   fullWidth
-                  placeholder="番地・建物名・階数など"
                   slotProps={{ htmlInput: { maxLength: 128 } }}
                 />
               </ItemBase>
@@ -297,60 +294,7 @@ export const CompanyComponent = () => {
                 />
               </ItemBase>
               <ItemBase name={'部署情報'} isRequired={1}>
-                <Grid container>
-                  <Grid>
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        width: '640px',
-                      }}
-                    >
-                      <TextFieldElement
-                        control={control}
-                        size="small"
-                        color={'primary'}
-                        name="departmentInfo"
-                        fullWidth
-                        slotProps={{ htmlInput: { maxLength: 256 } }}
-                      />
-                      <IconButton>
-                        <Delete />
-                      </IconButton>
-                    </Box>
-                  </Grid>
-                  <Grid>
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        width: '640px',
-                        mt: 1,
-                      }}
-                    >
-                      <TextFieldElement
-                        control={control}
-                        size="small"
-                        color={'primary'}
-                        name="departmentInfo"
-                        fullWidth
-                        slotProps={{ htmlInput: { maxLength: 256 } }}
-                      />
-                      <IconButton>
-                        <Delete />
-                      </IconButton>
-                    </Box>
-                  </Grid>
-                  <Grid>
-                    <Box sx={{ mt: 1 }}>
-                      <Button variant="outlined" startIcon={<Add />}>
-                        <Typography>追加</Typography>
-                      </Button>
-                    </Box>
-                  </Grid>
-                </Grid>
+                <DepartmentInput control={control} />
               </ItemBase>
               <ItemBase name={'雇用種別情報'} isRequired={1}>
                 <Grid container>
@@ -493,9 +437,19 @@ export const CompanyComponent = () => {
                   }}
                 >
                   <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ja}>
-                    <TimePicker ampm={false} timeSteps={{ hours: 1, minutes: 15 }} sx={{ width: '160px' }} />
+                    <TimePicker
+                      ampm={false}
+                      timeSteps={{ hours: 1, minutes: 15 }}
+                      sx={{ width: '160px' }}
+                      slotProps={{ textField: { size: 'small' } }}
+                    />
                     <Typography sx={{ mx: 1 }}>{' ～ '}</Typography>
-                    <TimePicker ampm={false} timeSteps={{ hours: 1, minutes: 15 }} sx={{ width: '160px' }} />
+                    <TimePicker
+                      ampm={false}
+                      timeSteps={{ hours: 1, minutes: 15 }}
+                      sx={{ width: '160px' }}
+                      slotProps={{ textField: { size: 'small' } }}
+                    />
                   </LocalizationProvider>
                 </Box>
               </ItemBase>

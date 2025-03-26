@@ -91,20 +91,19 @@ const OrderResult = (props: OrderSearchResultProps): JSX.Element => {
 
   return (
     <>
-      <Box sx={{ display: 'flex', alignItems: 'end', mb: 1 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
         <Box color="inherit" sx={{ flexGrow: 1, fontSize: '14px' }}>
           {countText()}
         </Box>
         <Button onClick={onCSVDownloadClick}>CSV出力</Button>
       </Box>
-
       {/* オーダー情報 */}
       <TableContainer sx={{ mb: 3 }}>
         <Table className={'table-bordered'}>
           <TableHead>
             <TableRow>
               {props.header.map((item, index) => (
-                <TableCell sx={{ whiteSpace: 'pre' }} key={index} style={styles.header}>
+                <TableCell sx={{ whiteSpace: 'pre' }} key={index} style={tableStyles.header}>
                   {item}
                 </TableCell>
               ))}
@@ -113,24 +112,33 @@ const OrderResult = (props: OrderSearchResultProps): JSX.Element => {
           <TableBody>
             {props.result.map((row, index) => (
               <TableRow key={index} hover sx={{ '&:hover': { cursor: 'pointer' } }} onClick={openModal}>
-                <TableCell style={styles.body}>{row.date}</TableCell>
-                <TableCell style={styles.body} sx={{ whiteSpace: 'pre' }} key={index}>
+                <TableCell style={tableStyles.body}>{row.date}</TableCell>
+                <TableCell style={tableStyles.body} sx={{ whiteSpace: 'pre' }} key={index}>
                   {row.userName}
                 </TableCell>
-                <TableCell style={styles.body}>{row.companyName}</TableCell>
-                <TableCell style={styles.body} align={'right'}>
+                <TableCell style={tableStyles.body}>{row.companyName}</TableCell>
+                <TableCell style={tableStyles.body} align={'right'}>
                   {row.shokusu}
                 </TableCell>
-                <TableCell style={styles.body} align={'right'}>
+                <TableCell style={tableStyles.body} align={'right'}>
                   {row.totalAmount}
                 </TableCell>
-                <TableCell style={styles.body}>{row.paymentMethod}</TableCell>
+                <TableCell style={tableStyles.body}>{row.paymentMethod}</TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </TableContainer>
-      <Pagination color="primary" count={pageCount} page={currentPage} onChange={changePage} />
+      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+        <Pagination
+          color="primary"
+          shape="rounded"
+          size="large"
+          count={pageCount}
+          page={currentPage}
+          onChange={changePage}
+        />
+      </Box>{' '}
       <OrderInfoModal open={open} setOpen={setOpen} searchedDate={new Date()} />
     </>
   );
@@ -141,7 +149,7 @@ export default OrderResult;
 /* style
 ---------------------------------------------------------------------------------------------------- */
 /** @type {{ [key: string]: React.CSSProperties }} style */
-const styles: { [key: string]: React.CSSProperties } = {
+export const tableStyles: { [key: string]: React.CSSProperties } = {
   // table
   header: {
     border: 'solid 1px lightgray',

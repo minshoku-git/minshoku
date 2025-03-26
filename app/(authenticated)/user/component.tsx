@@ -6,14 +6,19 @@ import { useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { FormContainer, SelectElement, TextFieldElement } from 'react-hook-form-mui';
 
-import { MockDataCreate_UserResult } from '@/app/_lib/mockDataCreate';
+import { MockDataCreate_UserResult } from '@/app/_lib/createMockData';
+import { SortType } from '@/app/_types/enum';
 
 import ItemBase from '../../_ui/shared/ItemBase';
-import UserResult from './parts/userResult';
+import UserResult, { HeaderStatus } from './parts/userResult';
 
 /** ページ名 */
 const pageName = 'ユーザー一覧';
-const resultHeader = ['ユーザー名', '会社名'];
+const resultHeader: Array<HeaderStatus> = [
+  { name: 'ユーザー名', variableName: 'userName', sort: SortType.ASC },
+  { name: '会社名', variableName: 'companyName', sort: SortType.ASC },
+  { name: 'id', variableName: 'id', sort: SortType.ASC },
+];
 
 /* TODO: タイプ定義ファイルに移動 */
 export type UserSearchFormValues = {

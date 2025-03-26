@@ -21,6 +21,33 @@ const lightTheme = createTheme({
   palette: {
     mode: 'light',
   },
+  components: {
+    MuiTableHead: {
+      styleOverrides: {
+        root: {
+          backgroundColor: '#fafafa',
+          borderBottom: '3px double lightGray',
+        },
+      },
+    },
+    MuiTableCell: {
+      styleOverrides: {
+        root: {
+          border: '1px solid lightGray',
+        },
+      },
+    },
+    MuiPagination: {
+      defaultProps: {
+        color: 'primary',
+        shape: 'rounded',
+        size: 'large',
+      },
+      styleOverrides: {
+        root: {},
+      },
+    },
+  },
 });
 
 /** @type {Theme} darkTheme */

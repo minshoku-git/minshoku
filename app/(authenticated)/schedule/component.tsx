@@ -10,7 +10,8 @@ import { useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { FormContainer, TextFieldElement } from 'react-hook-form-mui';
 
-import { MockDataCreate_ScheduleResult } from '@/app/_lib/mockDataCreate';
+import { MockDataCreate_ScheduleResult } from '@/app/_lib/createMockData';
+import { getToday, getTomorrow, getYesterday } from '@/app/_lib/getDateTime';
 import { ScheduleSearchFormValues } from '@/app/_types/types';
 import ItemBase from '@/app/_ui/shared/ItemBase';
 
@@ -18,13 +19,25 @@ import ScheduleResult from './parts/scheduleResult';
 
 /** ページ名 */
 const pageName: string = 'スケジュール一覧';
+/** ヘッダー */
 const header: Array<string> = ['配達日', '会社名', '店舗名', 'メニュー名', '食数', 'アレルギー'];
 
+/**
+ * スケジュール一覧Component
+ */
 export const ScheduleComponent = () => {
+  /* initialize
+  ------------------------------------------------------------------ */
   const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const [isSearch, setIsSearch] = useState(false);
 
+  /* useState
+  ------------------------------------------------------------------ */
+  const [isSearch, setIsSearch] = useState(false); // 検索状態
+  const [dateFrom, setDateFrom] = useState<Date | null>(new Date()); // 配達日(From)
+  const [dateTo, setDateTo] = useState<Date | null>(new Date()); // 配達日(To)
+
+  /* useForm
+  ------------------------------------------------------------------ */
   const { reset, control } = useForm<ScheduleSearchFormValues>({
     defaultValues: {
       deliveryFrom: '',
@@ -36,58 +49,55 @@ export const ScheduleComponent = () => {
     reValidateMode: 'onSubmit',
   });
 
-  // 配達日
-  const [dateFrom, setDateFrom] = useState<Date | null>(new Date());
-  const [dateTo, setDateTo] = useState<Date | null>(new Date());
-
-  // 先月
+  /* handler
+  ------------------------------------------------------------------ */
+  /** 日付設定（本日以降）ハンドラ */
   const onAfterTodayClick = () => {
-    setDateFrom(new Date());
+    setDateFrom(getToday());
     setDateTo(null);
   };
 
-  // 今日
+  /** 日付設定（今日）ハンドラ */
   const onTodayClick = () => {
-    setDateFrom(new Date());
-    setDateTo(new Date());
+    setDateFrom(getToday());
+    setDateTo(getToday());
   };
 
-  // 明日
+  /** 日付設定（明日）ハンドラ */
   const onTomorrowClick = () => {
-    const today = new Date();
-    const tomorrow = new Date(today.getFullYear(), today.getMonth(), parseInt(('00' + today.getDate()).slice(-2)) + 1);
-    setDateFrom(tomorrow);
-    setDateTo(tomorrow);
+    setDateFrom(getTomorrow());
+    setDateTo(getTomorrow());
   };
 
-  // 昨日
+  /** 日付設定（昨日）ハンドラ */
   const onYesterdayClick = () => {
-    const today = new Date();
-    const yesterday = new Date(today.getFullYear(), today.getMonth(), parseInt(('00' + today.getDate()).slice(-2)) - 1);
-    setDateFrom(yesterday);
-    setDateTo(yesterday);
+    setDateFrom(getYesterday());
+    setDateTo(getYesterday());
   };
 
-  // 検索ハンドラ
+  /** 検索条件リセットハンドラ */
+  const onResetClick = () => {
+    reset();
+    setDateFrom(getToday());
+    setDateTo(getToday());
+  };
+
+  /** 検索ハンドラ */
   const searchHandler: SubmitHandler<ScheduleSearchFormValues> = (data) => {
     console.log('addHandler click!!');
   };
 
-  // リセット
-  const onResetClick = () => {
-    reset();
-    setDateFrom(new Date());
-    setDateTo(new Date());
-  };
-
-  // 明細行リンクハンドラ
+  /** 明細行リンクハンドラ */
   const linkHandler = (id: string) => {
     router.push('/scheduleDetail');
   };
 
-  // MockData
+  /* MockData ※のちすて
+  ------------------------------------------------------------------ */
   const result = MockDataCreate_ScheduleResult();
 
+  /* DOM
+  ------------------------------------------------------------------ */
   return (
     <>
       <Paper
@@ -121,9 +131,19 @@ export const ScheduleComponent = () => {
                   }}
                 >
                   <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ja}>
-                    <DatePicker name={'dateFrom'} value={dateFrom} sx={{ minWidth: '150px' }} />
+                    <DatePicker
+                      name={'dateFrom'}
+                      value={dateFrom}
+                      sx={{ minWidth: '150px' }}
+                      slotProps={{ textField: { size: 'small' } }}
+                    />
                     <Typography sx={{ mx: 1 }}>{' ～ '}</Typography>
-                    <DatePicker name={'dateTo'} value={dateTo} sx={{ minWidth: '150px' }} />
+                    <DatePicker
+                      name={'dateTo'}
+                      value={dateTo}
+                      sx={{ minWidth: '150px' }}
+                      slotProps={{ textField: { size: 'small' } }}
+                    />
                   </LocalizationProvider>
                   <Button
                     onClick={onAfterTodayClick}

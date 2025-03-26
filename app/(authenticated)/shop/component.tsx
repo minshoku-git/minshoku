@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { FormContainer, SelectElement, TextFieldElement } from 'react-hook-form-mui';
 
-import { MockDataCreate_ShopSearchResult } from '@/app/_lib/mockDataCreate';
+import { MockDataCreate_ShopSearchResult } from '@/app/_lib/createMockData';
 
 import { state as stateMockData } from '../../../public/state.json';
 import ItemBase from '../../_ui/shared/ItemBase';

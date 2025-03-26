@@ -1,5 +1,13 @@
 import { z } from 'zod';
 
+/**
+ * types.tsx
+ * 全機能共通で使用する型定義を管理します。
+ * なるべくココで定義すること！
+ */
+
+// TODO: 各画面で用意するか悩み中。DB取得処理記述のタイミングで見直す。
+
 export type SearchResultProps = {
   // 明細行リンクハンドラー
   linkHandler?: (id: string) => void;

@@ -33,9 +33,9 @@ const ItemBase = (props: ItemBaseProps) => {
     <Grid
       container
       marginBottom={marginBottom + 'px'}
-      sx={{ alignItems: 'center', justifyContent: 'end', flexWrap: 'nowrap' }}
+      sx={{ alignItems: 'flex-start', justifyContent: 'end', flexWrap: 'nowrap' }}
     >
-      <Grid sx={{ display: 'flex', xs: props.narrowTitle ? 2 : 3 }}>
+      <Grid sx={{ display: 'flex', xs: props.narrowTitle ? 2 : 3, pt: 1 }}>
         <Typography variant="body2" marginRight="16px" sx={{ whiteSpace: 'nowrap' }}>
           {props.name}
         </Typography>

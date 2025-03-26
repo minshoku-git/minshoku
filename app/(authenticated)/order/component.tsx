@@ -4,14 +4,14 @@ import Grid from '@mui/material/Grid2';
 import { DatePicker } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { subMonths } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { SubmitHandler, useForm } from 'react-hook-form';
 import { FormContainer, SelectElement, TextFieldElement } from 'react-hook-form-mui';
 
-import { MockDataCreate_OrderResult } from '@/app/_lib/mockDataCreate';
+import { MockDataCreate_OrderResult } from '@/app/_lib/createMockData';
+import { getLastMonthEndDay, getLastMonthStartDay, getToday, getTomorrow, getYesterday } from '@/app/_lib/getDateTime';
 
 import { OrderSearchFormValues } from '../../_types/types';
 import ItemBase from '../../_ui/shared/ItemBase';
@@ -19,13 +19,27 @@ import OrderResult from './parts/orderResult';
 
 /** ページ名 */
 const pageName = 'オーダー一覧';
+/** ヘッダー */
 const resultHeader = ['配達日', 'ユーザー名', '会社名', '食数', '金額', '決済方法'];
 
+/**
+ * オーダー一覧Component
+ */
 export const OrderComponent = () => {
+  /* initialize
+  ------------------------------------------------------------------ */
   const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const [isSearch, setIsSearch] = useState(false);
 
+  /* useState
+  ------------------------------------------------------------------ */
+  // 検索状態
+  const [isSearch, setIsSearch] = useState(false);
+  // 配達日
+  const [dateFrom, setDateFrom] = useState(new Date());
+  const [dateTo, setDateTo] = useState(new Date());
+
+  /* useForm
+  ------------------------------------------------------------------ */
   const { reset, control } = useForm<OrderSearchFormValues>({
     defaultValues: {
       deliveryFrom: '',
@@ -39,60 +53,57 @@ export const OrderComponent = () => {
     reValidateMode: 'onSubmit',
   });
 
-  // 配達日
-  const [dateFrom, setDateFrom] = useState(new Date());
-  const [dateTo, setDateTo] = useState(new Date());
-
-  // 先月
+  /* handler
+  ------------------------------------------------------------------ */
+  /** 日付設定（先月）ハンドラ */
   const onLastMonthClick = () => {
-    // TODO: 両方未入力の場合は検索できないようにする
-    // TODO: 前の月の1日と最終日を設定する
-    setDateFrom(subMonths(dateFrom, 1));
-    setDateTo(subMonths(dateTo, 1));
+    setDateFrom(getLastMonthStartDay());
+    setDateTo(getLastMonthEndDay());
   };
 
-  // 今日
+  /** 日付設定（今日）ハンドラ */
   const onTodayClick = () => {
-    setDateFrom(new Date());
-    setDateTo(new Date());
+    setDateFrom(getToday());
+    setDateTo(getToday());
   };
 
-  // 明日
+  /** 日付設定（明日）ハンドラ */
   const onTomorrowClick = () => {
-    setDateFrom(
-      new Date(dateFrom.getFullYear(), dateFrom.getMonth(), parseInt(('00' + dateFrom.getDate()).slice(-2)) + 1)
-    );
-    setDateTo(new Date(dateTo.getFullYear(), dateTo.getMonth(), parseInt(('00' + dateTo.getDate()).slice(-2)) + 1));
+    setDateFrom(getTomorrow());
+    setDateTo(getTomorrow());
   };
 
-  // 昨日
+  /** 日付設定（昨日）ハンドラ */
   const onYesterdayClick = () => {
-    setDateFrom(
-      new Date(dateFrom.getFullYear(), dateFrom.getMonth(), parseInt(('00' + dateFrom.getDate()).slice(-2)) - 1)
-    );
-    setDateTo(new Date(dateTo.getFullYear(), dateTo.getMonth(), parseInt(('00' + dateTo.getDate()).slice(-2)) - 1));
+    setDateFrom(getYesterday());
+    setDateTo(getYesterday());
   };
 
-  const searchHandler = () => {
-    setIsSearch(true);
+  /** 検索条件リセットハンドラ */
+  const onResetClick = () => {
+    reset();
+    setDateFrom(getToday());
+    setDateTo(getToday());
   };
 
-  // 明細行リンクハンドラ
+  /** 検索ハンドラ */
+  const searchHandler: SubmitHandler<OrderSearchFormValues> = (data) => {
+    console.log('addHandler click!!');
+  };
+
+  /** 明細行リンクハンドラ */
   const linkHandler = (id: string) => {
+    // TODO:具体的な遷移方法を考える。idでデータを管理する？
     router.push('/userDetail');
     reset();
   };
 
-  // リセット
-  const onResetClick = () => {
-    reset();
-    setDateFrom(new Date());
-    setDateTo(new Date());
-  };
-
-  // MockData
+  /* MockData ※のちすて
+  ------------------------------------------------------------------ */
   const result = MockDataCreate_OrderResult();
 
+  /* DOM
+  ------------------------------------------------------------------ */
   return (
     <>
       <Paper
@@ -116,7 +127,6 @@ export const OrderComponent = () => {
               direction="column"
               sx={{ alignContent: 'center' }}
             >
-              {' '}
               <ItemBase name={'配達日'} isRequired={2}>
                 <Box
                   sx={{
@@ -127,9 +137,19 @@ export const OrderComponent = () => {
                   }}
                 >
                   <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ja}>
-                    <DatePicker name={'dateFrom'} value={dateFrom} sx={{ minWidth: '150px' }} />
+                    <DatePicker
+                      name={'dateFrom'}
+                      value={dateFrom}
+                      sx={{ minWidth: '150px' }}
+                      slotProps={{ textField: { size: 'small' } }}
+                    />
                     <Typography sx={{ mx: 1 }}>{' ～ '}</Typography>
-                    <DatePicker name={'dateTo'} value={dateTo} sx={{ minWidth: '150px' }} />
+                    <DatePicker
+                      name={'dateTo'}
+                      value={dateTo}
+                      sx={{ minWidth: '150px' }}
+                      slotProps={{ textField: { size: 'small' } }}
+                    />
                   </LocalizationProvider>
                   <Button
                     onClick={onLastMonthClick}

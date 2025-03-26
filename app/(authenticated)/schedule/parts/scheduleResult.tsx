@@ -12,6 +12,8 @@ import Box from '@mui/material/Box';
 import Pagination from '@mui/material/Pagination';
 import * as React from 'react';
 
+import { pageMaxCount } from '@/app/_types/values';
+
 /* TODO: タイプ定義ファイルに移動 */
 export type ScheduleSearchResult = {
   id: string;
@@ -47,7 +49,7 @@ const ScheduleResult = (props: ScheduleSearchResultProps): React.JSX.Element => 
   ------------------------------------------------------------------ */
 
   // 表示行数
-  const [rowsPerPage, setRowsPerPage] = React.useState(10);
+  const rowsPerPage: number = pageMaxCount();
   // ページ数
   const [pageCount, setPageCount] = React.useState(20);
   // 現在のページ番号
@@ -112,7 +114,14 @@ const ScheduleResult = (props: ScheduleSearchResultProps): React.JSX.Element => 
         </Table>
       </TableContainer>
       <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-        <Pagination color="primary" count={pageCount} page={currentPage} onChange={changePage} />
+        <Pagination
+          color="primary"
+          shape="rounded"
+          size="large"
+          count={pageCount}
+          page={currentPage}
+          onChange={changePage}
+        />
       </Box>
     </>
   );
