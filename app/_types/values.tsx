@@ -11,3 +11,19 @@
 export const pageMaxCount = () => {
   return 30;
 };
+
+/**
+ * 1KBのByte数(1024Byte)
+ * @returns 1024
+ */
+export const KB_ByteSize = () => {
+  return 1024;
+};
+
+/**
+ * 添付可能な画像拡張子
+ * @returns string<Array> ['image/png', 'image/jpg', 'image/jpeg']
+ */
+export const IMAGE_TYPES = () => {
+  return ['image/png', 'image/jpg', 'image/jpeg'];
+};

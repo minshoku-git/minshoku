@@ -1,19 +1,23 @@
 'use client';
-import { Box, Button, Divider, Paper, Typography } from '@mui/material';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Box, Button, Divider, Hidden, Paper, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2';
-import { DatePicker } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { ja } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { CSVDownload, CSVLink } from 'react-csv';
+import { CommonPropTypes } from 'react-csv/components/CommonPropTypes';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { FormContainer, SelectElement, TextFieldElement } from 'react-hook-form-mui';
+import { DatePickerElement } from 'react-hook-form-mui/date-pickers';
 
 import { MockDataCreate_OrderResult } from '@/app/_lib/createMockData';
 import { getLastMonthEndDay, getLastMonthStartDay, getToday, getTomorrow, getYesterday } from '@/app/_lib/getDateTime';
+import TestComponent from '@/app/(authenticated)/otamesi/component';
 
-import { OrderSearchFormValues } from '../../_types/types';
+import { OrderSearchFormValues, OrderSearchSchema } from '../../_types/types';
 import ItemBase from '../../_ui/shared/ItemBase';
 import OrderResult from './parts/orderResult';
 
@@ -34,61 +38,59 @@ export const OrderComponent = () => {
   ------------------------------------------------------------------ */
   // 検索状態
   const [isSearch, setIsSearch] = useState(false);
-  // 配達日
-  const [dateFrom, setDateFrom] = useState(new Date());
-  const [dateTo, setDateTo] = useState(new Date());
 
   /* useForm
   ------------------------------------------------------------------ */
-  const { reset, control } = useForm<OrderSearchFormValues>({
+  const { reset, control, setValue, handleSubmit } = useForm<OrderSearchFormValues>({
+    mode: 'onSubmit', // 初回validation時を検索ボタンが押されたタイミングに設定
+    reValidateMode: 'onBlur', // 送信ボタンが押され、バリデーションに引っかかった後は、常に入力値のフォーカスが外れた際にバリデーションが走る
+    resolver: zodResolver(OrderSearchSchema),
     defaultValues: {
-      deliveryFrom: '',
-      deliveryTo: '',
+      deliveryFrom: getToday(),
+      deliveryTo: getToday(),
       userName: '',
       companyName: '',
       branchName: '',
       status: '',
     },
-    mode: 'onSubmit',
-    reValidateMode: 'onSubmit',
   });
 
   /* handler
   ------------------------------------------------------------------ */
   /** 日付設定（先月）ハンドラ */
   const onLastMonthClick = () => {
-    setDateFrom(getLastMonthStartDay());
-    setDateTo(getLastMonthEndDay());
+    setValue('deliveryFrom', getLastMonthStartDay());
+    setValue('deliveryTo', getLastMonthEndDay());
   };
 
   /** 日付設定（今日）ハンドラ */
   const onTodayClick = () => {
-    setDateFrom(getToday());
-    setDateTo(getToday());
+    setValue('deliveryFrom', getToday());
+    setValue('deliveryTo', getToday());
   };
 
   /** 日付設定（明日）ハンドラ */
   const onTomorrowClick = () => {
-    setDateFrom(getTomorrow());
-    setDateTo(getTomorrow());
+    setValue('deliveryFrom', getTomorrow());
+    setValue('deliveryTo', getTomorrow());
   };
 
   /** 日付設定（昨日）ハンドラ */
   const onYesterdayClick = () => {
-    setDateFrom(getYesterday());
-    setDateTo(getYesterday());
+    setValue('deliveryFrom', getYesterday());
+    setValue('deliveryTo', getYesterday());
   };
 
   /** 検索条件リセットハンドラ */
   const onResetClick = () => {
     reset();
-    setDateFrom(getToday());
-    setDateTo(getToday());
+    setValue('deliveryFrom', getToday());
+    setValue('deliveryTo', getToday());
   };
 
   /** 検索ハンドラ */
   const searchHandler: SubmitHandler<OrderSearchFormValues> = (data) => {
-    console.log('addHandler click!!');
+    setIsSearch(!isSearch);
   };
 
   /** 明細行リンクハンドラ */
@@ -96,6 +98,26 @@ export const OrderComponent = () => {
     // TODO:具体的な遷移方法を考える。idでデータを管理する？
     router.push('/userDetail');
     reset();
+  };
+
+  /* csvPrinter 
+  ------------------------------------------------------------------ */
+  const headers = [
+    { label: 'First Name', key: 'firstname' },
+    { label: 'Last Name', key: 'lastname' },
+    { label: 'Email', key: 'email' },
+  ];
+
+  const data = [
+    { firstname: 'Ahmed', lastname: 'Tomi', email: 'ah@smthing.co.com' },
+    { firstname: 'Raed', lastname: 'Labes', email: 'rl@smthing.co.com' },
+    { firstname: 'Yezzi', lastname: 'Min l3b', email: 'ymin@cocococo.com' },
+  ];
+
+  const csvPrintHandler = () => {
+    // 謎errorが出る件は岩瀬さんに質問する
+    // suppressHydrationWarning
+    document.getElementById('csvLinkButton')?.click();
   };
 
   /* MockData ※のちすて
@@ -106,6 +128,21 @@ export const OrderComponent = () => {
   ------------------------------------------------------------------ */
   return (
     <>
+      {/* テスト用ボタン※のちすて */}
+      {/* <CSVLink
+        id="csvLinkButton"
+        filename="テストCSV"
+        data={data}
+        headers={headers}
+        enclosingCharacter=","
+        uFEFF={false}
+        hidden
+        suppressHydrationWarning
+      >
+        Download me
+      </CSVLink>
+      <TestComponent />
+      <Button onClick={csvPrintHandler}>テスト</Button> */}
       <Paper
         sx={{
           display: 'flex',
@@ -119,36 +156,52 @@ export const OrderComponent = () => {
         </Grid>
         <Divider />
         <Box sx={{ m: 3 }}>
-          <FormContainer onSuccess={searchHandler}>
-            <Grid
-              container
-              rowSpacing={2}
-              columnSpacing={{ xs: 1, sm: 2, md: 3 }}
-              direction="column"
-              sx={{ alignContent: 'center' }}
-            >
+          <form onSubmit={handleSubmit(searchHandler)}>
+            <Grid container rowSpacing={2} columnSpacing={{ xs: 1 }} direction="column" sx={{ alignContent: 'center' }}>
               <ItemBase name={'配達日'} isRequired={2}>
                 <Box
                   sx={{
                     display: 'flex',
                     flexDirection: 'row',
-                    alignItems: 'center',
+                    alignItems: 'flex-start',
                     width: '640px',
                   }}
                 >
                   <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ja}>
-                    <DatePicker
-                      name={'dateFrom'}
-                      value={dateFrom}
-                      sx={{ minWidth: '150px' }}
-                      slotProps={{ textField: { size: 'small' } }}
+                    <DatePickerElement
+                      control={control}
+                      name={'deliveryFrom'}
+                      sx={{
+                        minWidth: '150px',
+                        '& .MuiInputBase-root': {
+                          height: '40px',
+                          textAlign: 'center',
+                          verticalAlign: 'center',
+                          padding: '0 15px',
+                        },
+                        '& input': {
+                          padding: '0',
+                        },
+                      }}
                     />
-                    <Typography sx={{ mx: 1 }}>{' ～ '}</Typography>
-                    <DatePicker
-                      name={'dateTo'}
-                      value={dateTo}
-                      sx={{ minWidth: '150px' }}
-                      slotProps={{ textField: { size: 'small' } }}
+                    <Box sx={{ height: '40px', display: 'flex', alignItems: 'center' }}>
+                      <Typography sx={{ mx: 1 }}>{'～'}</Typography>
+                    </Box>
+                    <DatePickerElement
+                      control={control}
+                      name={'deliveryTo'}
+                      sx={{
+                        minWidth: '150px',
+                        '& .MuiInputBase-root': {
+                          height: '40px',
+                          textAlign: 'center',
+                          verticalAlign: 'center',
+                          padding: '0 15px',
+                        },
+                        '& input': {
+                          padding: '0',
+                        },
+                      }}
                     />
                   </LocalizationProvider>
                   <Button
@@ -263,7 +316,7 @@ export const OrderComponent = () => {
                 sx={{
                   minWidth: 'auto',
                   ml: 'auto',
-                  px: 1,
+                  mt: 1,
                   whiteSpace: 'nowrap',
                   textDecoration: 'underline',
                 }}
@@ -272,13 +325,7 @@ export const OrderComponent = () => {
               </Button>
             </Grid>
             <Grid sx={{ mt: 1 }} size={{ xs: 12 }}>
-              <Button
-                fullWidth
-                variant="contained"
-                onClick={() => {
-                  setIsSearch(!isSearch);
-                }}
-              >
+              <Button fullWidth variant="contained" type="submit">
                 検索
               </Button>
             </Grid>
@@ -288,7 +335,7 @@ export const OrderComponent = () => {
                 <OrderResult header={resultHeader} result={result} linkHandler={linkHandler} />
               </>
             )}
-          </FormContainer>
+          </form>
         </Box>
       </Paper>
     </>

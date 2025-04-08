@@ -12,6 +12,12 @@ export type SnackBarType = {
   message: string;
 };
 
+/**
+ * OpenSnackBar
+ * SnackBarの表示です。
+ * @param {CompanySearchResultProps} props - プロパティ
+ * @returns {JSX.Element} JSX
+ */
 export const OpenSnackBar = () => {
   const { snackbarState, closeSnackbar } = useSnackBar();
 
@@ -27,7 +33,7 @@ export const OpenSnackBar = () => {
     >
       <Alert severity={snackbarState.alertType as AlertColor} sx={{ display: 'flex', alignItems: 'center' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Typography>{snackbarState.message}</Typography>
+          <Typography sx={{ whiteSpace: 'pre-line' }}>{snackbarState.message}</Typography>
           <IconButton aria-label="close" onClick={closeSnackbar} size={'small'}>
             <Close />
           </IconButton>

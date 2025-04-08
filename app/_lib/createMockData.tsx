@@ -93,3 +93,66 @@ export function MockDataCreate_CompanySearchResult() {
   }
   return result;
 }
+
+export const MOCKDATA_departmentInfo: DepartmentData[] = [
+  { id: 'dep1', name: '総務部', disabled: false },
+  { id: 'dep2', name: '営業部', disabled: true },
+];
+
+export const MOCKDATA_employmentInfo: EmploymentData[] = [
+  {
+    id: 'emp1',
+    name: '正社員',
+    isDeduction: true,
+    isCreditCard: true,
+    isPayPay: true,
+    burdenAmount: '500',
+    disabled: true,
+  },
+  {
+    id: 'emp2',
+    name: 'アルバイト',
+    isDeduction: false,
+    isCreditCard: true,
+    isPayPay: true,
+    burdenAmount: '0',
+    disabled: true,
+  },
+  {
+    id: 'emp3',
+    name: 'パートタイム',
+    isDeduction: false,
+    isCreditCard: true,
+    isPayPay: true,
+    burdenAmount: '0',
+    disabled: false,
+  },
+];
+
+// 部署情報
+export type DepartmentData = {
+  // 部署ID
+  id: string;
+  // 部署名
+  name: string;
+  // 編集不可 true:編集不可(非活性),false:編集可能(活性)
+  disabled: boolean;
+};
+
+// 雇用種別情報
+export type EmploymentData = {
+  // 雇用種別ID
+  id: string;
+  // 雇用種別名
+  name: string;
+  // 決済方法(控除)
+  isDeduction: boolean;
+  // 決済方法(クレジットカード)
+  isCreditCard: boolean;
+  // 決済方法(PayPay)
+  isPayPay: boolean;
+  // 会社負担
+  burdenAmount: string;
+  // 編集不可 true:編集不可(非活性),false:編集可能(活性)
+  disabled: boolean;
+};

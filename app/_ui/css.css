@@ -1,0 +1,3 @@
+a:not[target='_blank'] {
+  color: 'red';
+}

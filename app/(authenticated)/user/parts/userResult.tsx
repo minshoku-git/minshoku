@@ -8,13 +8,12 @@ import {
   TableHead,
   TableRow,
   TableSortLabel,
-  Typography,
 } from '@mui/material';
 import * as React from 'react';
 
 import { SortType } from '@/app/_types/enum';
 import { pageMaxCount } from '@/app/_types/values';
-import Processing from '@/app/_ui/shared/Processing';
+import { useProcessing } from '@/app/_ui/processing/processingContext';
 
 export type HeaderStatus = {
   // ヘッダー名
@@ -40,6 +39,8 @@ export type UserSearchResultProps = {
   header: Array<HeaderStatus>;
   // 会社名・お届け先名毎のオーダー情報
   result: UserSearchResult[];
+  openProcessing: () => void;
+  closeProcessing: () => void;
 };
 
 /**
@@ -58,7 +59,7 @@ const UserResult = (props: UserSearchResultProps): React.JSX.Element => {
   ------------------------------------------------------------------ */
 
   // 待機中
-  const [processing, setProcessing] = React.useState<boolean>(false);
+  // const [processing, setProcessing] = React.useState<boolean>(false);
   // 表示行数
   const rowsPerPage: number = pageMaxCount();
   // ページ数
@@ -112,7 +113,7 @@ const UserResult = (props: UserSearchResultProps): React.JSX.Element => {
           sortArray.map((item) =>
             item.name === header.name ? { ...item, sort: SortType.ASC } : { ...item, sort: SortType.ASC }
           );
-      setProcessing(true);
+      props.openProcessing();
 
       // TODO:APIを叩く
       setTimeout(() => {
@@ -123,14 +124,13 @@ const UserResult = (props: UserSearchResultProps): React.JSX.Element => {
 
         setSortTarget(jadge ? { ...header, sort: setType } : { ...header, sort: SortType.ASC });
         setSortArray(res);
-        setProcessing(false);
+        props.closeProcessing();
       }, 1000);
     };
-  }, [sortArray, sortTarget.name]);
+  }, [sortTarget.name, sortArray, props]);
 
   return (
     <>
-      <Processing open={processing} />
       <Box sx={{ display: 'flex', alignItems: 'end', mb: 1 }}>
         <Box color="inherit" sx={{ flexGrow: 1, fontSize: '14px' }}>
           {countText()}

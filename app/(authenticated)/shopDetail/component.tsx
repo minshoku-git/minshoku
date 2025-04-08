@@ -3,31 +3,42 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { CloudUpload, Delete } from '@mui/icons-material';
 import { Box, Button, Divider, IconButton, Paper, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2';
-import { ChangeEvent, useRef, useState } from 'react';
-import { FieldError, SubmitHandler, useForm } from 'react-hook-form';
+import { ChangeEvent, JSX, useRef, useState } from 'react';
+import { SubmitHandler, useForm } from 'react-hook-form';
 import { SelectElement, TextareaAutosizeElement, TextFieldElement } from 'react-hook-form-mui';
 
+import { getAttachmentSizeOver, getMbSize } from '@/app/_lib/getFile';
+import { AlertType } from '@/app/_types/enum';
 import { ShopDetailSchema, ShopDetailSchemaType } from '@/app/_types/types';
+import { IMAGE_TYPES } from '@/app/_types/values';
 import ItemBase from '@/app/_ui/shared/ItemBase';
+import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
 
 import { state as stateMockData } from '../../../public/state.json';
+
 /** ページ名 */
 const pageName = '店舗詳細';
-// type Props = {
-//   control: Control<SearchFormValues>
-//   searchHandler: SubmitHandler<SearchFormValues>
-//   clearHandler: MouseEventHandler
-//   register: UseFormRegister<SearchFormValues>
-//   handleSubmit: UseFormHandleSubmit<SearchFormValues>
-//   isDirty: boolean
-// }
 
-export const ShopComponent = () => {
+/**
+ * 店舗コンポーネント
+ * @returns {JSX.Element} JSX
+ */
+export const ShopComponent = (): JSX.Element => {
+  /* initialize
+  ------------------------------------------------------------------ */
+  const { openSnackbar, closeSnackbar } = useSnackBar();
+
+  /* useState
+  ------------------------------------------------------------------ */
+  const [file, setFile] = useState<File>();
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  /* useForm
+  ------------------------------------------------------------------ */
   const {
     handleSubmit,
-    formState,
     control,
-    formState: { errors },
+    formState: { isDirty },
   } = useForm<ShopDetailSchema>({
     mode: 'onSubmit', // 初回validation時を検索ボタンが押されたタイミングに設定
     reValidateMode: 'onBlur', // 送信ボタンが押され、バリデーションに引っかかった後は、常に入力値のフォーカスが外れた際にバリデーションが走る
@@ -49,40 +60,57 @@ export const ShopComponent = () => {
       memo: '',
       houseNumber: '',
     },
-    // mode: 'onSubmit',
-    // reValidateMode: 'onSubmit'
   });
-  const searchHandler: SubmitHandler<ShopDetailSchema> = (data) => {
-    console.log(data + '成功してます');
+
+  /* functions
+  ------------------------------------------------------------------ */
+  const registerHandler: SubmitHandler<ShopDetailSchema> = (data) => {
+    console.log('data:' + data);
+    openSnackbar(AlertType.SUCCESS, '店舗情報の登録が完了しました。');
   };
 
-  /* fileUpload */
-  const [file, setFile] = useState<File>();
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  /* functions - 添付ファイル
+  ------------------------------------------------------------------ */
 
+  /* ファイル追加発火 */
   const fileUpload = () => {
     console.log('flieUpload click!');
     inputRef.current?.click();
     console.log('あなたのタイプは、' + inputRef.current?.type);
   };
+
+  /* ファイル追加 */
   const onFileInputChange = (event: ChangeEvent<HTMLInputElement>) => {
-    console.log('onFileInputChange click!');
-    // TODO:バリデーション(ファイルサイズ・拡張子)
-    const IMAGE_TYPES = ['image/jpg', 'image/png'];
-    if (!event.target.files) {
+    const file = event.target.files?.[0];
+    if (!file) {
       return;
     }
-    if (!IMAGE_TYPES.includes(event.target.files?.[0].type)) {
-      // TODO:alart or errorMessage
+    if (!IMAGE_TYPES().includes(file.type)) {
+      openSnackbar(AlertType.WARNING, '添付可能な拡張子のファイルではありません。\n添付可能な拡張子：png, jpg, jpeg');
       return;
     }
-    setFile(event.target.files?.[0]);
+    const filesize = getMbSize(file.size);
+    if (getAttachmentSizeOver(filesize)) {
+      openSnackbar(
+        AlertType.WARNING,
+        '添付可能なファイルサイズを超過しています。\n添付可能なファイルサイズ：20MB\n添付されたファイルサイズ：' +
+          filesize +
+          'MB'
+      );
+      return;
+    }
+    closeSnackbar();
+    setFile(file);
   };
+
+  /* ファイル削除 */
   const fileDelete = () => {
     console.log('fileDelete click!');
     setFile(undefined);
   };
 
+  /* Mock ※のちすて
+  ------------------------------------------------------------------ */
   const stateData = [
     { id: '', label: '未選択' },
     ...stateMockData.map((d: string, index: number) => {
@@ -90,11 +118,8 @@ export const ShopComponent = () => {
     }),
   ];
 
-  const errorPrams = (error: FieldError) => {
-    console.log('押されているっぽい');
-    return error?.message;
-  };
-
+  /* JSX.Element
+  ------------------------------------------------------------------ */
   return (
     <>
       <Paper
@@ -110,7 +135,7 @@ export const ShopComponent = () => {
         </Grid>
         <Divider />
         <Box sx={{ m: 3 }}>
-          <form onSubmit={handleSubmit(searchHandler)}>
+          <form onSubmit={handleSubmit(registerHandler)}>
             <Grid container rowSpacing={2} columnSpacing={{ xs: 1, sm: 2, md: 3 }} direction="column">
               <ItemBase name={'店舗ID'} isRequired={0}>
                 <TextFieldElement
@@ -308,7 +333,7 @@ export const ShopComponent = () => {
                 />
               </ItemBase>
             </Grid>
-            <Grid sx={{ mt: 1 }} size={{ xs: 12 }}>
+            <Grid sx={{ mt: 2 }} size={{ xs: 12 }}>
               <Button fullWidth variant="contained" type={'submit'}>
                 登録
               </Button>

@@ -12,19 +12,19 @@ interface SnackBarContextType {
 }
 
 const SnackBarContext = createContext<SnackBarContextType | null>({
-  closeSnackbar: () => {},
   openSnackbar: () => {},
+  closeSnackbar: () => {},
   snackbarState: {
+    open: false,
     alertType: AlertType.INFO,
     message: '',
-    open: false,
   },
 });
 
 export const SnackBarProvider = ({ children }: { children: ReactNode }) => {
   const [snackbarState, setSnackbarState] = useState<SnackBarType>({
     open: false,
-    alertType: AlertType.SUCCESS,
+    alertType: AlertType.INFO,
     message: '',
   });
 
@@ -49,7 +49,6 @@ export const SnackBarProvider = ({ children }: { children: ReactNode }) => {
 
 export const useSnackBar = (): SnackBarContextType => {
   const context = useContext(SnackBarContext);
-  console.log('SnackBarContext', context);
   if (!context) {
     throw new Error('useSnackBar must be used within a SnackBarProvider');
   }

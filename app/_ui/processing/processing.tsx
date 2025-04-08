@@ -2,25 +2,21 @@ import Backdrop from '@mui/material/Backdrop';
 import CircularProgress from '@mui/material/CircularProgress';
 import * as React from 'react';
 
-/** プロパティ */
-type Props = {
-  /** 表示判定 */
-  open: boolean;
-};
+import { useProcessing } from './processingContext';
 
 /**
  * 処理中背景
- * @param {Props} props - プロパティ
- * @returns {JSX.Element} JSX
+ * @returns {React.JSX.Element} React.JSX.Element
  */
-const Processing = (props: Props): React.JSX.Element => {
+export const OpenProcessing = (): React.JSX.Element => {
+  const { processingState } = useProcessing();
   return (
     <Backdrop
-      open={props.open}
+      open={processingState.open}
       sx={{
-        color: '#ff4500',
+        color: '#1976d2',
         background: 'rgba(255,255,255,0.50)',
-        zIndex: 1350,
+        zIndex: 135000000,
         size: '4rem',
       }}
     >
@@ -29,4 +25,4 @@ const Processing = (props: Props): React.JSX.Element => {
   );
 };
 
-export default Processing;
+export default OpenProcessing;

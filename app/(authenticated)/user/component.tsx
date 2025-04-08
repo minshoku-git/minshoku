@@ -1,13 +1,17 @@
 'use client';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Box, Button, Divider, Paper, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
-import { FormContainer, SelectElement, TextFieldElement } from 'react-hook-form-mui';
+import { SelectElement, TextFieldElement } from 'react-hook-form-mui';
 
 import { MockDataCreate_UserResult } from '@/app/_lib/createMockData';
 import { SortType } from '@/app/_types/enum';
+import { UserSearchFormValues, UserSearchSchema } from '@/app/_types/types';
+import OpenProcessing from '@/app/_ui/processing/processing';
+import { useProcessing } from '@/app/_ui/processing/processingContext';
 
 import ItemBase from '../../_ui/shared/ItemBase';
 import UserResult, { HeaderStatus } from './parts/userResult';
@@ -17,15 +21,7 @@ const pageName = 'ユーザー一覧';
 const resultHeader: Array<HeaderStatus> = [
   { name: 'ユーザー名', variableName: 'userName', sort: SortType.ASC },
   { name: '会社名', variableName: 'companyName', sort: SortType.ASC },
-  { name: 'id', variableName: 'id', sort: SortType.ASC },
 ];
-
-/* TODO: タイプ定義ファイルに移動 */
-export type UserSearchFormValues = {
-  userName: string;
-  companyName: string;
-  status: number;
-};
 
 /* TODO: タイプ定義ファイルに移動 */
 export type UserSearchResult = {
@@ -36,31 +32,40 @@ export type UserSearchResult = {
 };
 
 export const UserComponent = () => {
+  /* initialize
+  ------------------------------------------------------------------ */
   const router = useRouter();
+  const { openProcessing, closeProcessing } = useProcessing();
+
+  /* useState
+  ------------------------------------------------------------------ */
   const [isSearch, setIsSearch] = useState(false);
 
-  const { reset, control } = useForm<UserSearchFormValues>({
+  /* useForm
+  ------------------------------------------------------------------ */
+  const { reset, control, handleSubmit } = useForm<UserSearchFormValues>({
+    mode: 'onSubmit', // 初回validation時を検索ボタンが押されたタイミングに設定
+    reValidateMode: 'onBlur', // 送信ボタンが押され、バリデーションに引っかかった後は、常に入力値のフォーカスが外れた際にバリデーションが走る
+    resolver: zodResolver(UserSearchSchema),
     defaultValues: {
       userName: '',
       companyName: '',
-      status: 1,
+      status: '',
     },
-    mode: 'onSubmit',
-    reValidateMode: 'onSubmit',
   });
 
-  // MOCKDATA
-  const result = MockDataCreate_UserResult();
+  /* functions
+  ------------------------------------------------------------------ */
 
   // 検索ハンドラ
   const searchHandler: SubmitHandler<UserSearchFormValues> = (data) => {
-    // chipを表示しよう
-    // openSnackbar(
-    //   AlertType.INFO,
-    //   `検索ボタンが押されました...
-    //    名：${data.firstName}, 姓：${data.lastName}, 予約日:${data.date}`
-    // );
-    console.log('addHandler click!!');
+    console.log('data:' + data);
+    setIsSearch(!isSearch);
+  };
+
+  // リセットハンドラ
+  const onResetClick = () => {
+    reset();
   };
 
   // 明細行リンクハンドラ
@@ -69,13 +74,16 @@ export const UserComponent = () => {
     reset();
   };
 
-  // リセット
-  const onResetClick = () => {
-    reset();
-  };
+  /* mockData ※のちすて
+  ------------------------------------------------------------------ */
+  // MOCKDATA
+  const result = MockDataCreate_UserResult();
 
+  /* JSX
+  ------------------------------------------------------------------ */
   return (
     <>
+      <OpenProcessing />
       <Paper
         sx={{
           display: 'flex',
@@ -89,7 +97,7 @@ export const UserComponent = () => {
         </Grid>
         <Divider />
         <Box sx={{ m: 3 }}>
-          <FormContainer onSuccess={searchHandler}>
+          <form onSubmit={handleSubmit(searchHandler)}>
             <Grid
               container
               rowSpacing={2}
@@ -150,7 +158,7 @@ export const UserComponent = () => {
                 sx={{
                   minWidth: 'auto',
                   ml: 'auto',
-                  px: 1,
+                  mt: 1,
                   whiteSpace: 'nowrap',
                   textDecoration: 'underline',
                 }}
@@ -159,23 +167,23 @@ export const UserComponent = () => {
               </Button>
             </Grid>
             <Grid sx={{ mt: 1 }} size={{ xs: 12 }}>
-              <Button
-                fullWidth
-                variant="contained"
-                onClick={() => {
-                  setIsSearch(!isSearch);
-                }}
-              >
+              <Button fullWidth variant="contained" type="submit">
                 検索
               </Button>
             </Grid>
             {isSearch && result && (
               <>
                 <Divider sx={{ my: 3 }} />
-                <UserResult header={resultHeader} result={result} linkHandler={linkHandler} />
+                <UserResult
+                  header={resultHeader}
+                  result={result}
+                  linkHandler={linkHandler}
+                  openProcessing={openProcessing}
+                  closeProcessing={closeProcessing}
+                />
               </>
             )}
-          </FormContainer>
+          </form>
         </Box>
       </Paper>
     </>

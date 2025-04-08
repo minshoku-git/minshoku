@@ -1,6 +1,5 @@
 import { Close } from '@mui/icons-material';
 import { IconButton } from '@mui/material';
-import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Modal from '@mui/material/Modal';
 import Typography from '@mui/material/Typography';
@@ -55,7 +54,11 @@ const CustomModal = (props: CustomModalProps) => {
       <Modal open={props.open} onClose={props.onClose}>
         <Box sx={ModalStyle} width={width} height={height}>
           <Box sx={{ display: 'flex', mb: 2, alignItems: 'center' }}>
-            {title !== '' && <Typography variant="h6">{title}</Typography>}
+            {title !== '' && (
+              <Typography component="h2" variant="h6" color="primary">
+                {title}
+              </Typography>
+            )}
             <Box sx={{ flexGrow: 1 }} />
             <IconButton onClick={props.onClose}>
               <Close />

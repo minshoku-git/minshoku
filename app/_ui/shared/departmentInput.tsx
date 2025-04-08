@@ -1,64 +1,29 @@
 import { Add, Delete } from '@mui/icons-material';
 import { Box, Button, Grid2 as Grid, IconButton, TextField, Typography } from '@mui/material';
-import { fi } from 'date-fns/locale';
-import { useState } from 'react';
-import { Control, TextFieldElement } from 'react-hook-form-mui';
+import { Control, FieldArrayWithId, TextFieldElement, UseFormRegister, UseFormSetValue } from 'react-hook-form-mui';
+
+import { CompanyDetailFormValues } from '@/app/_types/types';
 
 type Props = {
-  // ※流用可能にしたいのでany型です。
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   control: Control<any>;
-  data?: Array<DepartmentData>;
+  addField: () => void;
+  removeField: (index: number) => void;
+  fields?: FieldArrayWithId<CompanyDetailFormValues, 'departmentInfo', 'id'>[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  setValue: any;
 };
-
-// 部署情報
-type DepartmentData = {
-  // 部署ID
-  id: string;
-  // 部署名
-  name: string;
-  // 編集可否 true:編集可能,false:編集不可
-  isEdit: boolean;
-};
-
-// 部署情報の初期値
-const initData: DepartmentData = { id: '', name: '', isEdit: true };
 
 export const DepartmentInput = (props: Props) => {
-  // 部署情報が1件も存在しない場合は空情報を追加する
-  // 部署情報が存在する場合は、その分だけ表示する
-
-  const [fields, setFields] = useState<string[]>(['']);
-
-  const addField = () => {
-    const newArray = [...fields, ''];
-    setFields(newArray);
+  // 入力値の前後の空白削除・入力値の全角空白を半角空白に置換・連続した空白を1個の半角空白にまとめる
+  const trimSpase = (value: string, index: number) => {
+    props.setValue(`departmentInfo.${index}.name`, value.trim().replace(/[ 　]+/g, ' '));
+    return;
   };
-
-  const deleteField = (index: number) => {
-    console.log('fields:' + fields.join(','));
-
-    const newArray = fields
-      .map((value, i) => {
-        if (index !== i) {
-          return value;
-        }
-        return;
-      })
-      .filter((f) => f !== undefined);
-    setFields(newArray);
-  };
-
-  const handleChange = (index: number, event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const newFields = [...fields];
-    newFields[index] = event.target.value;
-    setFields(newFields);
-  };
-
   return (
     <Grid container>
-      {fields ? (
-        fields.map((field, index) => (
+      {props.fields ? (
+        props.fields.map((field, index) => (
           <Grid key={index}>
             <Box
               sx={{
@@ -69,19 +34,23 @@ export const DepartmentInput = (props: Props) => {
                 mb: 1,
               }}
             >
-              <TextField
+              <TextFieldElement
+                control={props.control}
+                name={`departmentInfo.${index}.name`}
+                disabled={field.disabled}
+                slotProps={{ htmlInput: { maxLength: 256 } }}
                 size="small"
                 color={'primary'}
-                name={'departmentInfo' + index}
-                onChange={(e) => handleChange(index, e)}
+                onBlur={(e) => {
+                  trimSpase(e?.target?.value, index);
+                }}
                 fullWidth
-                slotProps={{ htmlInput: { maxLength: 256 } }}
-                value={field}
               />
               <IconButton
                 onClick={() => {
-                  deleteField(index);
+                  props.removeField(index);
                 }}
+                disabled={field.disabled}
               >
                 <Delete />
               </IconButton>
@@ -91,10 +60,9 @@ export const DepartmentInput = (props: Props) => {
       ) : (
         <></>
       )}
-
       <Grid>
         <Box>
-          <Button variant="outlined" startIcon={<Add />} onClick={addField}>
+          <Button variant="outlined" startIcon={<Add />} onClick={props.addField}>
             <Typography>追加</Typography>
           </Button>
         </Box>

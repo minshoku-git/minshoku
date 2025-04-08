@@ -1,19 +1,20 @@
 'use client';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Box, Button, Divider, Paper, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2';
-import { DatePicker } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { subMonths } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { FormContainer, SelectElement, TextFieldElement } from 'react-hook-form-mui';
+import { DatePickerElement } from 'react-hook-form-mui/date-pickers';
 
-import { MockDataCreate_CompanySearchResult, MockDataCreate_OrderResult } from '@/app/_lib/createMockData';
+import { MockDataCreate_CompanySearchResult } from '@/app/_lib/createMockData';
+import { getLastMonthEndDay, getLastMonthStartDay, getToday, getTomorrow, getYesterday } from '@/app/_lib/getDateTime';
+import { CompanySearchFormValues, CompanySearchSchema } from '@/app/_types/types';
 
-import { OrderSearchFormValues } from '../../_types/types';
 import ItemBase from '../../_ui/shared/ItemBase';
 import CompanyResult from './parts/companyResult';
 
@@ -22,59 +23,61 @@ const pageName = '会社一覧';
 const resultHeader = ['会社名', '支店名', '住所', '契約ステータス'];
 
 export const CompanyComponent = () => {
+  /* initialize
+  ------------------------------------------------------------------ */
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+
+  /* useState
+  ------------------------------------------------------------------ */
   const [isSearch, setIsSearch] = useState(false);
 
-  const { reset, control } = useForm<OrderSearchFormValues>({
+  /* useForm
+  ------------------------------------------------------------------ */
+  const { handleSubmit, reset, control, setValue } = useForm<CompanySearchFormValues>({
+    mode: 'onSubmit', // 初回validation時を検索ボタンが押されたタイミングに設定
+    reValidateMode: 'onBlur', // 送信ボタンが押され、バリデーションに引っかかった後は、常に入力値のフォーカスが外れた際にバリデーションが走る
+    resolver: zodResolver(CompanySearchSchema),
     defaultValues: {
-      deliveryFrom: '',
-      deliveryTo: '',
+      deliveryFrom: getToday(),
+      deliveryTo: getToday(),
       userName: '',
       companyName: '',
       branchName: '',
       status: '',
     },
-    mode: 'onSubmit',
-    reValidateMode: 'onSubmit',
   });
 
-  // 配達日
-  const [dateFrom, setDateFrom] = useState(new Date());
-  const [dateTo, setDateTo] = useState(new Date());
-
+  /* functions 配達日各種ボタン
+  ------------------------------------------------------------------ */
   // 先月
   const onLastMonthClick = () => {
-    // TODO: 両方未入力の場合は検索できないようにする
-    // TODO: 前の月の1日と最終日を設定する
-    setDateFrom(subMonths(dateFrom, 1));
-    setDateTo(subMonths(dateTo, 1));
+    setValue('deliveryFrom', getLastMonthStartDay());
+    setValue('deliveryTo', getLastMonthEndDay());
   };
 
-  // 今日
+  /** 日付設定（今日）ハンドラ */
   const onTodayClick = () => {
-    setDateFrom(new Date());
-    setDateTo(new Date());
+    setValue('deliveryFrom', getToday());
+    setValue('deliveryTo', getToday());
   };
 
-  // 明日
+  /** 日付設定（明日）ハンドラ */
   const onTomorrowClick = () => {
-    setDateFrom(
-      new Date(dateFrom.getFullYear(), dateFrom.getMonth(), parseInt(('00' + dateFrom.getDate()).slice(-2)) + 1)
-    );
-    setDateTo(new Date(dateTo.getFullYear(), dateTo.getMonth(), parseInt(('00' + dateTo.getDate()).slice(-2)) + 1));
+    setValue('deliveryFrom', getTomorrow());
+    setValue('deliveryTo', getTomorrow());
   };
 
-  // 昨日
+  /** 日付設定（昨日）ハンドラ */
   const onYesterdayClick = () => {
-    setDateFrom(
-      new Date(dateFrom.getFullYear(), dateFrom.getMonth(), parseInt(('00' + dateFrom.getDate()).slice(-2)) - 1)
-    );
-    setDateTo(new Date(dateTo.getFullYear(), dateTo.getMonth(), parseInt(('00' + dateTo.getDate()).slice(-2)) - 1));
+    setValue('deliveryFrom', getYesterday());
+    setValue('deliveryTo', getYesterday());
   };
 
+  /* functions 
+  ------------------------------------------------------------------ */
+  // 検索ハンドラ
   const searchHandler = () => {
-    setIsSearch(true);
+    setIsSearch(!isSearch);
   };
 
   // 明細行リンクハンドラ
@@ -86,13 +89,16 @@ export const CompanyComponent = () => {
   // リセット
   const onResetClick = () => {
     reset();
-    setDateFrom(new Date());
-    setDateTo(new Date());
+    setValue('deliveryFrom', getToday());
+    setValue('deliveryTo', getToday());
   };
 
-  // MockData
+  /* mockData ※のちすて
+  ------------------------------------------------------------------ */
   const result = MockDataCreate_CompanySearchResult();
 
+  /* JSX
+  ------------------------------------------------------------------ */
   return (
     <>
       <Paper
@@ -108,7 +114,7 @@ export const CompanyComponent = () => {
         </Grid>
         <Divider />
         <Box sx={{ m: 3 }}>
-          <FormContainer onSuccess={searchHandler}>
+          <form onSubmit={handleSubmit(searchHandler)}>
             <Grid
               container
               rowSpacing={2}
@@ -121,23 +127,45 @@ export const CompanyComponent = () => {
                   sx={{
                     display: 'flex',
                     flexDirection: 'row',
-                    alignItems: 'center',
+                    alignItems: 'flex-start',
                     width: '640px',
                   }}
                 >
                   <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ja}>
-                    <DatePicker
-                      name={'dateFrom'}
-                      value={dateFrom}
-                      sx={{ minWidth: '150px' }}
-                      slotProps={{ textField: { size: 'small' } }}
+                    <DatePickerElement
+                      control={control}
+                      name={'deliveryFrom'}
+                      sx={{
+                        minWidth: '150px',
+                        '& .MuiInputBase-root': {
+                          height: '40px',
+                          textAlign: 'center',
+                          verticalAlign: 'center',
+                          padding: '0 15px',
+                        },
+                        '& input': {
+                          padding: '0',
+                        },
+                      }}
                     />
-                    <Typography sx={{ mx: 1 }}>{' ～ '}</Typography>
-                    <DatePicker
-                      name={'dateTo'}
-                      value={dateTo}
-                      sx={{ minWidth: '150px' }}
-                      slotProps={{ textField: { size: 'small' } }}
+                    <Box sx={{ height: '40px', display: 'flex', alignItems: 'center' }}>
+                      <Typography sx={{ mx: 1 }}>{'～'}</Typography>
+                    </Box>{' '}
+                    <DatePickerElement
+                      control={control}
+                      name={'deliveryTo'}
+                      sx={{
+                        minWidth: '150px',
+                        '& .MuiInputBase-root': {
+                          height: '40px',
+                          textAlign: 'center',
+                          verticalAlign: 'center',
+                          padding: '0 15px',
+                        },
+                        '& input': {
+                          padding: '0',
+                        },
+                      }}
                     />
                   </LocalizationProvider>
                   <Button
@@ -252,7 +280,7 @@ export const CompanyComponent = () => {
                 sx={{
                   minWidth: 'auto',
                   ml: 'auto',
-                  px: 1,
+                  mt: 1,
                   whiteSpace: 'nowrap',
                   textDecoration: 'underline',
                 }}
@@ -261,13 +289,7 @@ export const CompanyComponent = () => {
               </Button>
             </Grid>
             <Grid sx={{ mt: 1 }} size={{ xs: 12 }}>
-              <Button
-                fullWidth
-                variant="contained"
-                onClick={() => {
-                  setIsSearch(!isSearch);
-                }}
-              >
+              <Button fullWidth variant="contained" type="submit">
                 検索
               </Button>
             </Grid>
@@ -277,7 +299,7 @@ export const CompanyComponent = () => {
                 <CompanyResult header={resultHeader} result={result} linkHandler={linkHandler} />
               </>
             )}
-          </FormContainer>
+          </form>
         </Box>
       </Paper>
     </>

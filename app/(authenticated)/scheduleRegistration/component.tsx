@@ -99,7 +99,7 @@ export const ScheduleRegistrationComponent = () => {
               </Box>
             </ItemBase>
           </Grid>
-          <Grid sx={{ mt: 1 }} size={{ xs: 12 }}>
+          <Grid sx={{ mt: 2 }} size={{ xs: 12 }}>
             <Button fullWidth variant="contained" disabled={file ? false : true} onClick={registerHandler}>
               登録
             </Button>

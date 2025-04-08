@@ -2,11 +2,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Box, Button, Divider, Paper, TextField, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2';
+import { useCallback, useEffect } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { SelectElement, TextareaAutosizeElement } from 'react-hook-form-mui';
 
-import { useFormGuard } from '@/app/_lib/useFormGuard';
 import { AlertType } from '@/app/_types/enum';
+import { DirtyProvider, useDirty } from '@/app/_ui/DartyContext';
 import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
 
 import { UserDetailFormValues, UserDetailSchema } from '../../_types/types';
@@ -22,6 +23,7 @@ export type Props = {
 
 export const UserDetailComponent = () => {
   const { openSnackbar } = useSnackBar();
+  const { setDirty, isDirty: dirty } = useDirty();
 
   const {
     handleSubmit,
@@ -40,10 +42,18 @@ export const UserDetailComponent = () => {
     openSnackbar(AlertType.INFO, 'ユーザー情報を更新しました。');
   };
 
-  console.log('isDirty', isDirty);
+  console.log('isDirty:' + isDirty);
+  console.log('dirty:' + dirty);
 
+  const handleClick = useCallback(() => {
+    setDirty(isDirty);
+  }, [setDirty, isDirty]);
   // 離脱確認ダイアログ表示
-  useFormGuard(isDirty);
+  useEffect(() => {
+    console.log('エフェクトのisDirty:' + isDirty);
+    handleClick();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDirty]);
 
   return (
     <>
@@ -193,13 +203,17 @@ export const UserDetailComponent = () => {
                   name="memo"
                   minRows={3}
                   resizeStyle="vertical"
+                  placeholder="500文字以内で入力してください。"
                   fullWidth
                 />
               </ItemBase>
             </Grid>
-            <Grid sx={{ mt: 1 }} size={{ xs: 12 }}>
+            <Grid size={{ xs: 12 }} sx={{ display: 'flex', mt: 2, gap: 2 }}>
               <Button fullWidth variant="contained" type={'submit'}>
                 更新
+              </Button>
+              <Button fullWidth variant="contained" color="error" type={'submit'} disabled>
+                承認
               </Button>
             </Grid>
           </form>

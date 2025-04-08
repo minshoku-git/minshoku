@@ -1,33 +1,25 @@
 'use client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Add, Delete } from '@mui/icons-material';
-import {
-  Box,
-  Button,
-  Checkbox,
-  Divider,
-  IconButton,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { Box, Button, Divider, Paper, TextField, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2';
-import { LocalizationProvider, TimePicker } from '@mui/x-date-pickers';
+import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
 import { ja } from 'date-fns/locale/ja';
 import { useMemo } from 'react';
-import { SubmitHandler, useForm } from 'react-hook-form';
+import { SubmitHandler, useFieldArray, useForm } from 'react-hook-form';
 import { SelectElement, TextareaAutosizeElement, TextFieldElement } from 'react-hook-form-mui';
+import { TimePickerElement } from 'react-hook-form-mui/date-pickers';
 
+import {
+  DepartmentData,
+  EmploymentData,
+  MOCKDATA_departmentInfo,
+  MOCKDATA_employmentInfo,
+} from '@/app/_lib/createMockData';
 import { AlertType } from '@/app/_types/enum';
 import { CompanyDetailFormValues, CompanyDetailSchema } from '@/app/_types/types';
 import { DepartmentInput } from '@/app/_ui/shared/departmentInput';
+import { EmploymentInput } from '@/app/_ui/shared/employmentInput';
 import ItemBase from '@/app/_ui/shared/ItemBase';
 import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
 
@@ -37,20 +29,26 @@ import { state as stateMockData } from '../../../public/state.json';
 const pageName = '会社詳細';
 
 export const CompanyComponent = () => {
-  const { openSnackbar } = useSnackBar();
-
+  /* initialize
+  ------------------------------------------------------------------ */
   const userUrl = ''; // TODO: api取得
   const companyId = ''; // TODO: api取得
+  const { openSnackbar } = useSnackBar();
 
+  /* useForm
+  ------------------------------------------------------------------ */
   const {
     handleSubmit,
     control,
+    setValue,
     formState: { isDirty },
   } = useForm<CompanyDetailFormValues>({
     mode: 'onSubmit', // 初回validation時を検索ボタンが押されたタイミングに設定
-    reValidateMode: 'onBlur', // 送信ボタンが押され、バリデーションに引っかかった後は、常に入力値のフォーカスが外れた際にバリデーションが走る
+    reValidateMode: 'onSubmit', // 送信ボタンが押され、バリデーションに引っかかった後は、常に入力値のフォーカスが外れた際にバリデーションが走る
     resolver: zodResolver(CompanyDetailSchema),
     defaultValues: {
+      departmentInfo: MOCKDATA_departmentInfo,
+      employmentTypeInfo: MOCKDATA_employmentInfo,
       companyName: '',
       branchName: '',
       postalCode: '',
@@ -63,16 +61,14 @@ export const CompanyComponent = () => {
       mailAddress: '',
       memo: '',
       location: '',
-      availabilityFrom: '',
-      availabilityTo: '',
+      availabilityFrom: null,
+      availabilityTo: null,
       cancelDeadlineDay: '',
       cancelDeadlineHour: '',
       cancelDeadlineMin: '',
-      departmentInfo: [],
       orderDeadlineDay: '',
       orderDeadlineHour: '',
       orderDeadlineMin: '',
-      employmentTypeInfo: [],
       annotation1: '',
       annotation2: '',
       anyItem1: '',
@@ -80,9 +76,66 @@ export const CompanyComponent = () => {
     },
   });
 
+  /* useFieldArray 部署情報
+  ------------------------------------------------------------------ */
+  const {
+    fields: fields_dep,
+    append: append_dep,
+    remove: remove_deb,
+  } = useFieldArray({ control: control, name: 'departmentInfo' });
+
+  const addField_dep = () => {
+    append_dep({ name: '', id: '', disabled: false });
+  };
+
+  // 削除対象の部署
+  const deleteDepArray: DepartmentData[] = [];
+
+  const removeField_dep = (index: number) => {
+    if (fields_dep[index].id) {
+      deleteDepArray.push(fields_dep[index] as DepartmentData);
+    }
+    remove_deb(index);
+    console.log('deleteDepArray:', deleteDepArray);
+  };
+
+  /* useFieldArray 雇用種別情報
+  ------------------------------------------------------------------ */
+  const {
+    fields: fields_emp,
+    append: append_emp,
+    remove: remove_emp,
+  } = useFieldArray({ control: control, name: 'employmentTypeInfo' });
+
+  const addField_emp = () => {
+    append_emp({
+      id: '',
+      name: '',
+      isCreditCard: false,
+      isPayPay: false,
+      isDeduction: false,
+      burdenAmount: '0',
+      disabled: false,
+    });
+  };
+
+  // 削除対象の雇用種別
+  const deleteEmpArray: EmploymentData[] = [];
+
+  const removeField_emp = (index: number) => {
+    if (fields_emp[index].id) {
+      deleteEmpArray.push(fields_emp[index] as EmploymentData);
+    }
+    remove_emp(index);
+    console.log('deleteEmpArray:', deleteEmpArray);
+  };
+
+  /* functions
+  ------------------------------------------------------------------ */
+
   // 登録ハンドラー
   const submitHandler: SubmitHandler<CompanyDetailFormValues> = (data) => {
-    console.log(data + '成功してます');
+    console.log('登録データ:', data);
     openSnackbar(AlertType.SUCCESS, '会社情報の登録が完了しました。');
   };
 
@@ -96,6 +149,8 @@ export const CompanyComponent = () => {
     await navigator.clipboard.writeText(message);
   };
 
+  /* mockData ※のちすて
+  ------------------------------------------------------------------ */
   // selectBoxの選択肢を生成
   const selectOptions = useMemo(() => {
     const day = selectOptionCreate(10);
@@ -120,6 +175,8 @@ export const CompanyComponent = () => {
     }),
   ];
 
+  /* JSX
+  ------------------------------------------------------------------ */
   return (
     <>
       <Paper sx={{ display: 'flex', flexDirection: 'column' }}>
@@ -277,6 +334,7 @@ export const CompanyComponent = () => {
                   control={control}
                   size="small"
                   color={'primary'}
+                  type="email"
                   name="mailAddress"
                   fullWidth
                   slotProps={{ htmlInput: { maxLength: 256 } }}
@@ -294,95 +352,22 @@ export const CompanyComponent = () => {
                 />
               </ItemBase>
               <ItemBase name={'部署情報'} isRequired={1}>
-                <DepartmentInput control={control} />
+                <DepartmentInput
+                  control={control}
+                  fields={fields_dep}
+                  addField={addField_dep}
+                  removeField={removeField_dep}
+                  setValue={setValue}
+                />
               </ItemBase>
               <ItemBase name={'雇用種別情報'} isRequired={1}>
-                <Grid container>
-                  <Grid>
-                    <TableContainer>
-                      <Table>
-                        <TableHead>
-                          <TableRow>
-                            <TableCell align="center">{'雇用形態名'}</TableCell>
-                            <TableCell align="center" sx={{ whiteSpace: 'nowrap', maxWidth: '100px' }}>
-                              会社清算
-                            </TableCell>
-                            <TableCell
-                              align="center"
-                              sx={{
-                                whiteSpace: 'pre-wrap',
-                                fontSize: '0.8rem',
-                                maxWidth: '100px',
-                              }}
-                            >
-                              {'クレジットカード'}
-                            </TableCell>
-                            <TableCell align="center">PayPay</TableCell>
-                            <TableCell align="center">会社負担</TableCell>
-                            <TableCell align="center"></TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          <TableRow>
-                            <TableCell align="center">
-                              <TextField size="small"></TextField>
-                            </TableCell>
-                            <TableCell align="center">
-                              <Checkbox></Checkbox>
-                            </TableCell>
-                            <TableCell align="center">
-                              <Checkbox></Checkbox>
-                            </TableCell>
-                            <TableCell align="center">
-                              <Checkbox></Checkbox>
-                            </TableCell>
-                            <TableCell align="center">
-                              <TextField size={'small'} sx={{ width: '80px', textAlign: 'right' }}>
-                                600
-                              </TextField>
-                            </TableCell>
-                            <TableCell align="center">
-                              <IconButton>
-                                <Delete />
-                              </IconButton>
-                            </TableCell>
-                          </TableRow>
-                          <TableRow>
-                            <TableCell align="center">
-                              <TextField size="small"></TextField>
-                            </TableCell>
-                            <TableCell align="center">
-                              <Checkbox></Checkbox>
-                            </TableCell>
-                            <TableCell align="center">
-                              <Checkbox></Checkbox>
-                            </TableCell>
-                            <TableCell align="center">
-                              <Checkbox></Checkbox>
-                            </TableCell>
-                            <TableCell align="center">
-                              <TextField size={'small'} sx={{ width: '80px', textAlign: 'right' }}>
-                                600
-                              </TextField>
-                            </TableCell>
-                            <TableCell align="center">
-                              <IconButton>
-                                <Delete />
-                              </IconButton>
-                            </TableCell>
-                          </TableRow>
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
-                  </Grid>
-                  <Grid>
-                    <Box sx={{ mt: 1 }}>
-                      <Button variant="outlined" startIcon={<Add />}>
-                        <Typography>追加</Typography>
-                      </Button>
-                    </Box>
-                  </Grid>
-                </Grid>
+                <EmploymentInput
+                  control={control}
+                  fields={fields_emp}
+                  addField={addField_emp}
+                  removeField={removeField_emp}
+                  setValue={setValue}
+                />
               </ItemBase>
               <ItemBase name={'任意項目1'} isRequired={1}>
                 <Box>
@@ -433,21 +418,28 @@ export const CompanyComponent = () => {
                   sx={{
                     display: 'flex',
                     flexDirection: 'row',
-                    alignItems: 'center',
+                    alignItems: 'flex-start',
+                    width: '640px',
                   }}
                 >
                   <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ja}>
-                    <TimePicker
+                    <TimePickerElement
+                      control={control}
+                      name={'availabilityFrom'}
                       ampm={false}
                       timeSteps={{ hours: 1, minutes: 15 }}
-                      sx={{ width: '160px' }}
-                      slotProps={{ textField: { size: 'small' } }}
+                      sx={TimePickerStyle}
+                      slotProps={{ textField: { size: 'small' }, inputAdornment: {} }}
                     />
-                    <Typography sx={{ mx: 1 }}>{' ～ '}</Typography>
-                    <TimePicker
+                    <Box sx={{ height: '40px', display: 'flex', alignItems: 'center' }}>
+                      <Typography sx={{ mx: 1 }}>{'～'}</Typography>
+                    </Box>{' '}
+                    <TimePickerElement
+                      control={control}
+                      name={'availabilityTo'}
                       ampm={false}
                       timeSteps={{ hours: 1, minutes: 15 }}
-                      sx={{ width: '160px' }}
+                      sx={TimePickerStyle}
                       slotProps={{ textField: { size: 'small' } }}
                     />
                   </LocalizationProvider>
@@ -458,7 +450,7 @@ export const CompanyComponent = () => {
                   sx={{
                     display: 'flex',
                     flexDirection: 'row',
-                    alignItems: 'center',
+                    alignItems: 'flex-start',
                     width: '640px',
                   }}
                   gap={1}
@@ -471,7 +463,9 @@ export const CompanyComponent = () => {
                     options={selectOptions.day}
                     sx={{ width: '80px' }}
                   ></SelectElement>
-                  <Typography sx={{ whiteSpace: 'nowrap' }}>日前</Typography>
+                  <Box sx={{ height: '40px', display: 'flex', alignItems: 'center' }}>
+                    <Typography sx={{ whiteSpace: 'nowrap' }}>{'日前'}</Typography>
+                  </Box>
                   <SelectElement
                     control={control}
                     size="small"
@@ -480,7 +474,9 @@ export const CompanyComponent = () => {
                     options={selectOptions.hours}
                     sx={{ width: '80px' }}
                   ></SelectElement>
-                  <Typography>時</Typography>
+                  <Box sx={{ height: '40px', display: 'flex', alignItems: 'center' }}>
+                    <Typography sx={{ whiteSpace: 'nowrap' }}>{'時'}</Typography>
+                  </Box>
                   <SelectElement
                     control={control}
                     size="small"
@@ -489,7 +485,9 @@ export const CompanyComponent = () => {
                     options={selectOptions.minutes}
                     sx={{ width: '80px' }}
                   ></SelectElement>
-                  <Typography>分</Typography>
+                  <Box sx={{ height: '40px', display: 'flex', alignItems: 'center' }}>
+                    <Typography sx={{ whiteSpace: 'nowrap' }}>{'分'}</Typography>
+                  </Box>
                 </Box>
               </ItemBase>
               <ItemBase name={'キャンセル期限'} isRequired={0}>
@@ -497,7 +495,7 @@ export const CompanyComponent = () => {
                   sx={{
                     display: 'flex',
                     flexDirection: 'row',
-                    alignItems: 'center',
+                    alignItems: 'flex-start',
                     width: '640px',
                   }}
                   gap={1}
@@ -510,7 +508,9 @@ export const CompanyComponent = () => {
                     options={selectOptions.day}
                     sx={{ width: '80px' }}
                   ></SelectElement>
-                  <Typography sx={{ whiteSpace: 'nowrap' }}>日前</Typography>
+                  <Box sx={{ height: '40px', display: 'flex', alignItems: 'center' }}>
+                    <Typography sx={{ whiteSpace: 'nowrap' }}>{'日前'}</Typography>
+                  </Box>
                   <SelectElement
                     control={control}
                     size="small"
@@ -519,7 +519,9 @@ export const CompanyComponent = () => {
                     options={selectOptions.hours}
                     sx={{ width: '80px' }}
                   ></SelectElement>
-                  <Typography>時</Typography>
+                  <Box sx={{ height: '40px', display: 'flex', alignItems: 'center' }}>
+                    <Typography sx={{ whiteSpace: 'nowrap' }}>{'時'}</Typography>
+                  </Box>
                   <SelectElement
                     control={control}
                     size="small"
@@ -528,21 +530,35 @@ export const CompanyComponent = () => {
                     options={selectOptions.minutes}
                     sx={{ width: '80px' }}
                   ></SelectElement>
-                  <Typography>分</Typography>
+                  <Box sx={{ height: '40px', display: 'flex', alignItems: 'center' }}>
+                    <Typography sx={{ whiteSpace: 'nowrap' }}>{'分'}</Typography>
+                  </Box>
                 </Box>
               </ItemBase>
             </Grid>
             {/* 登録・更新ボタン */}
-            <Grid sx={{ mt: 1 }} size={{ xs: 12 }}>
-              <Button fullWidth variant="contained" type={'submit'}>
+            <Grid sx={{ mt: 2 }} size={{ xs: 12 }}>
+              <Button fullWidth variant="contained" type="submit">
                 登録
               </Button>
             </Grid>
           </form>
         </Box>
-        {/* テストが終わったら以下は消します */}
       </Paper>
-      <Box sx={{ my: 2 }} />
     </>
   );
+};
+
+//
+const TimePickerStyle = {
+  width: '150px',
+  '& .MuiInputBase-root': {
+    height: '40px',
+    textAlign: 'center',
+    verticalAlign: 'center',
+    padding: '0 15px',
+  },
+  '& input': {
+    padding: '0',
+  },
 };

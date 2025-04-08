@@ -24,7 +24,7 @@ const OrderInfoModal = (props: OrderInfoModalProps) => {
           {/* ユーザー情報 */}
           <Grid size={{ xs: 12 }}>
             <TableContainer>
-              <Table className="table-bordered">
+              <Table>
                 <TableHead>
                   <TableRow>
                     <TableCell>ユーザー名</TableCell>
@@ -45,7 +45,7 @@ const OrderInfoModal = (props: OrderInfoModalProps) => {
           {/* 会社情報 */}
           <Grid size={{ xs: 12 }}>
             <TableContainer>
-              <Table className="table-bordered">
+              <Table>
                 <TableHead>
                   <TableRow>
                     <TableCell>会社名</TableCell>
@@ -70,7 +70,7 @@ const OrderInfoModal = (props: OrderInfoModalProps) => {
           {/* 注文履歴 */}
           <Grid size={{ xs: 12 }}>
             <TableContainer sx={{ maxHeight: '320px' }}>
-              <Table className="table-bordered">
+              <Table>
                 <TableHead>
                   <TableRow>
                     <TableCell>配達日</TableCell>

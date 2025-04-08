@@ -32,7 +32,7 @@ export type CompanySearchResultProps = {
 };
 
 /**
- * CompanyResultコンポーネント。
+ * 会社一覧明細行コンポーネント。
  * @param {CompanySearchResultProps} props - プロパティ
  * @returns {JSX.Element} JSX
  */

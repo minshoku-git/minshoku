@@ -197,7 +197,7 @@ export const UserComponent = () => {
                 sx={{
                   minWidth: 'auto',
                   ml: 'auto',
-                  px: 1,
+                  mt: 1,
                   whiteSpace: 'nowrap',
                   textDecoration: 'underline',
                 }}

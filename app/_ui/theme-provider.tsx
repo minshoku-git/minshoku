@@ -48,12 +48,10 @@ const lightTheme = createTheme({
       },
     },
     MuiListSubheader: {
-      defaultProps: {
-        color: 'primary',
-      },
       styleOverrides: {
         root: {
           fontSize: '16px',
+          color: 'black',
           backgroundColor: '#fafafa',
           marginTop: 0,
         },
@@ -62,7 +60,16 @@ const lightTheme = createTheme({
     MuiListItemButton: {
       styleOverrides: {
         root: {
+          color: '#1976d2',
+          fontWeight: 'bold',
           paddingLeft: 32,
+        },
+      },
+    },
+    MuiFormHelperText: {
+      styleOverrides: {
+        root: {
+          margin: '0 !important',
         },
       },
     },
@@ -77,6 +84,20 @@ const darkTheme = createTheme({
     mode: 'dark',
   },
 });
+
+/** モーダルスタイル */
+export const DateTimePickerStyle = {
+  width: '150px',
+  '& .MuiInputBase-root': {
+    height: '40px',
+    textAlign: 'center',
+    verticalAlign: 'center',
+    padding: '0 15px',
+  },
+  '& input': {
+    padding: '0',
+  },
+};
 
 /**
  * ThemeProvider

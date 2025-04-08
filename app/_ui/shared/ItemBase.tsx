@@ -30,11 +30,7 @@ const ItemBase = (props: ItemBaseProps) => {
   const marginBottom = props.marginBottom !== undefined ? props.marginBottom : 10;
 
   return (
-    <Grid
-      container
-      marginBottom={marginBottom + 'px'}
-      sx={{ alignItems: 'flex-start', justifyContent: 'end', flexWrap: 'nowrap' }}
-    >
+    <Grid container sx={{ alignItems: 'flex-start', justifyContent: 'end', flexWrap: 'nowrap' }}>
       <Grid sx={{ display: 'flex', xs: props.narrowTitle ? 2 : 3, pt: 1 }}>
         <Typography variant="body2" marginRight="16px" sx={{ whiteSpace: 'nowrap' }}>
           {props.name}
