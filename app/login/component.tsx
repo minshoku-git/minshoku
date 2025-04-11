@@ -6,9 +6,9 @@ import { useRouter } from 'next/navigation';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { TextFieldElement } from 'react-hook-form-mui';
 
-import RequiredMark from '../_ui/_shared/requiredMark';
 import { AlertType } from '../_types/enum';
 import { LoginFormValues, LoginSchema } from '../_types/types';
+import RequiredMark from '../_ui/_shared/requiredMark';
 import { useSnackBar } from '../_ui/snackBar/snackbarContext';
 
 export const LoginComponent = () => {
@@ -24,12 +24,12 @@ export const LoginComponent = () => {
     reValidateMode: 'onBlur', // 送信ボタンが押され、バリデーションに引っかかった後は、常に入力値のフォーカスが外れた際にバリデーションが走る
     resolver: zodResolver(LoginSchema),
     defaultValues: {
-      email: 'xxxxxx@refact.co.jp', // 実際は空
+      email: 'xxxxx@refact.co.jp', // 実際は空
       password: '',
     },
   });
 
-  /* functions
+  /* functions 
   ------------------------------------------------------------------ */
   // 登録ハンドラー
   const submitHandler: SubmitHandler<LoginFormValues> = (data) => {
