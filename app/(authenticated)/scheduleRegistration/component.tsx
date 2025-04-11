@@ -5,7 +5,7 @@ import Grid from '@mui/material/Grid2';
 import { ChangeEvent, useRef, useState } from 'react';
 
 import { AlertType } from '@/app/_types/enum';
-import ItemBase from '@/app/_ui/shared/ItemBase';
+import ItemBase from '@/app/_ui/_shared/itemBase';
 import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
 /** ページ名 */
 const pageName = 'スケジュール登録';
@@ -61,7 +61,7 @@ export const ScheduleRegistrationComponent = () => {
         <Divider />
         <Box sx={{ m: 3 }}>
           <Grid container rowSpacing={2} columnSpacing={{ xs: 1, sm: 2, md: 3 }} direction="column">
-            <ItemBase name={'店舗イメージ'} isRequired={1}>
+            <ItemBase name={'スケジュールデータ'} isRequired={0}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 {!file ? (
                   <Button

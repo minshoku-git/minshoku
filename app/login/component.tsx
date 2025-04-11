@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { TextFieldElement } from 'react-hook-form-mui';
 
-import RequiredMark from '../../app/_ui/shared/requiredMark';
+import RequiredMark from '../_ui/_shared/requiredMark';
 import { AlertType } from '../_types/enum';
 import { LoginFormValues, LoginSchema } from '../_types/types';
 import { useSnackBar } from '../_ui/snackBar/snackbarContext';

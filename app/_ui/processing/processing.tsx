@@ -16,7 +16,7 @@ export const OpenProcessing = (): React.JSX.Element => {
       sx={{
         color: '#1976d2',
         background: 'rgba(255,255,255,0.50)',
-        zIndex: 135000000,
+        zIndex: 20,
         size: '4rem',
       }}
     >

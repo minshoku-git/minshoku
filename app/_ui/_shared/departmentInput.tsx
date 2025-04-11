@@ -29,7 +29,7 @@ export const DepartmentInput = (props: Props) => {
               sx={{
                 display: 'flex',
                 flexDirection: 'row',
-                alignItems: 'center',
+                alignItems: 'flex-start',
                 width: '640px',
                 mb: 1,
               }}
@@ -46,14 +46,20 @@ export const DepartmentInput = (props: Props) => {
                 }}
                 fullWidth
               />
-              <IconButton
-                onClick={() => {
-                  props.removeField(index);
-                }}
-                disabled={field.disabled}
-              >
-                <Delete />
-              </IconButton>
+              {props.fields && props.fields.length > 1 ? (
+                <IconButton
+                  disabled={field.disabled}
+                  onClick={() => {
+                    props.removeField(index);
+                  }}
+                >
+                  <Delete />
+                </IconButton>
+              ) : (
+                <IconButton disabled>
+                  <Delete />
+                </IconButton>
+              )}
             </Box>
           </Grid>
         ))

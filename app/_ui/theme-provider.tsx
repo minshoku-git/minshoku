@@ -20,6 +20,9 @@ const lightTheme = createTheme({
   cssVariables,
   palette: {
     mode: 'light',
+    text: {
+      primary: '#333333', // デフォルトのテキストカラー（スタイルが適用されていない場合）
+    },
   },
   components: {
     MuiTableHead: {
@@ -70,6 +73,19 @@ const lightTheme = createTheme({
       styleOverrides: {
         root: {
           margin: '0 !important',
+        },
+      },
+    },
+    MuiDialog: {
+      styleOverrides: {
+        root: {
+          '&.confirm': {
+            backgroundColor: 'green', // IDが my-button-id のボタンを緑色に変更
+            color: 'white',
+            '&:hover': {
+              backgroundColor: 'darkgreen', // ホバー時の色を変更
+            },
+          },
         },
       },
     },

@@ -1,8 +1,7 @@
 'use client';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import MenuIcon from '@mui/icons-material/Menu';
-import { Box, Button, Link, ListSubheader, Typography } from '@mui/material';
+import { Box, Button, Link, ListSubheader } from '@mui/material';
 import { AppBar as MuiAppBar, AppBarProps as MuiAppBarProps } from '@mui/material';
 import Divider from '@mui/material/Divider';
 import Drawer from '@mui/material/Drawer';
@@ -18,20 +17,22 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import * as React from 'react';
 
-import { DirtyProvider, useDirty } from '../_ui/DartyContext';
-import DirtyCheck from '../_ui/Dirty';
-import OpenProcessing from '../_ui/processing/processing';
-import { ProcessingProvider } from '../_ui/processing/processingContext';
+import ConfirmDialog from '../_ui/dirty/conformDialog';
+import { useDirty } from '../_ui/dirty/dartyContext';
+import DirtyCheck from '../_ui/dirty/dirty';
 import { OpenSnackBar } from '../_ui/snackBar/snackBar';
 import { SnackBarProvider } from '../_ui/snackBar/snackbarContext';
 
 const drawerWidth = 240;
 
-// AppBarの型を拡張
+/* AppBarの型を拡張
+------------------------------------------------------------------ */
 interface AppBarProps extends MuiAppBarProps {
   open?: boolean; // openプロパティを追加
 }
 
+/* Main
+------------------------------------------------------------------ */
 const Main = styled('main', {
   shouldForwardProp: (prop) => prop !== 'open',
 })<AppBarProps>(({ theme }) => ({
@@ -56,6 +57,8 @@ const Main = styled('main', {
   ],
 }));
 
+/* AppBar
+------------------------------------------------------------------ */
 const AppBar = styled(MuiAppBar, {
   shouldForwardProp: (prop) => prop !== 'open',
 })<AppBarProps>(({ theme, open }) => ({
@@ -73,6 +76,8 @@ const AppBar = styled(MuiAppBar, {
   }),
 }));
 
+/* DrawerHeader
+------------------------------------------------------------------ */
 const DrawerHeader = styled('div')(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
@@ -82,192 +87,232 @@ const DrawerHeader = styled('div')(({ theme }) => ({
   justifyContent: 'flex-end',
 }));
 
+/* RootLayout
+------------------------------------------------------------------ */
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  /* initialize
+  ------------------------------------------------------------------ */
   const theme = useTheme();
   const router = useRouter();
   const currentPathname = usePathname();
   const [open, setOpen] = useState(true);
-  const { isDirty } = useDirty();
+  const { isDirty, setDirty, openConfirmDialog, closeConform, url } = useDirty();
   const { confirmNavigation } = DirtyCheck();
 
-  const linkHandler = (e: React.MouseEvent<HTMLButtonElement>) => {
-    const url = e.currentTarget.getAttribute('data-url');
-    router.push(url!);
-  };
-
+  /* functions - Header 
+  ------------------------------------------------------------------ */
+  /** メニューを開く */
   const handleDrawerOpen = () => {
     setOpen(true);
   };
-
+  /** メニューを閉じる */
   const handleDrawerClose = () => {
     setOpen(false);
   };
-
+  /** 表示中画面のメニューボタンを非活性化 */
   const disabledTitle = (pathname: string) => {
     return currentPathname === pathname;
   };
 
-  React.useEffect(() => {
-    console.log('親コンポーネントのisDirty:', isDirty);
-    // 親コンポーネント内でsetDirtyを呼び出す
-  }, [isDirty]);
+  /* functions - 離脱確認ダイアログ
+  ------------------------------------------------------------------ */
+  /** リンク先を開く */
+  const pushHandler = () => {
+    setDirty(false);
+    router.push(url!);
+  };
 
+  /* functions - のちすてゾーン
+  ------------------------------------------------------------------ */
+  // const linkHandler = (e: React.MouseEvent<HTMLButtonElement>) => {
+  //   const url = e.currentTarget.getAttribute('data-url');
+  //   router.push(url!);
+  // };
+
+  console.log('layout*isDirty:' + isDirty);
+
+  /* dirty
+  ------------------------------------------------------------------ */
+
+  /* JSX
+  ------------------------------------------------------------------ */
   return (
     <SnackBarProvider>
-      <ProcessingProvider>
-        <DirtyProvider>
-          <OpenSnackBar />
-          <OpenProcessing />
-          <Box sx={{ display: 'flex' }}>
-            <AppBar position="fixed" open={open} sx={styles.appBar}>
-              <Toolbar>
-                <IconButton
-                  color="inherit"
-                  aria-label="open drawer"
-                  onClick={handleDrawerOpen}
-                  edge="start"
-                  sx={[{ mr: 2 }, open && { display: 'none' }]}
-                >
-                  <MenuIcon />
-                </IconButton>
-                <Image
-                  src="/logo.png"
-                  alt="みんなの社食"
-                  width="200"
-                  height="52"
-                  // Largest Contentful Paint (LCP) 要素として検出された画像だと警告がでるので、以下のように設定した
-                  priority={true}
-                  fetchPriority={'auto'}
-                />
-                <Box sx={{ flexGrow: 1 }} />
-                <Link href="/login">
-                  <Button className="underline" color="inherit" onClick={async () => {}}>
-                    ログアウト
-                  </Button>
-                </Link>
-              </Toolbar>
-            </AppBar>
-            <Drawer
-              sx={{
-                width: drawerWidth,
-                flexShrink: 0,
-                '& .MuiDrawer-paper': {
-                  width: drawerWidth,
-                  boxSizing: 'border-box',
-                },
-              }}
-              variant="persistent"
-              anchor="left"
-              open={open}
+      {/* <ProcessingProvider> */}
+      {/* snackバー表示 */}
+      <OpenSnackBar />
+      {/* 読込中表示 */}
+      {/* <OpenProcessing /> */}
+      {/* 離脱確認ダイアログ */}
+      <ConfirmDialog open={openConfirmDialog} routerPush={() => pushHandler()} closeConform={() => closeConform()} />
+      {/* 全体 */}
+      <Box sx={{ display: 'flex' }}>
+        {/* ヘッダー */}
+        <AppBar position="fixed" open={open} sx={styles.appBar}>
+          <Toolbar>
+            <IconButton
+              color="inherit"
+              aria-label="open drawer"
+              onClick={handleDrawerOpen}
+              edge="start"
+              sx={[{ mr: 2 }, open && { display: 'none' }]}
             >
-              <DrawerHeader>
-                <IconButton onClick={handleDrawerClose}>
-                  {theme.direction === 'ltr' ? <ChevronLeftIcon /> : <ChevronRightIcon />}
-                </IconButton>
-              </DrawerHeader>
-              <Divider />
-              <List subheader={<ListSubheader>提供スケジュール</ListSubheader>}>
-                <ListItem disablePadding>
-                  <ListItemButton
-                    component="button"
-                    data-url="/schedule"
-                    disabled={disabledTitle('/schedule')}
-                    onClick={linkHandler}
-                  >
-                    <ListItemText primary={'スケジュール一覧'} />
-                  </ListItemButton>
-                </ListItem>
-                <ListItem disablePadding>
-                  <ListItemButton
-                    component="button"
-                    data-url="/scheduleRegistration"
-                    onClick={() => {
-                      confirmNavigation('/scheduleRegistration');
-                    }}
-                    disabled={disabledTitle('/scheduleRegistration')}
-                  >
-                    <ListItemText primary={'スケジュール登録'} />
-                  </ListItemButton>
-                </ListItem>
-              </List>
-              <List subheader={<ListSubheader>店舗情報</ListSubheader>}>
-                <ListItem disablePadding>
-                  <ListItemButton
-                    component="button"
-                    data-url="/shop"
-                    onClick={linkHandler}
-                    disabled={disabledTitle('/shop')}
-                  >
-                    <ListItemText primary={'店舗一覧'} />
-                  </ListItemButton>
-                </ListItem>
-                <ListItem disablePadding>
-                  <ListItemButton
-                    component="button"
-                    data-url="/shopDetail"
-                    onClick={() => {
-                      confirmNavigation('/shopDetail');
-                    }}
-                    disabled={disabledTitle('/shopDetail')}
-                  >
-                    <ListItemText primary={'店舗新規登録'} />
-                  </ListItemButton>
-                </ListItem>
-              </List>
-              <List subheader={<ListSubheader>会社情報</ListSubheader>}>
-                <ListItem disablePadding>
-                  <ListItemButton
-                    component="button"
-                    data-url="/company"
-                    onClick={linkHandler}
-                    disabled={disabledTitle('/company')}
-                  >
-                    <ListItemText primary={'会社一覧'} />
-                  </ListItemButton>
-                </ListItem>
-                <ListItem disablePadding>
-                  <ListItemButton
-                    component="button"
-                    data-url="/companyDetail"
-                    onClick={linkHandler}
-                    disabled={disabledTitle('/companyDetail')}
-                  >
-                    <ListItemText primary={'会社新規登録'} />
-                  </ListItemButton>
-                </ListItem>
-              </List>
-              <List subheader={<ListSubheader>ユーザー情報</ListSubheader>}>
-                <ListItem disablePadding>
-                  <ListItemButton
-                    component="button"
-                    data-url="/user"
-                    onClick={linkHandler}
-                    disabled={disabledTitle('/user')}
-                  >
-                    <ListItemText primary={'ユーザー一覧'} />
-                  </ListItemButton>
-                </ListItem>
-              </List>
-              <List subheader={<ListSubheader>オーダー情報</ListSubheader>}>
-                <ListItem disablePadding>
-                  <ListItemButton
-                    component="button"
-                    data-url="/order"
-                    onClick={linkHandler}
-                    disabled={disabledTitle('/order')}
-                  >
-                    <ListItemText primary={'オーダー一覧'} />
-                  </ListItemButton>
-                </ListItem>
-              </List>
-            </Drawer>
-            <Main open={open} sx={{ position: 'sticky' }}>
-              <DrawerHeader />
-              <Box sx={{ width: '1000px', mx: 'auto' }}>{children}</Box>
-            </Main>
-          </Box>
-        </DirtyProvider>
-      </ProcessingProvider>
+              <MenuIcon />
+            </IconButton>
+            <Image
+              src="/logo.png"
+              alt="みんなの社食"
+              width="200"
+              height="52"
+              // Largest Contentful Paint (LCP) 要素として検出された画像だと警告がでるので、以下のように設定した
+              priority={true}
+              fetchPriority={'auto'}
+            />
+            <Box sx={{ flexGrow: 1 }} />
+            <Link href="/login">
+              <Button className="underline" color="inherit" onClick={async () => {}}>
+                ログアウト
+              </Button>
+            </Link>
+          </Toolbar>
+        </AppBar>
+        {/* サイドメニュー */}
+        <Drawer
+          sx={{
+            width: drawerWidth,
+            flexShrink: 0,
+            '& .MuiDrawer-paper': {
+              width: drawerWidth,
+              boxSizing: 'border-box',
+            },
+          }}
+          variant="persistent"
+          anchor="left"
+          open={open}
+        >
+          <DrawerHeader>
+            <IconButton onClick={handleDrawerClose}>
+              <ChevronLeftIcon />
+            </IconButton>
+          </DrawerHeader>
+          <Divider />
+          <List subheader={<ListSubheader>提供スケジュール</ListSubheader>}>
+            <ListItem disablePadding>
+              <ListItemButton
+                component="button"
+                onClick={() => {
+                  confirmNavigation('/schedule');
+                }}
+                disabled={disabledTitle('/schedule')}
+              >
+                <ListItemText primary={'スケジュール一覧'} />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton
+                component="button"
+                onClick={() => {
+                  confirmNavigation('/scheduleRegistration');
+                }}
+                disabled={disabledTitle('/scheduleRegistration')}
+              >
+                <ListItemText primary={'スケジュール登録'} />
+              </ListItemButton>
+            </ListItem>
+          </List>
+          <List subheader={<ListSubheader>店舗情報</ListSubheader>}>
+            <ListItem disablePadding>
+              <ListItemButton
+                component="button"
+                onClick={() => {
+                  confirmNavigation('/shop');
+                }}
+                disabled={disabledTitle('/shop')}
+              >
+                <ListItemText primary={'店舗一覧'} />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton
+                component="button"
+                onClick={() => {
+                  confirmNavigation('/shopDetail/-');
+                }}
+                disabled={disabledTitle('/shopDetail/-')}
+              >
+                <ListItemText primary={'店舗新規登録'} />
+              </ListItemButton>
+            </ListItem>
+          </List>
+          <List subheader={<ListSubheader>会社情報</ListSubheader>}>
+            <ListItem disablePadding>
+              <ListItemButton
+                component="button"
+                onClick={() => {
+                  confirmNavigation('/company');
+                }}
+                disabled={disabledTitle('/company')}
+              >
+                <ListItemText primary={'会社一覧'} />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton
+                component="button"
+                onClick={() => {
+                  confirmNavigation('/companyDetail/-');
+                }}
+                disabled={disabledTitle('/companyDetail/-')}
+              >
+                <ListItemText primary={'会社新規登録'} />
+              </ListItemButton>
+            </ListItem>
+          </List>
+          <List subheader={<ListSubheader>ユーザー情報</ListSubheader>}>
+            <ListItem disablePadding>
+              <ListItemButton
+                component="button"
+                onClick={() => {
+                  confirmNavigation('/user');
+                }}
+                disabled={disabledTitle('/user')}
+              >
+                <ListItemText primary={'ユーザー一覧'} />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton
+                component="button"
+                onClick={() => {
+                  confirmNavigation('/userDetail/-');
+                }}
+                disabled={disabledTitle('/userDetail/-')}
+              >
+                <ListItemText primary={'ユーザー詳細(後で除外)'} />
+              </ListItemButton>
+            </ListItem>
+          </List>
+          <List subheader={<ListSubheader>オーダー情報</ListSubheader>}>
+            <ListItem disablePadding>
+              <ListItemButton
+                component="button"
+                onClick={() => {
+                  confirmNavigation('/order');
+                }}
+                disabled={disabledTitle('/order')}
+              >
+                <ListItemText primary={'オーダー一覧'} />
+              </ListItemButton>
+            </ListItem>
+          </List>
+        </Drawer>
+        {/* メインコンテンツ */}
+        <Main open={open} sx={{ position: 'sticky' }}>
+          <DrawerHeader />
+          <Box sx={{ width: '1000px', mx: 'auto' }}>{children}</Box>
+        </Main>
+      </Box>
+      {/* </ProcessingProvider> */}
     </SnackBarProvider>
   );
 }

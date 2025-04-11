@@ -1,24 +1,21 @@
 'use client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Box, Button, Divider, Hidden, Paper, Typography } from '@mui/material';
+import { Box, Button, Divider, Paper, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { ja } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { CSVDownload, CSVLink } from 'react-csv';
-import { CommonPropTypes } from 'react-csv/components/CommonPropTypes';
 import { SubmitHandler, useForm } from 'react-hook-form';
-import { FormContainer, SelectElement, TextFieldElement } from 'react-hook-form-mui';
+import { SelectElement, TextFieldElement } from 'react-hook-form-mui';
 import { DatePickerElement } from 'react-hook-form-mui/date-pickers';
 
 import { MockDataCreate_OrderResult } from '@/app/_lib/createMockData';
 import { getLastMonthEndDay, getLastMonthStartDay, getToday, getTomorrow, getYesterday } from '@/app/_lib/getDateTime';
-import TestComponent from '@/app/(authenticated)/otamesi/component';
 
 import { OrderSearchFormValues, OrderSearchSchema } from '../../_types/types';
-import ItemBase from '../../_ui/shared/ItemBase';
+import ItemBase from '../../_ui/_shared/itemBase';
 import OrderResult from './parts/orderResult';
 
 /** ページ名 */
@@ -63,7 +60,7 @@ export const OrderComponent = () => {
     setValue('deliveryTo', getLastMonthEndDay());
   };
 
-  /** 日付設定（今日）ハンドラ */
+  /** 日付設定（本日）ハンドラ */
   const onTodayClick = () => {
     setValue('deliveryFrom', getToday());
     setValue('deliveryTo', getToday());
@@ -216,17 +213,6 @@ export const OrderComponent = () => {
                     先月
                   </Button>
                   <Button
-                    onClick={onTodayClick}
-                    sx={{
-                      minWidth: 'auto',
-                      ml: 1,
-                      px: 1,
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    今日
-                  </Button>
-                  <Button
                     onClick={onYesterdayClick}
                     sx={{
                       minWidth: 'auto',
@@ -236,6 +222,17 @@ export const OrderComponent = () => {
                     }}
                   >
                     昨日
+                  </Button>
+                  <Button
+                    onClick={onTodayClick}
+                    sx={{
+                      minWidth: 'auto',
+                      ml: 1,
+                      px: 1,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    本日
                   </Button>
                   <Button
                     onClick={onTomorrowClick}
@@ -302,9 +299,8 @@ export const OrderComponent = () => {
                     fullWidth
                     options={[
                       { id: '', label: '未選択' },
-                      { id: '10', label: '契約ステータス1' },
-                      { id: '20', label: '契約ステータス2' },
-                      { id: '30', label: '契約ステータス3' },
+                      { id: '10', label: '利用中' },
+                      { id: '20', label: '利用停止' },
                     ]}
                   ></SelectElement>
                 </Box>

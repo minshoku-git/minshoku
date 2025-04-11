@@ -1,20 +1,22 @@
 'use client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CloudUpload, Delete } from '@mui/icons-material';
-import { Box, Button, Divider, IconButton, Paper, Typography } from '@mui/material';
+import { Box, Button, Divider, FormControlLabel, IconButton, Paper, Switch, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2';
-import { ChangeEvent, JSX, useRef, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { ChangeEvent, JSX, useEffect, useRef, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { SelectElement, TextareaAutosizeElement, TextFieldElement } from 'react-hook-form-mui';
 
 import { getAttachmentSizeOver, getMbSize } from '@/app/_lib/getFile';
 import { AlertType } from '@/app/_types/enum';
-import { ShopDetailSchema, ShopDetailSchemaType } from '@/app/_types/types';
-import { IMAGE_TYPES } from '@/app/_types/values';
-import ItemBase from '@/app/_ui/shared/ItemBase';
+import { ShopDetailFormValues, ShopDetailSchemaType } from '@/app/_types/types';
+import { HYPHEN, IMAGE_TYPES } from '@/app/_types/values';
+import ItemBase from '@/app/_ui/_shared/itemBase';
+import { useDirty } from '@/app/_ui/dirty/dartyContext';
 import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
 
-import { state as stateMockData } from '../../../public/state.json';
+import { state as stateMockData } from '../../../../public/state.json';
 
 /** ページ名 */
 const pageName = '店舗詳細';
@@ -26,10 +28,14 @@ const pageName = '店舗詳細';
 export const ShopComponent = (): JSX.Element => {
   /* initialize
   ------------------------------------------------------------------ */
+  const params = useParams();
+
   const { openSnackbar, closeSnackbar } = useSnackBar();
+  const { setDirty } = useDirty();
 
   /* useState
   ------------------------------------------------------------------ */
+  const [editMode, setEditMode] = useState<boolean>(HYPHEN() !== params.id);
   const [file, setFile] = useState<File>();
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -39,9 +45,9 @@ export const ShopComponent = (): JSX.Element => {
     handleSubmit,
     control,
     formState: { isDirty },
-  } = useForm<ShopDetailSchema>({
+  } = useForm<ShopDetailFormValues>({
     mode: 'onSubmit', // 初回validation時を検索ボタンが押されたタイミングに設定
-    reValidateMode: 'onBlur', // 送信ボタンが押され、バリデーションに引っかかった後は、常に入力値のフォーカスが外れた際にバリデーションが走る
+    reValidateMode: 'onSubmit',
     resolver: zodResolver(ShopDetailSchemaType),
     defaultValues: {
       shopId: '0000001',
@@ -64,7 +70,7 @@ export const ShopComponent = (): JSX.Element => {
 
   /* functions
   ------------------------------------------------------------------ */
-  const registerHandler: SubmitHandler<ShopDetailSchema> = (data) => {
+  const registerHandler: SubmitHandler<ShopDetailFormValues> = (data) => {
     console.log('data:' + data);
     openSnackbar(AlertType.SUCCESS, '店舗情報の登録が完了しました。');
   };
@@ -109,7 +115,20 @@ export const ShopComponent = (): JSX.Element => {
     setFile(undefined);
   };
 
-  /* Mock ※のちすて
+  /* dirty
+  ------------------------------------------------------------------ */
+  useEffect(() => {
+    setDirty(isDirty);
+  }, [isDirty, setDirty]);
+
+  useEffect(() => {
+    return () => {
+      setDirty(false); // CleanUp
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* mock ※のちすて
   ------------------------------------------------------------------ */
   const stateData = [
     { id: '', label: '未選択' },
@@ -117,6 +136,11 @@ export const ShopComponent = (): JSX.Element => {
       return { id: index.toString(), label: d };
     }),
   ];
+
+  // モード切り替え
+  const modeChangeHandler = (e: ChangeEvent<HTMLInputElement>) => {
+    setEditMode(e.target.checked);
+  };
 
   /* JSX.Element
   ------------------------------------------------------------------ */
@@ -132,23 +156,40 @@ export const ShopComponent = (): JSX.Element => {
           <Typography component="h2" variant="h6" color="primary" gutterBottom sx={{ px: 3, py: 2, mb: 0 }}>
             {pageName}
           </Typography>
+          <Box sx={{ flexGrow: 1 }} />
+          <FormControlLabel
+            value="end"
+            control={
+              <Switch
+                color="primary"
+                onChange={(e) => {
+                  modeChangeHandler(e);
+                }}
+                checked={editMode}
+              />
+            }
+            label="EditMode"
+            labelPlacement="end"
+          />
         </Grid>
         <Divider />
         <Box sx={{ m: 3 }}>
           <form onSubmit={handleSubmit(registerHandler)}>
             <Grid container rowSpacing={2} columnSpacing={{ xs: 1, sm: 2, md: 3 }} direction="column">
-              <ItemBase name={'店舗ID'} isRequired={0}>
-                <TextFieldElement
-                  control={control}
-                  size="small"
-                  color={'primary'}
-                  name="shopId"
-                  fullWidth
-                  disabled
-                  sx={{ backgroundColor: 'lightgray' }}
-                  slotProps={{ htmlInput: { maxLength: 64 } }}
-                />
-              </ItemBase>
+              {editMode && (
+                <ItemBase name={'店舗ID'} isRequired={2}>
+                  <TextFieldElement
+                    control={control}
+                    size="small"
+                    color={'primary'}
+                    name="shopId"
+                    fullWidth
+                    disabled
+                    sx={{ backgroundColor: 'lightgray' }}
+                    slotProps={{ htmlInput: { maxLength: 64 } }}
+                  />
+                </ItemBase>
+              )}
               <ItemBase name={'店舗名'} isRequired={0}>
                 <TextFieldElement control={control} size="small" color={'primary'} name="shopName" fullWidth />
               </ItemBase>
@@ -168,6 +209,7 @@ export const ShopComponent = (): JSX.Element => {
                   size="small"
                   color={'primary'}
                   name="postalCode"
+                  placeholder="半角数字7桁"
                   slotProps={{ htmlInput: { maxLength: 7 } }}
                   fullWidth
                 />
@@ -177,7 +219,7 @@ export const ShopComponent = (): JSX.Element => {
                   sx={{
                     display: 'flex',
                     flexDirection: 'row',
-                    alignItems: 'center',
+                    alignItems: 'flex-start',
                     width: '640px',
                   }}
                   gap={2}
@@ -335,7 +377,7 @@ export const ShopComponent = (): JSX.Element => {
             </Grid>
             <Grid sx={{ mt: 2 }} size={{ xs: 12 }}>
               <Button fullWidth variant="contained" type={'submit'}>
-                登録
+                {editMode ? '更新' : '登録'}
               </Button>
             </Grid>
           </form>

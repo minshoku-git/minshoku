@@ -1,7 +1,8 @@
 import { Close } from '@mui/icons-material';
-import { Box, IconButton, Typography } from '@mui/material';
+import { Box, Fade, IconButton, Slide, Typography } from '@mui/material';
 import Alert, { AlertColor } from '@mui/material/Alert';
 import Snackbar from '@mui/material/Snackbar';
+import { useEffect } from 'react';
 
 import { AlertType } from '../../_types/enum';
 import { useSnackBar } from './snackbarContext';
@@ -21,9 +22,17 @@ export type SnackBarType = {
 export const OpenSnackBar = () => {
   const { snackbarState, closeSnackbar } = useSnackBar();
 
+  useEffect(() => {
+    if (snackbarState.open) {
+      setTimeout(() => {
+        closeSnackbar();
+      }, 10000); // 10秒間表示
+    }
+  }, [closeSnackbar, snackbarState.open]);
+
   return (
     <Snackbar
-      sx={{ zIndex: 99999 }}
+      sx={{ zIndex: 1101 }}
       anchorOrigin={{
         vertical: 'top',
         horizontal: 'center',

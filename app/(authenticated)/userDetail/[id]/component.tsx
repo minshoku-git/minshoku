@@ -1,60 +1,85 @@
 'use client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Box, Button, Divider, Paper, TextField, Typography } from '@mui/material';
+import { Box, Button, Divider, FormControlLabel, Paper, Switch, TextField, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2';
-import { useCallback, useEffect } from 'react';
+import { useParams } from 'next/navigation';
+import { ChangeEvent, useCallback, useEffect, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { SelectElement, TextareaAutosizeElement } from 'react-hook-form-mui';
 
 import { AlertType } from '@/app/_types/enum';
-import { DirtyProvider, useDirty } from '@/app/_ui/DartyContext';
+import { UserDetailFormValues, UserDetailSchema } from '@/app/_types/types';
+import { HYPHEN } from '@/app/_types/values';
+import ItemBase from '@/app/_ui/_shared/itemBase';
+import { useDirty } from '@/app/_ui/dirty/dartyContext';
 import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
-
-import { UserDetailFormValues, UserDetailSchema } from '../../_types/types';
-import ItemBase from '../../_ui/shared/ItemBase';
 
 /** ページ名 */
 const pageName = 'ユーザー詳細';
 
-export type Props = {
-  test: string;
-  clearHandler: () => void;
-};
-
 export const UserDetailComponent = () => {
-  const { openSnackbar } = useSnackBar();
-  const { setDirty, isDirty: dirty } = useDirty();
+  /* initialize
+  ------------------------------------------------------------------ */
+  const params = useParams();
 
+  const { openSnackbar } = useSnackBar();
+  const { setDirty } = useDirty();
+
+  /* useState
+  ------------------------------------------------------------------ */
+  const [approvalMode, setApprovalMode] = useState<boolean>(HYPHEN() !== params.id);
+
+  /* useForm
+  ------------------------------------------------------------------ */
   const {
-    handleSubmit,
     control,
+    handleSubmit,
     formState: { isDirty },
   } = useForm<UserDetailFormValues>({
-    mode: 'onSubmit', // 初回validation時を検索ボタンが押されたタイミングに設定
-    reValidateMode: 'onBlur', // 送信ボタンが押され、バリデーションに引っかかった後は、常に入力値のフォーカスが外れた際にバリデーションが走る
+    mode: 'onSubmit',
+    reValidateMode: 'onSubmit',
     resolver: zodResolver(UserDetailSchema),
     defaultValues: {
       restriction: '10',
       memo: '',
     },
   });
+
+  /* functions
+  ------------------------------------------------------------------ */
+  /* 更新 */
   const submitHandler: SubmitHandler<UserDetailFormValues> = (data) => {
     openSnackbar(AlertType.INFO, 'ユーザー情報を更新しました。');
   };
 
-  console.log('isDirty:' + isDirty);
-  console.log('dirty:' + dirty);
+  /* 承認 */
+  const approvalHandler = () => {
+    setApprovalMode(false);
+    openSnackbar(AlertType.INFO, 'ユーザー情報を承認しました。');
+  };
 
-  const handleClick = useCallback(() => {
-    setDirty(isDirty);
-  }, [setDirty, isDirty]);
-  // 離脱確認ダイアログ表示
+  /* dirty
+  ------------------------------------------------------------------ */
   useEffect(() => {
-    console.log('エフェクトのisDirty:' + isDirty);
-    handleClick();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDirty]);
+    setDirty(isDirty);
+  }, [isDirty, setDirty]);
 
+  useEffect(() => {
+    return () => {
+      setDirty(false); // CleanUp
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* mockData ※のちすて
+  ------------------------------------------------------------------ */
+  // モード切り替え
+  const modeChangeHandler = (e: ChangeEvent<HTMLInputElement>) => {
+    setApprovalMode(e.target.checked);
+  };
+
+  /* JSX
+  ------------------------------------------------------------------ */
   return (
     <>
       <Paper
@@ -67,6 +92,21 @@ export const UserDetailComponent = () => {
           <Typography component="h2" variant="h6" color="primary" gutterBottom sx={{ px: 3, py: 2, mb: 0 }}>
             {pageName}
           </Typography>
+          <Box sx={{ flexGrow: 1 }} />
+          <FormControlLabel
+            value="end"
+            control={
+              <Switch
+                color="primary"
+                onChange={(e) => {
+                  modeChangeHandler(e);
+                }}
+                checked={approvalMode}
+              />
+            }
+            label="ApprovalMode"
+            labelPlacement="end"
+          />
         </Grid>
         <Divider />
         <Box sx={{ m: 3 }}>
@@ -138,7 +178,7 @@ export const UserDetailComponent = () => {
                   value={'第一システム開発本部'}
                 />
               </ItemBase>
-              <ItemBase name={'雇用形態'} isRequired={2}>
+              <ItemBase name={'雇用形態名'} isRequired={2}>
                 <TextField
                   size="small"
                   color={'primary'}
@@ -212,9 +252,18 @@ export const UserDetailComponent = () => {
               <Button fullWidth variant="contained" type={'submit'}>
                 更新
               </Button>
-              <Button fullWidth variant="contained" color="error" type={'submit'} disabled>
-                承認
-              </Button>
+              {approvalMode && (
+                <Button
+                  fullWidth
+                  variant="contained"
+                  color="error"
+                  onClick={() => {
+                    approvalHandler();
+                  }}
+                >
+                  承認
+                </Button>
+              )}
             </Grid>
           </form>
         </Box>

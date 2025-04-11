@@ -14,7 +14,7 @@ import { DatePickerElement } from 'react-hook-form-mui/date-pickers';
 import { MockDataCreate_ScheduleResult } from '@/app/_lib/createMockData';
 import { getToday, getTomorrow, getYesterday } from '@/app/_lib/getDateTime';
 import { ScheduleSearchFormValues, ScheduleSearchSchema } from '@/app/_types/types';
-import ItemBase from '@/app/_ui/shared/ItemBase';
+import ItemBase from '@/app/_ui/_shared/itemBase';
 
 import ScheduleResult from './parts/scheduleResult';
 
@@ -57,7 +57,7 @@ export const ScheduleComponent = () => {
     setValue('deliveryTo', null);
   };
 
-  /** 日付設定（今日）ハンドラ */
+  /** 日付設定（本日）ハンドラ */
   const onTodayClick = () => {
     setValue('deliveryFrom', getToday());
     setValue('deliveryTo', getToday());
@@ -180,18 +180,6 @@ export const ScheduleComponent = () => {
                     本日以降
                   </Button>
                   <Button
-                    onClick={onTodayClick}
-                    sx={{
-                      minWidth: 'auto',
-                      ml: 1,
-                      px: 1,
-                      whiteSpace: 'nowrap',
-                      h: 40,
-                    }}
-                  >
-                    今日
-                  </Button>
-                  <Button
                     onClick={onYesterdayClick}
                     sx={{
                       minWidth: 'auto',
@@ -202,6 +190,18 @@ export const ScheduleComponent = () => {
                     }}
                   >
                     昨日
+                  </Button>
+                  <Button
+                    onClick={onTodayClick}
+                    sx={{
+                      minWidth: 'auto',
+                      ml: 1,
+                      px: 1,
+                      whiteSpace: 'nowrap',
+                      h: 40,
+                    }}
+                  >
+                    本日
                   </Button>
                   <Button
                     onClick={onTomorrowClick}

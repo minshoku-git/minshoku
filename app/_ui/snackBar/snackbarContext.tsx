@@ -33,11 +33,7 @@ export const SnackBarProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const closeSnackbar = () => {
-    setSnackbarState({
-      open: false,
-      alertType: AlertType.SUCCESS,
-      message: '',
-    });
+    setSnackbarState({ ...snackbarState, open: false });
   };
 
   return (

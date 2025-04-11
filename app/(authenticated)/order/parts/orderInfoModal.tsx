@@ -2,7 +2,7 @@ import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from
 import Grid from '@mui/material/Grid2';
 import * as React from 'react';
 
-import CustomModal from '@/app/_ui/shared/customModal';
+import CustomModal from '@/app/_ui/_shared/customModal';
 
 /** OrderInfoModalPropsコンポーネントプロパティ */
 type OrderInfoModalProps = {

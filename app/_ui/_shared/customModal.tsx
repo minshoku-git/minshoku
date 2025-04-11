@@ -4,6 +4,7 @@ import Box from '@mui/material/Box';
 import Modal from '@mui/material/Modal';
 import Typography from '@mui/material/Typography';
 import * as React from 'react';
+import { JSX } from 'react';
 
 /** モーダルスタイル */
 const ModalStyle = {
@@ -41,7 +42,7 @@ type CustomModalProps = {
  * モーダルの土台です。
  * @returns {JSX.Element} JSX
  */
-const CustomModal = (props: CustomModalProps) => {
+const CustomModal = (props: CustomModalProps): JSX.Element => {
   /** title */
   const title = props.title !== undefined ? props.title : '';
   /** 幅 */
@@ -50,24 +51,22 @@ const CustomModal = (props: CustomModalProps) => {
   const height = props.height !== undefined ? props.height : 'auto';
 
   return (
-    <React.Fragment>
-      <Modal open={props.open} onClose={props.onClose}>
-        <Box sx={ModalStyle} width={width} height={height}>
-          <Box sx={{ display: 'flex', mb: 2, alignItems: 'center' }}>
-            {title !== '' && (
-              <Typography component="h2" variant="h6" color="primary">
-                {title}
-              </Typography>
-            )}
-            <Box sx={{ flexGrow: 1 }} />
-            <IconButton onClick={props.onClose}>
-              <Close />
-            </IconButton>
-          </Box>
-          {props.children}
+    <Modal open={props.open} onClose={props.onClose}>
+      <Box sx={ModalStyle} width={width} height={height}>
+        <Box sx={{ display: 'flex', mb: 2, alignItems: 'center' }}>
+          {title !== '' && (
+            <Typography component="h2" variant="h6" color="primary">
+              {title}
+            </Typography>
+          )}
+          <Box sx={{ flexGrow: 1 }} />
+          <IconButton onClick={props.onClose}>
+            <Close />
+          </IconButton>
         </Box>
-      </Modal>
-    </React.Fragment>
+        {props.children}
+      </Box>
+    </Modal>
   );
 };
 

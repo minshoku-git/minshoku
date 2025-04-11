@@ -1,12 +1,14 @@
 'use client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Box, Button, Divider, Paper, TextField, Typography } from '@mui/material';
+import { Search } from '@mui/icons-material';
+import { Box, Button, Divider, FormControlLabel, Paper, Switch, TextField, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
 import { ja } from 'date-fns/locale/ja';
-import { useMemo } from 'react';
-import { SubmitHandler, useFieldArray, useForm } from 'react-hook-form';
+import { useParams, usePathname, useSearchParams } from 'next/navigation';
+import { ChangeEvent, useEffect, useMemo, useState } from 'react';
+import { SubmitHandler, useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { SelectElement, TextareaAutosizeElement, TextFieldElement } from 'react-hook-form-mui';
 import { TimePickerElement } from 'react-hook-form-mui/date-pickers';
 
@@ -18,12 +20,14 @@ import {
 } from '@/app/_lib/createMockData';
 import { AlertType } from '@/app/_types/enum';
 import { CompanyDetailFormValues, CompanyDetailSchema } from '@/app/_types/types';
-import { DepartmentInput } from '@/app/_ui/shared/departmentInput';
-import { EmploymentInput } from '@/app/_ui/shared/employmentInput';
-import ItemBase from '@/app/_ui/shared/ItemBase';
+import { HYPHEN } from '@/app/_types/values';
+import { DepartmentInput } from '@/app/_ui/_shared/departmentInput';
+import { EmploymentInput } from '@/app/_ui/_shared/employmentInput';
+import ItemBase from '@/app/_ui/_shared/itemBase';
+import { useDirty } from '@/app/_ui/dirty/dartyContext';
 import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
 
-import { state as stateMockData } from '../../../public/state.json';
+import { state as stateMockData } from '../../../../public/state.json';
 
 /** ページ名 */
 const pageName = '会社詳細';
@@ -31,24 +35,42 @@ const pageName = '会社詳細';
 export const CompanyComponent = () => {
   /* initialize
   ------------------------------------------------------------------ */
-  const userUrl = ''; // TODO: api取得
-  const companyId = ''; // TODO: api取得
-  const { openSnackbar } = useSnackBar();
+  const params = useParams();
+
+  const { openSnackbar, closeSnackbar } = useSnackBar();
+  const { setDirty } = useDirty();
+
+  /* useState
+  ------------------------------------------------------------------ */
+  const [editMode, setEditMode] = useState<boolean>(HYPHEN() !== params.id);
 
   /* useForm
   ------------------------------------------------------------------ */
   const {
-    handleSubmit,
     control,
+    handleSubmit,
     setValue,
+    getValues,
     formState: { isDirty },
   } = useForm<CompanyDetailFormValues>({
-    mode: 'onSubmit', // 初回validation時を検索ボタンが押されたタイミングに設定
-    reValidateMode: 'onSubmit', // 送信ボタンが押され、バリデーションに引っかかった後は、常に入力値のフォーカスが外れた際にバリデーションが走る
+    mode: 'onSubmit',
+    reValidateMode: 'onSubmit',
     resolver: zodResolver(CompanyDetailSchema),
     defaultValues: {
-      departmentInfo: MOCKDATA_departmentInfo,
-      employmentTypeInfo: MOCKDATA_employmentInfo,
+      // departmentInfo: MOCKDATA_departmentInfo,
+      // employmentTypeInfo: MOCKDATA_employmentInfo,
+      departmentInfo: [{ name: '', id: '', disabled: false }],
+      employmentTypeInfo: [
+        {
+          id: '',
+          name: '',
+          isCreditCard: false,
+          isPayPay: false,
+          isDeduction: false,
+          burdenAmount: '0',
+          disabled: false,
+        },
+      ],
       companyName: '',
       branchName: '',
       postalCode: '',
@@ -69,10 +91,11 @@ export const CompanyComponent = () => {
       orderDeadlineDay: '',
       orderDeadlineHour: '',
       orderDeadlineMin: '',
-      annotation1: '',
-      annotation2: '',
       anyItem1: '',
       anyItem2: '',
+      annotation1: '',
+      annotation2: '',
+      otameshi: '',
     },
   });
 
@@ -136,6 +159,7 @@ export const CompanyComponent = () => {
   // 登録ハンドラー
   const submitHandler: SubmitHandler<CompanyDetailFormValues> = (data) => {
     console.log('登録データ:', data);
+    console.log('登録データ:', data.city);
     openSnackbar(AlertType.SUCCESS, '会社情報の登録が完了しました。');
   };
 
@@ -149,9 +173,27 @@ export const CompanyComponent = () => {
     await navigator.clipboard.writeText(message);
   };
 
+  /* dirty
+  ------------------------------------------------------------------ */
+  useEffect(() => {
+    setDirty(isDirty);
+  }, [isDirty, setDirty]);
+
+  useEffect(() => {
+    return () => {
+      setDirty(false); // CleanUp
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   /* mockData ※のちすて
   ------------------------------------------------------------------ */
-  // selectBoxの選択肢を生成
+  // モード切り替え
+  const modeChangeHandler = (e: ChangeEvent<HTMLInputElement>) => {
+    setEditMode(e.target.checked);
+  };
+
+  // 時間の選択肢を一度に生成する関数
   const selectOptions = useMemo(() => {
     const day = selectOptionCreate(10);
     const hours = selectOptionCreate(23);
@@ -159,6 +201,7 @@ export const CompanyComponent = () => {
     return { hours, minutes, day };
   }, []);
 
+  // 時間の選択肢を生成する関数
   function selectOptionCreate(max: number) {
     const hours = [{ id: '', label: '未選択' }];
     for (let i = 0; i <= max; i++) {
@@ -167,7 +210,7 @@ export const CompanyComponent = () => {
     return hours;
   }
 
-  // 都道府県(モックから取得)
+  // 都道府県をモックから取得
   const stateData = [
     { id: '', label: '未選択' },
     ...stateMockData.map((d: string, index: number) => {
@@ -175,50 +218,107 @@ export const CompanyComponent = () => {
     }),
   ];
 
+  // 郵便番号検索のおためし
+  const kensaku = () => {
+    console.log('やほー！');
+
+    const postcode = getValues('postalCode');
+    if (postcode.length !== 7) {
+      closeSnackbar();
+      openSnackbar(AlertType.WARNING, '住所を取得できませんでした。番号をお確かめの上、再度お試しください。');
+      return;
+    }
+
+    const url = `https://postcode.teraren.com/postcodes/${postcode}.json`;
+
+    fetch(url)
+      .then((response) => response.json())
+      .then((json) => {
+        const prefecture = json.prefecture;
+        const city = json.city;
+        const suburb = json.suburb;
+        const address = prefecture + city + suburb;
+        console.log('address:' + address);
+        if (!address) {
+          setValue('otameshi', '');
+          openSnackbar(AlertType.WARNING, '住所を取得できませんでした。番号をお確かめの上、再度お試しください。');
+        }
+        setValue('otameshi', address);
+      })
+      .catch((error) => {
+        setValue('otameshi', '');
+        openSnackbar(AlertType.WARNING, '住所を取得できませんでした。番号をお確かめの上、再度お試しください。');
+        console.error(error);
+      });
+  };
+
   /* JSX
   ------------------------------------------------------------------ */
   return (
     <>
       <Paper sx={{ display: 'flex', flexDirection: 'column' }}>
+        {/* タイトル */}
         <Grid container alignItems="center">
           <Typography component="h2" variant="h6" color="primary" gutterBottom sx={{ px: 3, py: 2, mb: 0 }}>
             {pageName}
           </Typography>
+          <Box sx={{ flexGrow: 1 }} />
+
+          <FormControlLabel
+            value="end"
+            control={
+              <Switch
+                color="primary"
+                onChange={(e) => {
+                  modeChangeHandler(e);
+                }}
+                checked={editMode}
+              />
+            }
+            label="EditMode"
+            labelPlacement="end"
+          />
         </Grid>
         <Divider />
-        <Box sx={{ m: 3, mb: 0, display: 'flex' }}>
-          <Box sx={{ flexGrow: 1 }} />
-          <Button variant="contained" onClick={clickboardHandler}>
-            URLと案内文をコピーする
-          </Button>
-        </Box>
+        {editMode && (
+          <Box sx={{ m: 3, mb: 0, display: 'flex' }}>
+            <Box sx={{ flexGrow: 1 }} />
+            <Button variant="contained" onClick={clickboardHandler}>
+              URLと案内文をコピーする
+            </Button>
+          </Box>
+        )}
         <Box sx={{ m: 3 }}>
           <form onSubmit={handleSubmit(submitHandler)}>
             <Grid container rowSpacing={2} columnSpacing={{ xs: 1, sm: 2, md: 3 }} direction="column">
-              <ItemBase name={'ユーザー登録URL'} isRequired={2}>
-                <TextField
-                  size="small"
-                  color={'primary'}
-                  name="userUrl"
-                  fullWidth
-                  disabled
-                  sx={{ backgroundColor: 'lightgray' }}
-                  slotProps={{ htmlInput: { maxLength: 64 } }}
-                  value={'https://xxxxxxxxxxxxx/login/refact'}
-                />
-              </ItemBase>
-              <ItemBase name={'会社ID'} isRequired={2}>
-                <TextField
-                  size="small"
-                  color={'primary'}
-                  name="companyId"
-                  fullWidth
-                  disabled
-                  sx={{ backgroundColor: 'lightgray' }}
-                  slotProps={{ htmlInput: { maxLength: 64 } }}
-                  value={'0123456789'}
-                />
-              </ItemBase>
+              {editMode && (
+                <>
+                  <ItemBase name={'ユーザー登録URL'} isRequired={2}>
+                    <TextField
+                      size="small"
+                      color={'primary'}
+                      name="userUrl"
+                      fullWidth
+                      disabled
+                      sx={{ backgroundColor: 'lightgray' }}
+                      slotProps={{ htmlInput: { maxLength: 64 } }}
+                      value={'https://xxxxxxxxxxxxx/login/refact'}
+                    />
+                  </ItemBase>
+                  <ItemBase name={'会社ID'} isRequired={2}>
+                    <TextField
+                      size="small"
+                      color={'primary'}
+                      name="companyId"
+                      fullWidth
+                      disabled
+                      sx={{ backgroundColor: 'lightgray' }}
+                      slotProps={{ htmlInput: { maxLength: 64 } }}
+                      value={'0123456789'}
+                    />
+                  </ItemBase>
+                </>
+              )}
               <ItemBase name={'会社名'} isRequired={0}>
                 <TextFieldElement control={control} size="small" color={'primary'} name="companyName" fullWidth />
               </ItemBase>
@@ -243,21 +343,44 @@ export const CompanyComponent = () => {
                 />
               </ItemBase>
               <ItemBase name={'郵便番号'} isRequired={0}>
-                <TextFieldElement
-                  control={control}
-                  size="small"
-                  color={'primary'}
-                  name="postalCode"
-                  slotProps={{ htmlInput: { maxLength: 7 } }}
-                  fullWidth
-                />
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'flex-start',
+                    width: '640px',
+                  }}
+                  gap={2}
+                >
+                  <TextFieldElement
+                    control={control}
+                    size="small"
+                    color={'primary'}
+                    name="postalCode"
+                    fullWidth
+                    slotProps={{ htmlInput: { maxLength: 7 } }}
+                  />
+                  <Button
+                    variant="outlined"
+                    sx={{ height: '40px', px: 3, textWrap: 'nowrap' }}
+                    startIcon={<Search />}
+                    onClick={() => {
+                      kensaku();
+                    }}
+                  >
+                    住所検索
+                  </Button>
+                </Box>
+              </ItemBase>
+              <ItemBase name={'住所(おためし)'} isRequired={0}>
+                <TextFieldElement control={control} size="small" color={'primary'} name="otameshi" fullWidth />
               </ItemBase>
               <ItemBase name={'住所'} isRequired={0}>
                 <Box
                   sx={{
                     display: 'flex',
                     flexDirection: 'row',
-                    alignItems: 'center',
+                    alignItems: 'flex-start',
                     width: '640px',
                   }}
                   gap={2}
@@ -277,10 +400,10 @@ export const CompanyComponent = () => {
                     label="市区"
                     fullWidth
                     options={[
-                      { id: '', label: '未選択' },
-                      { id: '10', label: '市区1' },
-                      { id: '20', label: '市区2' },
-                      { id: '30', label: '市区3' },
+                      { id: '', label: '未選択', value: '未選択' },
+                      { id: '10', label: '市区1', value: '市区1' },
+                      { id: '20', label: '市区2', value: '市区2' },
+                      { id: '30', label: '市区3', value: '市区3' },
                     ]}
                   ></SelectElement>
                   <SelectElement
@@ -539,7 +662,7 @@ export const CompanyComponent = () => {
             {/* 登録・更新ボタン */}
             <Grid sx={{ mt: 2 }} size={{ xs: 12 }}>
               <Button fullWidth variant="contained" type="submit">
-                登録
+                {editMode ? '更新' : '登録'}
               </Button>
             </Grid>
           </form>

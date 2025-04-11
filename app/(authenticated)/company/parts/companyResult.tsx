@@ -12,6 +12,8 @@ import Box from '@mui/material/Box';
 import Pagination from '@mui/material/Pagination';
 import * as React from 'react';
 
+import { pageMaxCount } from '@/app/_types/values';
+
 /* TODO: タイプ定義ファイルに移動 */
 export type CompanySearchResult = {
   id: string;
@@ -47,13 +49,11 @@ const ScheduleResult = (props: CompanySearchResultProps): React.JSX.Element => {
   ------------------------------------------------------------------ */
 
   // 表示行数
-  const [rowsPerPage, setRowsPerPage] = React.useState(10);
+  const rowsPerPage = pageMaxCount(); // 30ページ
   // ページ数
-  const [pageCount, setPageCount] = React.useState(20);
+  const pageCount = 20; // Mockなので固定値、本当は取得時に割り出す。
   // 現在のページ番号
   const [currentPage, setCurrentPage] = React.useState(1);
-  // モーダル
-  const [open, setOpen] = React.useState(false);
 
   /* functions
   ------------------------------------------------------------------ */

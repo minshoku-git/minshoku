@@ -1,0 +1,13 @@
+*appRouter
+**動的ルーティングのパスやパラメータの取得
+
+/test/[id]?name=taro : /test/1001?name=taro
+
+  import { useParams, usePathname, useSearchParams } from 'next/navigation';
+
+  const name = searchParams.get('name');
+
+  const params = useParams(); // taro
+  const id = params.id; // 1001
+
+  const pathname = usePathname(); // /1001?name=taro

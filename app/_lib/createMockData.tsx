@@ -9,8 +9,8 @@ export function MockDataCreate_UserResult() {
   const result: UserSearchResult[] = [];
   for (let i = 0; i < 30; i++) {
     result.push({
-      id: i.toString(),
-      userName: 'userName' + i,
+      id: 'id' + i.toString().padStart(4, '0'),
+      userName: 'userName' + i + ' / ユーザーネーム' + i,
       companyName:
         i % 2
           ? '株式会社リファクト'
@@ -27,7 +27,7 @@ export function MockDataCreate_OrderResult() {
   const result: OrderSearchResult[] = [];
   for (let i = 1; i <= 30; i++) {
     result.push({
-      id: i.toString(),
+      id: 'id' + i.toString().padStart(4, '0'),
       userName: 'userName' + i,
       companyName:
         i % 2
@@ -48,7 +48,7 @@ export function MockDataCreate_ScheduleResult() {
   const result: ScheduleSearchResult[] = [];
   for (let i = 1; i <= 30; i++) {
     result.push({
-      id: i.toString(),
+      id: 'id' + i.toString().padStart(4, '0'),
       date: '2025/4/' + i,
       companyName: '株式会社リファクト',
       branchName: i % 2 ? '本郷事業所' : '札幌事業所',
@@ -64,7 +64,7 @@ export function MockDataCreate_ShopSearchResult() {
   const result: ShopSearchResult[] = [];
   for (let i = 1; i <= 30; i++) {
     result.push({
-      id: i.toString(),
+      id: 'id' + i.toString().padStart(4, '0'),
       shopName: 'shopName' + i,
       companyName: '株式会社リファクト',
       address:
@@ -81,7 +81,7 @@ export function MockDataCreate_CompanySearchResult() {
   const result: CompanySearchResult[] = [];
   for (let i = 1; i <= 30; i++) {
     result.push({
-      id: i.toString(),
+      id: 'id' + i.toString().padStart(4, '0'),
       companyName: '株式会社リファクト',
       branchName: i % 2 ? '本郷事業所' : '札幌事業所',
       address:

@@ -3,8 +3,8 @@ import Grid from '@mui/material/Grid2';
 import Typography from '@mui/material/Typography';
 import * as React from 'react';
 
-import OptionalMark from '../shared/optionalMark';
-import RequiredMark from '../shared/requiredMark';
+import OptionalMark from './optionalMark';
+import RequiredMark from './requiredMark';
 
 /** ItemBaseコンポーネントプロパティ */
 type ItemBaseProps = {

@@ -1,6 +1,6 @@
 'use client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Box, Button, Divider, Paper, Typography } from '@mui/material';
+import { Box, Button, Divider, Paper, Switch, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -13,7 +13,7 @@ import { UserSearchFormValues, UserSearchSchema } from '@/app/_types/types';
 import OpenProcessing from '@/app/_ui/processing/processing';
 import { useProcessing } from '@/app/_ui/processing/processingContext';
 
-import ItemBase from '../../_ui/shared/ItemBase';
+import ItemBase from '../../_ui/_shared/itemBase';
 import UserResult, { HeaderStatus } from './parts/userResult';
 
 /** ページ名 */
@@ -34,6 +34,7 @@ export type UserSearchResult = {
 export const UserComponent = () => {
   /* initialize
   ------------------------------------------------------------------ */
+
   const router = useRouter();
   const { openProcessing, closeProcessing } = useProcessing();
 
@@ -70,7 +71,7 @@ export const UserComponent = () => {
 
   // 明細行リンクハンドラ
   const linkHandler = (id: string) => {
-    router.push('/userDetail');
+    router.push(`/userDetail/${id}`);
     reset();
   };
 
@@ -83,7 +84,7 @@ export const UserComponent = () => {
   ------------------------------------------------------------------ */
   return (
     <>
-      <OpenProcessing />
+      {/* <OpenProcessing /> */}
       <Paper
         sx={{
           display: 'flex',
@@ -145,8 +146,12 @@ export const UserComponent = () => {
                     fullWidth
                     options={[
                       { id: '', label: '未選択' },
-                      { id: '10', label: '利用可能' },
-                      { id: '20', label: '利用停止' },
+                      { id: '00', label: '制限なし' },
+                      { id: '01', label: '申請中' },
+                      { id: '02', label: '利用停止' },
+                      { id: '03', label: '否認' },
+                      { id: '04', label: '削除' },
+                      { id: '05', label: '登録中' },
                     ]}
                   ></SelectElement>
                 </Box>

@@ -1,34 +1,22 @@
 'use client';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Box, Button, Divider, Paper, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
-import { FormContainer, SelectElement, TextFieldElement } from 'react-hook-form-mui';
+import { SelectElement, TextFieldElement } from 'react-hook-form-mui';
 
 import { MockDataCreate_ShopSearchResult } from '@/app/_lib/createMockData';
+import { ShopSearchFormValues, ShopSearchSchema } from '@/app/_types/types';
 
 import { state as stateMockData } from '../../../public/state.json';
-import ItemBase from '../../_ui/shared/ItemBase';
+import ItemBase from '../../_ui/_shared/itemBase';
 import ShopResult from './parts/shopResult';
 
 /** ページ名 */
 const pageName = '店舗一覧';
 const resultHeader = ['店舗名', '会社名', '住所', 'ステータス'];
-
-/* 店舗一覧 検索条件 */
-export type ShopSearchFormValues = {
-  /* 店舗名 */
-  shopName: string;
-  /* 都道府県 */
-  state: string;
-  /* 市 */
-  city: string;
-  /* 町村 */
-  town: string;
-  /* ステータス */
-  status: string;
-};
 
 /* TODO: タイプ定義ファイルに移動 */
 export type ShopSearchResult = {
@@ -40,10 +28,20 @@ export type ShopSearchResult = {
 };
 
 export const UserComponent = () => {
+  /* initialize
+  ------------------------------------------------------------------ */
   const router = useRouter();
+
+  /* useState
+  ------------------------------------------------------------------ */
   const [isSearch, setIsSearch] = useState(false);
 
-  const { reset, control } = useForm<ShopSearchFormValues>({
+  /* useForm
+  ------------------------------------------------------------------ */
+  const { control, handleSubmit, reset } = useForm<ShopSearchFormValues>({
+    mode: 'onSubmit',
+    reValidateMode: 'onSubmit',
+    resolver: zodResolver(ShopSearchSchema),
     defaultValues: {
       shopName: '',
       state: '',
@@ -51,31 +49,18 @@ export const UserComponent = () => {
       town: '',
       status: '',
     },
-    mode: 'onSubmit',
-    reValidateMode: 'onSubmit',
   });
 
-  const stateData = [
-    { id: '', label: '未選択' },
-    ...stateMockData.map((d: string, index: number) => {
-      return { id: index.toString(), label: d };
-    }),
-  ];
-
+  /* functions
+  ------------------------------------------------------------------ */
   // 検索ハンドラ
   const searchHandler: SubmitHandler<ShopSearchFormValues> = (data) => {
-    // chipを表示しよう
-    // openSnackbar(
-    //   AlertType.INFO,
-    //   `検索ボタンが押されました...
-    //    名：${data.firstName}, 姓：${data.lastName}, 予約日:${data.date}`
-    // );
-    console.log('addHandler click!!');
+    setIsSearch(!isSearch);
   };
 
   // 明細行リンクハンドラ
   const linkHandler = (id: string) => {
-    router.push('/shopDetail');
+    router.push(`/shopDetail/${id}`);
     reset();
   };
 
@@ -84,9 +69,19 @@ export const UserComponent = () => {
     reset();
   };
 
-  // MockData
+  /* mockData ※のちすて
+  ------------------------------------------------------------------ */
   const result = MockDataCreate_ShopSearchResult();
 
+  const stateData = [
+    { id: '', label: '未選択' },
+    ...stateMockData.map((d: string, index: number) => {
+      return { id: index.toString(), label: d };
+    }),
+  ];
+
+  /* JSX
+  ------------------------------------------------------------------ */
   return (
     <>
       <Paper
@@ -102,7 +97,7 @@ export const UserComponent = () => {
         </Grid>
         <Divider />
         <Box sx={{ m: 3 }}>
-          <FormContainer onSuccess={searchHandler}>
+          <form onSubmit={handleSubmit(searchHandler)}>
             <Grid
               container
               rowSpacing={2}
@@ -147,10 +142,10 @@ export const UserComponent = () => {
                     label="市区"
                     fullWidth
                     options={[
-                      { id: '', label: '未選択' },
-                      { id: '10', label: '市区1' },
-                      { id: '20', label: '市区2' },
-                      { id: '30', label: '市区3' },
+                      { id: '', label: '未選択', value: '未選択' },
+                      { id: '10', label: '市区1', value: '市区1' },
+                      { id: '20', label: '市区2', value: '市区2' },
+                      { id: '30', label: '市区3', value: '市区3' },
                     ]}
                   ></SelectElement>
                   <SelectElement
@@ -206,13 +201,7 @@ export const UserComponent = () => {
               </Button>
             </Grid>
             <Grid sx={{ mt: 1 }} size={{ xs: 12 }}>
-              <Button
-                fullWidth
-                variant="contained"
-                onClick={() => {
-                  setIsSearch(!isSearch);
-                }}
-              >
+              <Button fullWidth variant="contained" type="submit">
                 検索
               </Button>
             </Grid>
@@ -222,7 +211,7 @@ export const UserComponent = () => {
                 <ShopResult header={resultHeader} result={result} linkHandler={linkHandler} />
               </>
             )}
-          </FormContainer>
+          </form>
         </Box>
       </Paper>
     </>

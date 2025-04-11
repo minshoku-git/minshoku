@@ -47,7 +47,7 @@ export const EmploymentInput = (props: Props) => {
                       <TableCell align="center" width={'35%'} sx={{ p: 0 }}>
                         雇用形態名
                       </TableCell>
-                      <TableCell align="center" sx={{ whiteSpace: 'nowrap', p: 1 }} width={'15%'}>
+                      <TableCell align="center" sx={{ whiteSpace: 'nowrap', p: 0 }} width={'15%'}>
                         会社清算
                       </TableCell>
                       <TableCell
@@ -63,11 +63,11 @@ export const EmploymentInput = (props: Props) => {
                       >
                         {'クレジット\nカード'}
                       </TableCell>
-                      <TableCell align="center" width={'15%'} sx={{ p: 1 }}>
+                      <TableCell align="center" width={'15%'} sx={{ p: 0 }}>
                         PayPay
                       </TableCell>
-                      <TableCell align="center" width={'30%'}>
-                        会社負担
+                      <TableCell align="center" width={'30%'} sx={{ p: 0 }}>
+                        会社負担額
                       </TableCell>
                       <TableCell align="center" width={'5%'} sx={{ p: 0 }}></TableCell>
                     </TableRow>
@@ -125,9 +125,15 @@ export const EmploymentInput = (props: Props) => {
                         </TableCell>
                         {/* 削除 */}
                         <TableCell align="center" sx={{ p: '2px' }}>
-                          <IconButton onClick={() => props.removeField(index)} disabled={field.disabled}>
-                            <Delete />
-                          </IconButton>
+                          {props.fields && props.fields.length > 1 ? (
+                            <IconButton onClick={() => props.removeField(index)} disabled={field.disabled}>
+                              <Delete />
+                            </IconButton>
+                          ) : (
+                            <Box sx={{ width: '40px' }}>
+                              <Delete color="disabled" />
+                            </Box>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}

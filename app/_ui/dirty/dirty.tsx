@@ -1,8 +1,7 @@
-import { Box } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
 
-import { useDirty } from './DartyContext';
+import { useDirty } from './dartyContext';
 
 /**
  * 処理中背景
@@ -10,36 +9,24 @@ import { useDirty } from './DartyContext';
  */
 export const DirtyCheck = () => {
   const router = useRouter();
-  const { isDirty, setDirty } = useDirty();
-
-  const atai = setDirty((s) => s);
-  console.log('atai:' + atai);
-  React.useEffect(() => {
-    if (isDirty) {
-      console.log('isDirtyがtrueになりました');
-    } else {
-      console.log('isDirtyがfalseになりました');
-    }
-  }, [isDirty]);
+  const { isDirty, setDirty, openConform, setConformUrl } = useDirty();
 
   // 1.リロードボタン、外部サイトへの遷移
   const handleBeforeUnload = (event: BeforeUnloadEvent) => {
     if (isDirty) {
-      console.log('リロードが動作しています');
       event.preventDefault();
       return (event.returnValue = '変更が保存されていません。\nこのページから移動してよろしいですか？');
     }
   };
 
-  // 1.router.pushなど
+  // 2.router.push
   const confirmNavigation = (url: string) => {
-    console.log('やあ動いているよ');
-    console.log('Dirty.tsxのisDirty:' + isDirty);
+    console.log('お呼び出しがかかりました');
+    console.log('isDirty:' + isDirty);
     if (isDirty) {
-      const confirmLeave = window.confirm('変更が保存されていません。\nこのページから移動してよろしいですか？');
-      if (confirmLeave) {
-        router.push(url);
-      }
+      setConformUrl(url);
+      openConform();
+      setDirty(false);
     } else {
       router.push(url);
     }

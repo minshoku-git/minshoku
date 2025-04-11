@@ -6,7 +6,7 @@
 
 /**
  * 検索画面の一頁あたりの表示上限件数
- * @returns 最大表示件数
+ * @returns 最大表示件数(30件)
  */
 export const pageMaxCount = () => {
   return 30;
@@ -26,4 +26,8 @@ export const KB_ByteSize = () => {
  */
 export const IMAGE_TYPES = () => {
   return ['image/png', 'image/jpg', 'image/jpeg'];
+};
+
+export const HYPHEN = () => {
+  return '-';
 };

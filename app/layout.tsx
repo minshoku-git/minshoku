@@ -1,9 +1,11 @@
 import './globals.css';
 
+import { Dialog, Modal } from '@mui/material';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import type { Metadata } from 'next';
 import React from 'react';
 
+import { DirtyProvider, useDirty } from './_ui/dirty/dartyContext';
 import { notoSansJp } from './_ui/fonts';
 import ThemeProvider from './_ui/theme-provider';
 
@@ -25,7 +27,9 @@ const Layout = ({ children }: Readonly<{ children: React.ReactNode }>) => {
     <html lang="ja">
       <body className={notoSansJp.variable}>
         <AppRouterCacheProvider>
-          <ThemeProvider>{children}</ThemeProvider>
+          <ThemeProvider>
+            <DirtyProvider>{children}</DirtyProvider>
+          </ThemeProvider>
         </AppRouterCacheProvider>
       </body>
     </html>
