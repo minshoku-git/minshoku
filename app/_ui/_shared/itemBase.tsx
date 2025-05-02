@@ -2,6 +2,7 @@ import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid2';
 import Typography from '@mui/material/Typography';
 import * as React from 'react';
+import { JSX } from 'react';
 
 import OptionalMark from './optionalMark';
 import RequiredMark from './requiredMark';
@@ -25,7 +26,7 @@ type ItemBaseProps = {
  * @param {ItemBaseProps} props - プロパティ
  * @returns {JSX.Element} JSX
  */
-const ItemBase = (props: ItemBaseProps) => {
+const ItemBase = (props: ItemBaseProps): JSX.Element => {
   /** 余白（下） */
   const marginBottom = props.marginBottom !== undefined ? props.marginBottom : 10;
 

@@ -11,7 +11,10 @@ import ThemeProvider from './_ui/theme-provider';
 
 /** @type {Metadata} metadata */
 export const metadata: Metadata = {
-  title: 'みんなの社食',
+  title: {
+    default: 'みんなの社食',
+    template: '%s | みんなの社食',
+  },
   description: 'みんなの社食',
 };
 

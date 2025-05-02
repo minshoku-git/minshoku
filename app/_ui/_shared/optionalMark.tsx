@@ -1,11 +1,12 @@
 import Box from '@mui/material/Box';
 import * as React from 'react';
+import { JSX } from 'react';
 
 /**
  * 「任意」マークコンポーネント
  * @returns {JSX.Element} JSX
  */
-const OptionalMark = () => {
+const OptionalMark = (): JSX.Element => {
   return (
     <Box
       sx={{

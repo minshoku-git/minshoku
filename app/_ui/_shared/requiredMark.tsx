@@ -1,11 +1,12 @@
 import Box from '@mui/material/Box';
 import * as React from 'react';
+import { JSX } from 'react';
 
 /**
  * 「必須」マークコンポーネント
  * @returns {JSX.Element} JSX
  */
-const RequiredMark = () => {
+const RequiredMark = (): JSX.Element => {
   return (
     <Box
       sx={{

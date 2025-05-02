@@ -2,7 +2,7 @@
 
 import { useMediaQuery } from '@mui/material';
 import CssBaseline from '@mui/material/CssBaseline';
-import type { Palette } from '@mui/material/styles';
+import type { Palette, Theme } from '@mui/material/styles';
 import { ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
 import { createTheme } from '@mui/material/styles';
 import type { TypographyOptions } from '@mui/material/styles/createTypography';
@@ -12,10 +12,10 @@ const typography: TypographyOptions | ((palette: Palette) => TypographyOptions) 
   fontFamily: 'var(--font-noto-sans-jp)',
 };
 /** @type {boolean} cssVariables */
-const cssVariables = true;
+const cssVariables: boolean = true;
 
 /** @type {Theme} lightTheme */
-const lightTheme = createTheme({
+const lightTheme: Theme = createTheme({
   typography,
   cssVariables,
   palette: {

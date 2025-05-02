@@ -1,5 +1,6 @@
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from '@mui/material';
 import * as React from 'react';
+import { JSX } from 'react';
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -9,9 +10,9 @@ interface ConfirmDialogProps {
 
 /**
  * 処理中背景
- * @returns
+ * @returns {JSX.Element} JSX
  */
-export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({ open, closeConform, routerPush }) => {
+export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({ open, closeConform, routerPush }): JSX.Element => {
   return (
     <Dialog open={open} onClose={closeConform} sx={{ zIndex: 9999, position: 'absolute' }}>
       <DialogTitle>離脱確認</DialogTitle>

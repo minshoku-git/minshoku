@@ -11,18 +11,21 @@ import { useProcessing } from './processingContext';
 export const OpenProcessing = (): React.JSX.Element => {
   const { processingState } = useProcessing();
   return (
-    <Backdrop
-      open={processingState.open}
-      sx={{
-        color: '#1976d2',
-        background: 'rgba(255,255,255,0.50)',
-        zIndex: 20,
-        size: '4rem',
-      }}
-    >
-      <CircularProgress color="inherit" size="3rem" />
-    </Backdrop>
+    <>
+      {processingState.open && (
+        <Backdrop
+          open={processingState.open}
+          sx={{
+            color: '#fff',
+            background: 'rgba(0,0,0,0.6)',
+            zIndex: 10000,
+          }}
+        >
+          <CircularProgress color="inherit" size="5rem" />
+        </Backdrop>
+      )}
+    </>
   );
 };
 
-export default OpenProcessing;
+export { useProcessing };

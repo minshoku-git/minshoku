@@ -12,7 +12,8 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import { CheckboxElement, Control, FieldArrayWithId, TextFieldElement, UseFormSetValue } from 'react-hook-form-mui';
+import { JSX } from 'react';
+import { CheckboxElement, Control, FieldArrayWithId, TextFieldElement } from 'react-hook-form-mui';
 
 import { CompanyDetailFormValues } from '@/app/_types/types';
 
@@ -26,7 +27,12 @@ type Props = {
   setValue: any;
 };
 
-export const EmploymentInput = (props: Props) => {
+/**
+ * EmploymentInputコンポーネント
+ * @param {Props} props
+ * @returns {JSX.Element} JSX
+ */
+export const EmploymentInput = (props: Props): JSX.Element => {
   // 入力値の前後の空白削除・入力値の全角空白を半角空白に置換・連続した空白を1個の半角空白にまとめる
   const trimSpase = (value: string, index: number) => {
     props.setValue(`employmentTypeInfo.${index}.name`, value.trim().replace(/[ 　]+/g, ' '));

@@ -1,6 +1,7 @@
 import { Add, Delete } from '@mui/icons-material';
-import { Box, Button, Grid2 as Grid, IconButton, TextField, Typography } from '@mui/material';
-import { Control, FieldArrayWithId, TextFieldElement, UseFormRegister, UseFormSetValue } from 'react-hook-form-mui';
+import { Box, Button, Grid2 as Grid, IconButton, Typography } from '@mui/material';
+import { JSX } from 'react';
+import { Control, FieldArrayWithId, TextFieldElement } from 'react-hook-form-mui';
 
 import { CompanyDetailFormValues } from '@/app/_types/types';
 
@@ -14,7 +15,12 @@ type Props = {
   setValue: any;
 };
 
-export const DepartmentInput = (props: Props) => {
+/**
+ * DepartmentInputコンポーネント
+ * @param {Props} props
+ * @returns {JSX.Element} JSX
+ */
+export const DepartmentInput = (props: Props): JSX.Element => {
   // 入力値の前後の空白削除・入力値の全角空白を半角空白に置換・連続した空白を1個の半角空白にまとめる
   const trimSpase = (value: string, index: number) => {
     props.setValue(`departmentInfo.${index}.name`, value.trim().replace(/[ 　]+/g, ' '));
@@ -22,7 +28,7 @@ export const DepartmentInput = (props: Props) => {
   };
   return (
     <Grid container>
-      {props.fields ? (
+      {props.fields && props.fields.length > 0 ? (
         props.fields.map((field, index) => (
           <Grid key={index}>
             <Box
