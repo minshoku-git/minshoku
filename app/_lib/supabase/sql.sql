@@ -1,41 +1,13 @@
--- 試し書き,実際にはこちらは全く読み取られない。。。
-
--- 最初に必要なカスタム型の定義（変更なし）
-CREATE TYPE company_insert_type AS (
-  company_name TEXT,
-  branch_name TEXT,
-  post_code TEXT,
-  prefectures TEXT,
-  municipalities TEXT,
-  town_area TEXT,
-  area_block_number TEXT,
-  building_name TEXT,
-  restaurant_name TEXT,
-  mailaddress TEXT,
-  memo TEXT,
-  usage_state INTEGER,
-  optional_item_title_1 TEXT,
-  optional_item_title_2 TEXT,
-  optional_item_notes_1 TEXT,
-  optional_item_notes_2 TEXT,
-  url_key TEXT,
-  offer_time_from TEXT,
-  offer_time_to TEXT,
-  order_period_day INTEGER,
-  order_period_hour INTEGER,
-  order_period_minute INTEGER,
-  cancel_period_day INTEGER,
-  cancel_period_hour INTEGER,
-  cancel_period_minute INTEGER
-);
-
--- insert_company 関数の作成
-CREATE OR REPLACE FUNCTION insert_company(t_company company_insert_type)
-RETURNS INTEGER AS $$
+CREATE OR REPLACE FUNCTION your_function_name(
+  t_companies jsonb,
+  departments text[],
+  employment_status text[]
+)
+RETURNS integer AS $$
 DECLARE
-  new_company_id INTEGER;
+  new_id integer;
+  dept text;
 BEGIN
-  -- t_companies テーブルへの INSERT（idとcreated_atは自動で追加される）
   INSERT INTO t_companies (
     company_name,
     branch_name,
@@ -46,6 +18,7 @@ BEGIN
     area_block_number,
     building_name,
     restaurant_name,
+    location,
     mailaddress,
     memo,
     usage_state,
@@ -63,48 +36,52 @@ BEGIN
     cancel_period_hour,
     cancel_period_minute
   ) VALUES (
-    t_company.company_name,
-    t_company.branch_name,
-    t_company.post_code,
-    t_company.prefectures,
-    t_company.municipalities,
-    t_company.town_area,
-    t_company.area_block_number,
-    t_company.building_name,
-    t_company.restaurant_name,
-    t_company.mailaddress,
-    t_company.memo,
-    t_company.usage_state,
-    t_company.optional_item_title_1,
-    t_company.optional_item_title_2,
-    t_company.optional_item_notes_1,
-    t_company.optional_item_notes_2,
-    t_company.url_key,
-    t_company.offer_time_from,
-    t_company.offer_time_to,
-    t_company.order_period_day,
-    t_company.order_period_hour,
-    t_company.order_period_minute,
-    t_company.cancel_period_day,
-    t_company.cancel_period_hour,
-    t_company.cancel_period_minute
+    t_companies->>'company_name',
+    t_companies->>'branch_name',
+    t_companies->>'post_code',
+    t_companies->>'prefectures',
+    t_companies->>'municipalities',
+    t_companies->>'town_area',
+    t_companies->>'area_block_number',
+    t_companies->>'building_name',
+    t_companies->>'restaurant_name',
+    t_companies->>'location',
+    t_companies->>'mailaddress',
+    'ソースだよ',
+    0,
+    t_companies->>'optional_item_title_1',
+    t_companies->>'optional_item_title_2',
+    t_companies->>'optional_item_notes_1',
+    t_companies->>'optional_item_notes_2',
+    '',
+    current_timestamp,
+    current_timestamp,
+    (t_companies->>'order_period_day')::int,
+    (t_companies->>'order_period_hour')::int,
+    (t_companies->>'order_period_minute')::int,
+    (t_companies->>'cancel_period_day')::int,
+    (t_companies->>'cancel_period_hour')::int,
+    (t_companies->>'cancel_period_minute')::int
   )
-  RETURNING id INTO new_company_id;
+  RETURNING id INTO new_id;
 
-  
+  IF new_id IS NULL THEN
+    RAISE EXCEPTION 'Failed to insert company, new_id is NULL';
+  END IF;
 
-  -- t_companies_department テーブルへの INSERT（idとcreated_atは自動で追加される）
-  INSERT INTO t_companies_department (
-    t_companies_id,
-    department_name,
-    delete_flag,
-  ) VALUES ({new_company_id,
-    "部署名",
-    0}
-    
-  )
+  FOREACH dept IN ARRAY departments LOOP
+    INSERT INTO t_companies_department (
+      t_companies_id,
+      department_name,
+      delete_flag
+    )
+    VALUES (
+      new_id,
+      dept,
+      0
+    );
+  END LOOP;
 
-  -- 新しく挿入された会社IDを返す
-  RETURN new_company_id;
+  RETURN new_id;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql;

@@ -154,6 +154,10 @@ export const CompanyComponent = (): JSX.Element => {
     } else {
       setResult(res);
       setIsSearch(true);
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth',
+      });
     }
     closeProcessing();
   };

@@ -4,13 +4,13 @@ import { CloudUpload, Delete } from '@mui/icons-material';
 import { Box, Button, Divider, IconButton, Paper, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import { useParams, useRouter } from 'next/navigation';
-import { ChangeEvent, JSX, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, JSX, useEffect, useMemo, useRef, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { SelectElement, TextareaAutosizeElement, TextFieldElement } from 'react-hook-form-mui';
 
 import { getShopDetail, insertShopDetail } from '@/app/_actions/actions';
 import { getAttachmentSizeOver, getMbSize } from '@/app/_lib/getFile';
-import { update_shopDetail } from '@/app/_lib/supabase/supabaseFunction';
+import { update_shopDetail } from '@/app/_lib/supabase/functions/shopFunction';
 import { getEditFlag } from '@/app/_lib/utill';
 import { AlertType } from '@/app/_types/enum';
 import { ShopDetailFormValues, ShopDetailSchemaType } from '@/app/_types/types';
@@ -37,11 +37,11 @@ export const ShopComponent = (): JSX.Element => {
   const { openProcessing, closeProcessing } = useProcessing();
   const router = useRouter();
   const params = useParams();
-  const id = (params.id as string) ?? '';
+  const id = (params.id as string) ?? '-';
 
   /* useState
   ------------------------------------------------------------------ */
-  const editMode = useRef<boolean>(getEditFlag(id));
+  const editMode = useMemo(() => getEditFlag(id), [id]);
   const [file, setFile] = useState<File>();
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -56,7 +56,7 @@ export const ShopComponent = (): JSX.Element => {
     mode: 'onSubmit',
     reValidateMode: 'onSubmit',
     resolver: zodResolver(ShopDetailSchemaType),
-    defaultValues: defaultValues,
+    defaultValues: defalutData,
   });
 
   /* useEffect
@@ -402,7 +402,8 @@ export const ShopComponent = (): JSX.Element => {
   );
 };
 
-const defaultValues: ShopDetailFormValues = {
+/** formValues初期値 */
+const defalutData: ShopDetailFormValues = {
   id: '-',
   shop_name: '',
   shop_name_kana: '',

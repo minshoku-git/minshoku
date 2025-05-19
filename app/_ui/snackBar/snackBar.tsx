@@ -32,7 +32,7 @@ export const OpenSnackBar = () => {
 
   return (
     <Snackbar
-      sx={{ zIndex: 1101 }}
+      sx={{ zIndex: 11000 }}
       anchorOrigin={{
         vertical: 'top',
         horizontal: 'center',

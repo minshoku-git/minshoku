@@ -1,4 +1,4 @@
-import { HYPHEN } from '../_types/values';
+import { HYPHEN, pageMaxCount } from '../_types/values';
 /**
  * getFile.ts
  * 汎用的な関数を管理します。
@@ -6,12 +6,13 @@ import { HYPHEN } from '../_types/values';
 
 /**
  * getEditFlag
- * 明細画面の表示モードを判定する。
- * @param {string} id ID
+ * 明細画面が編集モードかどうかを判定する。
+ *
+ * @param {string} id - ID
  * @returns {boolean} true:編集モード, false:登録モード
  */
 export const getEditFlag = (id: string): boolean => {
-  if (id && id === HYPHEN()) {
+  if (!id || (id && id === HYPHEN())) {
     return false;
   }
   return true;
@@ -20,7 +21,8 @@ export const getEditFlag = (id: string): boolean => {
 /**
  * getPostCodeAddHyphen
  * 郵便番号7桁にハイフンを付けた文字列を返却する。
- * @param {string} post_code 郵便番号7桁
+ *
+ * @param {string} post_code - 郵便番号7桁
  * @returns {string} XXX-XXXX
  */
 export const getPostCodeAddHyphen = (post_code: string): string => {
@@ -30,6 +32,7 @@ export const getPostCodeAddHyphen = (post_code: string): string => {
 /**
  * convertTimeToDate
  * 時間(string)を日付(Date)に変換する。
+ *
  * @param {string} time 時間(00:00:00)
  * @returns {Date} 本日付の時間
  */
@@ -41,4 +44,52 @@ export const convertTimeToDate = (time: string): Date => {
   now.setSeconds(seconds || 0);
   now.setMilliseconds(0);
   return now;
+};
+
+/**
+ * getRange
+ * 次のページ数を元に、明細行の取得開始件数、取得終了件数を取得する。
+ * @param {number} nextPage 次のページ数
+ * @returns {{number;number;}} 取得開始件数、取得終了件数
+ */
+export const getRange = (nextPage: number): { startRange: number; endRange: number } => {
+  const startRange = (nextPage - 1) * pageMaxCount();
+  const endRange = startRange + pageMaxCount() - 1;
+  return { startRange, endRange };
+};
+
+/**
+ * getPagenationsItems
+ * ページネーションの表示項目を取得する。
+ * @param {number} startRange 開始件数
+ * @param {number} dataLength 終了件数
+ * @param {number} count 検索件数
+ * @returns {{number;number;number;}} 開始件数、終了件数、総ページ数
+ */
+export const getPagenationsItems = (
+  startRange: number,
+  dataLength: number,
+  count: number
+): { startRow: number; endRow: number; totalPage: number } => {
+  const startRow = startRange + 1;
+  const endRow = startRange + dataLength;
+  const totalPage = (count ?? 0) > pageMaxCount() ? Math.floor(count / pageMaxCount()) + 1 : 1;
+
+  return { startRow, endRow, totalPage };
+};
+
+/**
+ * getPostgreSqlItems
+ * Transaction専用・postgreSQL作成用の情報を作成する。
+ * @param {object} insertValues 入力内容
+ * @returns {{Array<string>;string;Array<string>;}} 開始件数、終了件数、総ページ数
+ */
+export const getPostgreSqlItems = (
+  insertValues: object
+): { columns: Array<string>; placeholders: string; values: Array<string> } => {
+  const columns = Object.keys(insertValues);
+  const placeholders = columns.map((_, i) => `$${i + 1}`).join(',');
+  const values = Object.values(insertValues);
+
+  return { columns, placeholders, values };
 };

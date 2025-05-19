@@ -28,6 +28,7 @@ const pageName = 'ユーザー一覧';
 const resultHeader: Array<HeaderStatus> = [
   { name: 'ユーザー名', variableName: 'user_name', sort: SortType.ASC },
   { name: '会社名', variableName: 'company_name', sort: SortType.ASC },
+  { name: '支店名', variableName: 'branch_name', sort: SortType.ASC },
 ];
 
 /**
@@ -51,6 +52,7 @@ export const UserComponent = ({ todos }: Props): JSX.Element => {
     request: {
       user_name: '',
       company_name: '',
+      branch_name: '',
       usage_state: '',
     },
     sortItems: {
@@ -81,6 +83,7 @@ export const UserComponent = ({ todos }: Props): JSX.Element => {
     defaultValues: {
       user_name: '',
       company_name: '',
+      branch_name: '',
       usage_state: '',
     },
   });
@@ -200,6 +203,19 @@ export const UserComponent = ({ todos }: Props): JSX.Element => {
                   <TextFieldElement control={control} size="small" color={'primary'} name="company_name" fullWidth />
                 </Box>
               </ItemBase>
+              <ItemBase name={'支店名'} isRequired={2}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    width: '640px',
+                  }}
+                >
+                  <TextFieldElement control={control} size="small" color={'primary'} name="branch_name" fullWidth />
+                </Box>
+              </ItemBase>
+
               <ItemBase name={'ステータス'} isRequired={2}>
                 <Box
                   sx={{
@@ -268,6 +284,7 @@ export const UserComponent = ({ todos }: Props): JSX.Element => {
                         {row.user_name} / {row.user_name_kana}
                       </TableCell>
                       <TableCell sx={{ whiteSpace: 'pre' }}>{row.t_companies.company_name}</TableCell>
+                      <TableCell sx={{ whiteSpace: 'pre' }}>{row.t_companies.branch_name}</TableCell>
                     </TableRow>
                   ))
                 }

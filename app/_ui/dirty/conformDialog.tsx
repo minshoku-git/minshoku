@@ -6,20 +6,26 @@ interface ConfirmDialogProps {
   open: boolean;
   routerPush: () => void;
   closeConform: () => void;
+  title: string;
+  message: string;
 }
 
 /**
- * 処理中背景
+ * 確認ダイアログ
  * @returns {JSX.Element} JSX
  */
-export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({ open, closeConform, routerPush }): JSX.Element => {
+export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
+  open,
+  closeConform,
+  routerPush,
+  title,
+  message,
+}): JSX.Element => {
   return (
-    <Dialog open={open} onClose={closeConform} sx={{ zIndex: 9999, position: 'absolute' }}>
-      <DialogTitle>離脱確認</DialogTitle>
+    <Dialog open={open} onClose={closeConform} sx={{ zIndex: 10100, position: 'absolute' }}>
+      <DialogTitle>{title}</DialogTitle>
       <DialogContent>
-        <Typography sx={{ whiteSpace: 'pre-wrap', fontSize: '0.875rem' }}>
-          {'変更が保存されていません。\nこのページから移動してよろしいですか？'}
-        </Typography>
+        <Typography sx={{ whiteSpace: 'pre-wrap', fontSize: '0.875rem' }}>{message}</Typography>
       </DialogContent>
       <DialogActions sx={{ mb: '5px' }}>
         <Button

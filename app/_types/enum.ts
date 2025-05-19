@@ -47,11 +47,19 @@ export enum UsageCompanyStatus {
 }
 
 /* 支払いステータス */
-export enum OrderStatus {
+export enum PaymentStatus {
   /** 0:会社清算 */
   SALAEY_DEDUCTIONS = '0',
   /** 1:クレジットカード */
   CREDITCARD = '1',
   /** 2:PayPay */
   PAYPAY = '2',
+}
+
+/** オーダーステータス */
+export enum OrderStatus {
+  /** 0:制限なし */
+  CANCEL = '0',
+  /** 1:有効 */
+  VALID = '1',
 }

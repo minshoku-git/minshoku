@@ -1,4 +1,4 @@
-import { startOfMonth, subDays, subMonths } from 'date-fns';
+import { format, startOfMonth, subDays, subMonths } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 /**
  * getDateTime.tsx
@@ -56,4 +56,14 @@ export function getLastMonthStartDay() {
 export function getLastMonthEndDay() {
   const startDay = getThisMonthStartDay();
   return subDays(startDay, +1);
+}
+
+/**
+ * getTimeString
+ * 日付から文字列の時間('HH:mm')の取得
+ * @param date - 日付
+ * @returns {string} 'HH:mm'
+ */
+export function getTimeString(date: Date): string {
+  return format(date, 'HH:mm');
 }

@@ -65,6 +65,8 @@ export type SearchResult_UserList = {
   t_companies: {
     /** 会社名 */
     company_name: string;
+    /** 支店名 */
+    branch_name: string;
   };
 };
 
@@ -108,6 +110,8 @@ export type SearchResult_ScheduleList = {
   delivery_day: string;
   /** 会社名 */
   company_name: string;
+  /** 支店名 */
+  branch_name: string;
   /** 店舗名 */
   shop_name: string;
   /** メニュー名 */

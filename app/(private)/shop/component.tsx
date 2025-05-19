@@ -152,6 +152,10 @@ export const ShopComponent = (): JSX.Element => {
       setResult(null);
       setIsSearch(false);
     } else {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth',
+      });
       setResult(res);
       setIsSearch(true);
     }

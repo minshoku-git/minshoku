@@ -18,7 +18,7 @@ export const OpenProcessing = (): React.JSX.Element => {
           sx={{
             color: '#fff',
             background: 'rgba(0,0,0,0.6)',
-            zIndex: 10000,
+            zIndex: 110000,
           }}
         >
           <CircularProgress color="inherit" size="5rem" />

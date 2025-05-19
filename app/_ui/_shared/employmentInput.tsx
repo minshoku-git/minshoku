@@ -22,7 +22,7 @@ type Props = {
   control: Control<any>;
   addField: () => void;
   removeField: (index: number) => void;
-  fields?: FieldArrayWithId<CompanyDetailFormValues, 'employmentTypeInfo', 'id'>[];
+  fields?: FieldArrayWithId<CompanyDetailFormValues, 'employmentStatusInfo', 'id'>[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   setValue: any;
 };
@@ -35,7 +35,7 @@ type Props = {
 export const EmploymentInput = (props: Props): JSX.Element => {
   // 入力値の前後の空白削除・入力値の全角空白を半角空白に置換・連続した空白を1個の半角空白にまとめる
   const trimSpase = (value: string, index: number) => {
-    props.setValue(`employmentTypeInfo.${index}.name`, value.trim().replace(/[ 　]+/g, ' '));
+    props.setValue(`employmentStatusInfo.${index}.name`, value.trim().replace(/[ 　]+/g, ' '));
     return;
   };
   return (
@@ -86,7 +86,7 @@ export const EmploymentInput = (props: Props): JSX.Element => {
                         <TableCell align="center">
                           <TextFieldElement
                             control={props.control}
-                            name={`employmentTypeInfo.${index}.name`}
+                            name={`employmentStatusInfo.${index}.employment_status_name`}
                             size={'small'}
                             onBlur={(e) => {
                               trimSpase(e?.target?.value, index);
@@ -97,7 +97,7 @@ export const EmploymentInput = (props: Props): JSX.Element => {
                         <TableCell align="center">
                           <CheckboxElement
                             control={props.control}
-                            name={`employmentTypeInfo.${index}.isDeduction`}
+                            name={`employmentStatusInfo.${index}.deduction_flag`}
                             sx={{ marginLeft: '11px', marginRight: '-16px' }}
                           />
                         </TableCell>
@@ -105,7 +105,7 @@ export const EmploymentInput = (props: Props): JSX.Element => {
                         <TableCell align="center">
                           <CheckboxElement
                             control={props.control}
-                            name={`employmentTypeInfo.${index}.isCreditCard`}
+                            name={`employmentStatusInfo.${index}.credit_flag`}
                             sx={{ marginLeft: '11px', marginRight: '-16px' }}
                           />
                         </TableCell>
@@ -113,7 +113,7 @@ export const EmploymentInput = (props: Props): JSX.Element => {
                         <TableCell align="center">
                           <CheckboxElement
                             control={props.control}
-                            name={`employmentTypeInfo.${index}.isPayPay`}
+                            name={`employmentStatusInfo.${index}.paypay_flag`}
                             sx={{ marginLeft: '11px', marginRight: '-16px' }}
                           />
                         </TableCell>
@@ -124,7 +124,7 @@ export const EmploymentInput = (props: Props): JSX.Element => {
                             slotProps={{
                               htmlInput: { maxLength: 5 },
                             }}
-                            name={`employmentTypeInfo.${index}.burdenAmount`}
+                            name={`employmentStatusInfo.${index}.set_meal_burden`}
                             size={'small'}
                             sx={{ input: { textAlign: 'right' } }}
                           />

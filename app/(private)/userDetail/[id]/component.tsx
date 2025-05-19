@@ -1,17 +1,28 @@
 'use client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Box, Button, Divider, FormControlLabel, Paper, Switch, TextField, Typography } from '@mui/material';
+import {
+  Box,
+  Button,
+  ButtonGroup,
+  Divider,
+  FormControlLabel,
+  Paper,
+  Switch,
+  TextField,
+  Typography,
+} from '@mui/material';
 import Grid from '@mui/material/Grid2';
-import { useParams } from 'next/navigation';
-import { ChangeEvent, JSX, useCallback, useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { JSX, useEffect, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { SelectElement, TextareaAutosizeElement } from 'react-hook-form-mui';
 
-import { AlertType } from '@/app/_types/enum';
+import { AlertType, UserUsageStatus } from '@/app/_types/enum';
 import { UserDetailFormValues, UserDetailSchema } from '@/app/_types/types';
-import { HYPHEN } from '@/app/_types/values';
 import ItemBase from '@/app/_ui/_shared/itemBase';
+import ConfirmDialog from '@/app/_ui/dirty/conformDialog';
 import { useDirty } from '@/app/_ui/dirty/dartyContext';
+import { useProcessing } from '@/app/_ui/processing/processingContext';
 import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
 
 /** ページ名 */
@@ -25,12 +36,24 @@ export const UserDetailComponent = (): JSX.Element => {
   /* initialize
   ------------------------------------------------------------------ */
   const params = useParams();
+  const router = useRouter();
   const { openSnackbar } = useSnackBar();
+  const { openProcessing, closeProcessing } = useProcessing();
+
   const { setDirty } = useDirty();
 
   /* useState
   ------------------------------------------------------------------ */
-  const [approvalMode, setApprovalMode] = useState<boolean>(HYPHEN() !== params.id);
+  // TODO:ユーザー情報のユーザーステータスに差し替えする。
+  const [userUsageStatus, setUserUsageStatus] = useState<UserUsageStatus>(UserUsageStatus.REGISTERED);
+  const [showNini, setShowNini] = useState<boolean>(true);
+
+  // ステータス変更確認ダイアログ
+  const [openDialog, setOpenDialog] = useState<boolean>(false);
+  const [dialogMessage, setDialogMessage] = useState<string>('');
+  const [dialogActionHandler, setDialogActionHandler] = useState<() => void>(() => {
+    return () => {};
+  });
 
   /* useForm
   ------------------------------------------------------------------ */
@@ -50,15 +73,60 @@ export const UserDetailComponent = (): JSX.Element => {
 
   /* functions
   ------------------------------------------------------------------ */
-  /* 更新 */
+  /** 更新 */
   const submitHandler: SubmitHandler<UserDetailFormValues> = (data) => {
     openSnackbar(AlertType.INFO, 'ユーザー情報を更新しました。');
   };
 
-  /* 承認 */
+  /** 否認 */
+  const disapprovalHandler = () => {
+    const handler = () => {
+      openProcessing();
+      // TODO:否認APIの呼出し
+      setTimeout(() => {
+        closeProcessing();
+        setUserUsageStatus(UserUsageStatus.DISAPPROVAL);
+        openSnackbar(AlertType.INFO, 'ユーザー情報を否認しました。');
+      }, 3000);
+    };
+    // dialog setting
+    setDialogMessage(`ユーザー情報を"否認"します。\n変更後、引き戻しはできませんがよろしいですか？`);
+    setDialogActionHandler(() => handler);
+    setOpenDialog(true);
+  };
+
+  /** 承認 */
   const approvalHandler = () => {
-    setApprovalMode(false);
-    openSnackbar(AlertType.INFO, 'ユーザー情報を承認しました。');
+    const handler = () => {
+      openProcessing();
+      // TODO:承認APIの呼出し
+      setTimeout(() => {
+        closeProcessing();
+        setUserUsageStatus(UserUsageStatus.REGISTERED);
+        openSnackbar(AlertType.INFO, 'ユーザー情報を承認しました。');
+      }, 3000);
+    };
+    // dialog setting
+    setDialogMessage(`ユーザー情報を"承認"します。\n変更後、引き戻しはできませんがよろしいですか？`);
+    setDialogActionHandler(() => handler);
+    setOpenDialog(true);
+  };
+
+  /** 削除 */
+  const deletelHandler = () => {
+    const handler = () => {
+      openProcessing();
+      // TODO:削除APIの呼出し
+      setTimeout(() => {
+        closeProcessing();
+        openSnackbar(AlertType.INFO, 'ユーザー情報を削除しました。');
+        router.push('/user');
+      }, 3000);
+    };
+    // dialog setting
+    setDialogMessage(`ユーザー情報を"削除"します。\n変更後、引き戻しはできませんがよろしいですか？`);
+    setDialogActionHandler(() => handler);
+    setOpenDialog(true);
   };
 
   /* dirty
@@ -76,15 +144,32 @@ export const UserDetailComponent = (): JSX.Element => {
 
   /* mockData ※のちすて
   ------------------------------------------------------------------ */
-  // モード切り替え
-  const modeChangeHandler = (e: ChangeEvent<HTMLInputElement>) => {
-    setApprovalMode(e.target.checked);
+  // 登録中ステータス
+  const modeChangeHandler_REGISTERED = () => {
+    setUserUsageStatus(UserUsageStatus.REGISTERED);
+  };
+  // 申請中ステータス
+  const modeChangeHandler_PENDING = () => {
+    setUserUsageStatus(UserUsageStatus.PENDING);
+  };
+  // 否認ステータス
+  const modeChangeHandler_DISAPPROVAL = () => {
+    setUserUsageStatus(UserUsageStatus.DISAPPROVAL);
   };
 
   /* JSX
   ------------------------------------------------------------------ */
   return (
     <>
+      {/* ステータス変更確認ダイアログ */}
+      <ConfirmDialog
+        open={openDialog}
+        routerPush={dialogActionHandler}
+        closeConform={() => setOpenDialog(false)}
+        title={'ステータス変更確認'}
+        message={dialogMessage}
+      />
+      {/* MainContents */}
       <Paper
         sx={{
           display: 'flex',
@@ -96,20 +181,26 @@ export const UserDetailComponent = (): JSX.Element => {
             {pageName}
           </Typography>
           <Box sx={{ flexGrow: 1 }} />
+          <Typography>{'モック用　'}</Typography>
           <FormControlLabel
             value="end"
             control={
               <Switch
                 color="primary"
                 onChange={(e) => {
-                  modeChangeHandler(e);
+                  setShowNini(!showNini);
                 }}
-                checked={approvalMode}
+                checked={showNini}
               />
             }
-            label="ApprovalMode"
+            label="任意項目表示"
             labelPlacement="end"
           />
+          <ButtonGroup sx={{ mr: 3 }}>
+            <Button onClick={() => modeChangeHandler_REGISTERED()}>登録中ステータス</Button>
+            <Button onClick={() => modeChangeHandler_PENDING()}>申請中ステータス</Button>
+            <Button onClick={() => modeChangeHandler_DISAPPROVAL()}>否認ステータス</Button>
+          </ButtonGroup>
         </Grid>
         <Divider />
         <Box sx={{ m: 3 }}>
@@ -170,6 +261,17 @@ export const UserDetailComponent = (): JSX.Element => {
                   value={'株式会社リファクト'}
                 />
               </ItemBase>
+              <ItemBase name={'支店名'} isRequired={2}>
+                <TextField
+                  size="small"
+                  color={'primary'}
+                  name="shopName"
+                  fullWidth
+                  sx={{ backgroundColor: 'lightgray' }}
+                  disabled
+                  value={'本郷事業所'}
+                />
+              </ItemBase>
               <ItemBase name={'部署名'} isRequired={2}>
                 <TextField
                   size="small"
@@ -192,28 +294,32 @@ export const UserDetailComponent = (): JSX.Element => {
                   value={'正社員'}
                 />
               </ItemBase>
-              <ItemBase name={'任意項目1'} isRequired={2}>
-                <TextField
-                  size="small"
-                  color={'primary'}
-                  name="shopName"
-                  fullWidth
-                  sx={{ backgroundColor: 'lightgray' }}
-                  disabled
-                  value={'任意項目1'}
-                />
-              </ItemBase>
-              <ItemBase name={'任意項目2'} isRequired={2}>
-                <TextField
-                  size="small"
-                  color={'primary'}
-                  name="shopName"
-                  fullWidth
-                  sx={{ backgroundColor: 'lightgray' }}
-                  disabled
-                  value={'任意項目2'}
-                />
-              </ItemBase>
+              {showNini && (
+                <>
+                  <ItemBase name={'任意項目1'} isRequired={2}>
+                    <TextField
+                      size="small"
+                      color={'primary'}
+                      name="shopName"
+                      fullWidth
+                      sx={{ backgroundColor: 'lightgray' }}
+                      disabled
+                      value={'任意項目1'}
+                    />
+                  </ItemBase>
+                  <ItemBase name={'任意項目2'} isRequired={2}>
+                    <TextField
+                      size="small"
+                      color={'primary'}
+                      name="shopName"
+                      fullWidth
+                      sx={{ backgroundColor: 'lightgray' }}
+                      disabled
+                      value={'任意項目2'}
+                    />
+                  </ItemBase>
+                </>
+              )}
               <ItemBase name={'ステータス'} isRequired={2}>
                 <TextField
                   size="small"
@@ -222,50 +328,89 @@ export const UserDetailComponent = (): JSX.Element => {
                   fullWidth
                   sx={{ backgroundColor: 'lightgray' }}
                   disabled
-                  value={'登録中'}
+                  value={
+                    userUsageStatus === UserUsageStatus.PENDING
+                      ? '申請中'
+                      : userUsageStatus === UserUsageStatus.DISAPPROVAL
+                        ? '否認'
+                        : '登録中'
+                  }
                 />
               </ItemBase>
-              <ItemBase name={'利用制限'} isRequired={0}>
-                <SelectElement
-                  control={control}
-                  size="small"
-                  name="restriction"
-                  fullWidth
-                  options={[
-                    { id: '', label: '未選択' },
-                    { id: '10', label: '利用可能' },
-                    { id: '20', label: '利用停止' },
-                  ]}
-                ></SelectElement>
-              </ItemBase>
-              <ItemBase name={'メモ'} isRequired={1}>
-                <TextareaAutosizeElement
-                  control={control}
-                  size="small"
-                  color={'primary'}
-                  name="memo"
-                  minRows={3}
-                  resizeStyle="vertical"
-                  placeholder="500文字以内で入力してください。"
-                  fullWidth
-                />
-              </ItemBase>
+              {userUsageStatus === UserUsageStatus.REGISTERED && (
+                <>
+                  <ItemBase name={'利用制限'} isRequired={0}>
+                    <SelectElement
+                      control={control}
+                      size="small"
+                      name="restriction"
+                      fullWidth
+                      options={[
+                        { id: '', label: '未選択' },
+                        { id: '10', label: '利用可能' },
+                        { id: '20', label: '利用停止' },
+                      ]}
+                    ></SelectElement>
+                  </ItemBase>
+                  <ItemBase name={'メモ'} isRequired={1}>
+                    <TextareaAutosizeElement
+                      control={control}
+                      size="small"
+                      color={'primary'}
+                      name="memo"
+                      minRows={3}
+                      resizeStyle="vertical"
+                      placeholder="500文字以内で入力してください。"
+                      fullWidth
+                    />
+                  </ItemBase>
+                </>
+              )}
             </Grid>
             <Grid size={{ xs: 12 }} sx={{ display: 'flex', mt: 2, gap: 2 }}>
-              <Button fullWidth variant="contained" type={'submit'}>
-                更新
-              </Button>
-              {approvalMode && (
+              {/* 登録中の場合 */}
+              {userUsageStatus === UserUsageStatus.REGISTERED && (
+                <Button fullWidth variant="contained" type={'submit'}>
+                  更新
+                </Button>
+              )}
+              {/* 否認の場合 */}
+              {userUsageStatus === UserUsageStatus.DISAPPROVAL && (
                 <Button
                   fullWidth
                   variant="contained"
                   color="error"
                   onClick={() => {
-                    approvalHandler();
+                    deletelHandler();
                   }}
                 >
-                  承認
+                  削除
                 </Button>
+              )}
+              {/* 申請中の場合 */}
+              {userUsageStatus === UserUsageStatus.PENDING && (
+                <>
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    color="error"
+                    onClick={() => {
+                      disapprovalHandler();
+                    }}
+                  >
+                    否認
+                  </Button>
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    color="success"
+                    onClick={() => {
+                      approvalHandler();
+                    }}
+                  >
+                    承認
+                  </Button>
+                </>
               )}
             </Grid>
           </form>

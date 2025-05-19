@@ -25,7 +25,7 @@ const pageName: string = 'スケジュール一覧';
 /* 明細行ヘッダー */
 const resultHeader: Array<HeaderStatus> = [
   { name: '配達日', variableName: 'delivery_day', sort: SortType.ASC },
-  { name: '会社名', variableName: 'company_name', sort: SortType.ASC },
+  { name: '会社名 / 支店名', variableName: 'company_name', sort: SortType.ASC },
   { name: '店舗名', variableName: 'shop_name', sort: SortType.ASC },
   { name: 'メニュー名', variableName: 'menu_name', sort: SortType.ASC },
   { name: '食数', variableName: 'count', sort: SortType.ASC },
@@ -322,11 +322,17 @@ export const ScheduleComponent = () => {
                 result.data?.map((row, index) => (
                   <TableRow key={index} hover>
                     <TableCell sx={{ whiteSpace: 'pre' }}>{row.delivery_day}</TableCell>
-                    <TableCell>{row.company_name}</TableCell>
+                    <TableCell>
+                      {row.company_name}
+                      <br />
+                      {row.branch_name}
+                    </TableCell>
                     <TableCell>{row.shop_name}</TableCell>
                     <TableCell>{row.menu_name}</TableCell>
-                    <TableCell align="right">{row.count}</TableCell>
-                    <TableCell>{row.allergies.join(' , ')}</TableCell>
+                    <TableCell sx={{ width: '20px' }} align="right">
+                      {row.count}
+                    </TableCell>
+                    <TableCell sx={{ width: '20px' }}>{row.allergies.join(' / ')}</TableCell>
                   </TableRow>
                 ))
               }

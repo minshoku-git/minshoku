@@ -15,8 +15,9 @@ import { DatePickerElement } from 'react-hook-form-mui/date-pickers';
 import { MockDataCreate_OrderResult } from '@/app/_lib/createMockData';
 import { getLastMonthEndDay, getLastMonthStartDay, getToday, getTomorrow, getYesterday } from '@/app/_lib/getDateTime';
 import { ApiRequest, ApiResponse, SearchResult_orderList, SearchResult_ShopList } from '@/app/_lib/supabase/types';
-import { AlertType, OrderStatus, SortType } from '@/app/_types/enum';
+import { AlertType, OrderStatus, PaymentStatus, SortType } from '@/app/_types/enum';
 import { CustomTable } from '@/app/_ui/_shared/costomTable/customTable';
+import ConfirmDialog from '@/app/_ui/dirty/conformDialog';
 import { useProcessing } from '@/app/_ui/processing/processingContext';
 import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
 
@@ -46,6 +47,15 @@ export const OrderComponent = (): JSX.Element => {
   const router = useRouter();
   const { openSnackbar } = useSnackBar();
   const { openProcessing, closeProcessing } = useProcessing();
+
+  // TODO:オーダー情報のオーダーステータスに差し替えする。
+  const [orderStatus, setOrderStatus] = useState<OrderStatus>(OrderStatus.VALID);
+
+  // ステータス変更確認ダイアログ
+  const [openDialog, setOpenDialog] = useState<boolean>(false);
+  const [dialogActionHandler, setDialogActionHandler] = useState<() => void>(() => {
+    return () => {};
+  });
 
   /* useState
   ------------------------------------------------------------------ */
@@ -219,6 +229,10 @@ export const OrderComponent = (): JSX.Element => {
       setResult(null);
       setIsSearch(false);
     } else {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth',
+      });
       setResult(res);
       setIsSearch(true);
     }
@@ -237,6 +251,22 @@ export const OrderComponent = (): JSX.Element => {
     // TODO:具体的な遷移方法を考える。idでデータを管理する？
     router.push('/userDetail');
     reset();
+  };
+
+  /** キャンセルハンドラ */
+  const cancelHandler = () => {
+    const handler = () => {
+      openProcessing();
+      // TODO:キャンセルAPIの呼出し
+      setTimeout(() => {
+        closeProcessing();
+        setOrderStatus(OrderStatus.CANCEL);
+        openSnackbar(AlertType.INFO, 'ユーザー情報を承認しました。');
+      }, 3000);
+    };
+    // dialog setting
+    setDialogActionHandler(() => handler);
+    setOpenDialog(true);
   };
 
   /* csvPrinter 
@@ -278,6 +308,15 @@ export const OrderComponent = (): JSX.Element => {
       </CSVLink>
       <TestComponent />
       <Button onClick={csvPrintHandler}>テスト</Button> */}
+
+      {/* ステータス変更確認ダイアログ */}
+      <ConfirmDialog
+        open={openDialog}
+        routerPush={dialogActionHandler}
+        closeConform={() => setOpenDialog(false)}
+        title={'ステータス変更確認'}
+        message={`注文を"キャンセル"します。\n変更後、引き戻しはできませんがよろしいですか？`}
+      />
       <Paper
         sx={{
           display: 'flex',
@@ -482,9 +521,9 @@ export const OrderComponent = (): JSX.Element => {
                         <TableCell align={'right'}>{row.count}</TableCell>
                         <TableCell align={'right'}>{row.amount}</TableCell>
                         <TableCell>
-                          {OrderStatus.SALAEY_DEDUCTIONS === row.payment_state
+                          {PaymentStatus.SALAEY_DEDUCTIONS === row.payment_state
                             ? '会社清算'
-                            : OrderStatus.CREDITCARD === row.payment_state
+                            : PaymentStatus.CREDITCARD === row.payment_state
                               ? 'クレジットカード'
                               : 'PayPay'}
                         </TableCell>
@@ -492,7 +531,13 @@ export const OrderComponent = (): JSX.Element => {
                     ))
                   }
                 />
-                <OrderInfoModal open={open} setOpen={setOpen} searchedDate={new Date()} />
+                <OrderInfoModal
+                  open={open}
+                  setOpen={setOpen}
+                  searchedDate={new Date()}
+                  orderStatus={orderStatus}
+                  cancelHandler={cancelHandler}
+                />
               </>
             )}
           </form>

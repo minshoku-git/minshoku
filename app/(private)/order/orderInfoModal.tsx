@@ -1,7 +1,8 @@
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
+import { Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import * as React from 'react';
 
+import { OrderStatus } from '@/app/_types/enum';
 import CustomModal from '@/app/_ui/_shared/customModal';
 
 /** OrderInfoModalPropsコンポーネントプロパティ */
@@ -9,6 +10,8 @@ type OrderInfoModalProps = {
   open: boolean;
   setOpen: (open: boolean) => void;
   searchedDate: Date;
+  cancelHandler: () => void;
+  orderStatus: OrderStatus;
 };
 
 /**
@@ -49,6 +52,7 @@ const OrderInfoModal = (props: OrderInfoModalProps): React.JSX.Element => {
                 <TableHead>
                   <TableRow>
                     <TableCell>会社名</TableCell>
+                    <TableCell>支店名</TableCell>
                     <TableCell>部署名</TableCell>
                     <TableCell>任意項目</TableCell>
                     <TableCell>雇用形態名</TableCell>
@@ -58,6 +62,7 @@ const OrderInfoModal = (props: OrderInfoModalProps): React.JSX.Element => {
                 <TableBody sx={{ maxWidth: 300, overflowY: 'auto', maxHeight: 280 }}>
                   <TableRow>
                     <TableCell>xxxx株式会社</TableCell>
+                    <TableCell>XXXX支店</TableCell>
                     <TableCell>営業部</TableCell>
                     <TableCell>xxxxxxxx</TableCell>
                     <TableCell>社員</TableCell>
@@ -88,13 +93,20 @@ const OrderInfoModal = (props: OrderInfoModalProps): React.JSX.Element => {
                     <TableCell>チキンカレー：1個</TableCell>
                     <TableCell>500円</TableCell>
                     <TableCell>クレジットカード</TableCell>
-                    <TableCell>キャンセル</TableCell>
+                    <TableCell>{props.orderStatus === OrderStatus.VALID ? '有効' : 'キャンセル'}</TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
             </TableContainer>
           </Grid>
         </Grid>
+        {props.orderStatus === OrderStatus.VALID && (
+          <Grid sx={{ mt: 2 }} size={{ xs: 12 }}>
+            <Button fullWidth variant="contained" type="submit" color="error" onClick={props.cancelHandler}>
+              キャンセル
+            </Button>
+          </Grid>
+        )}
       </CustomModal>
     </>
   );

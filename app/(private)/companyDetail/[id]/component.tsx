@@ -1,17 +1,17 @@
 'use client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Box, Button, Divider, FormControlLabel, Paper, Switch, TextField, Typography } from '@mui/material';
+import { Box, Button, Divider, Paper, TextField, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
 import { ja } from 'date-fns/locale/ja';
-import { useParams, useRouter } from 'next/navigation';
-import { ChangeEvent, JSX, useEffect, useMemo, useRef, useState } from 'react';
+import { useParams, usePathname, useRouter } from 'next/navigation';
+import { JSX, useEffect, useMemo, useState } from 'react';
 import { SubmitHandler, useFieldArray, useForm } from 'react-hook-form';
 import { SelectElement, TextareaAutosizeElement, TextFieldElement } from 'react-hook-form-mui';
 import { TimePickerElement } from 'react-hook-form-mui/date-pickers';
 
-import { getComponyDetail, insertComponyDetail } from '@/app/_actions/actions';
+import { getComponyDetail, insertComponyDetailTEST, updateComponyDetailTEST } from '@/app/_actions/actions';
 import { DepartmentData, EmploymentData } from '@/app/_lib/createMockData';
 import { convertTimeToDate, getEditFlag } from '@/app/_lib/utill';
 import { AlertType } from '@/app/_types/enum';
@@ -40,12 +40,14 @@ export const CompanyComponent = (): JSX.Element => {
   const { openProcessing, closeProcessing } = useProcessing();
   const router = useRouter();
   const params = useParams();
-  const id = (params.id as string) ?? '';
+  const id = (params.id as string) ?? '-';
+  const pathname = usePathname();
 
   /* useState
   ------------------------------------------------------------------ */
-  const editMode = useRef<boolean>(getEditFlag(id));
+  const editMode = useMemo(() => getEditFlag(id), [id]);
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [key, setKey] = useState(0);
 
   /* useForm
   ------------------------------------------------------------------ */
@@ -66,12 +68,8 @@ export const CompanyComponent = (): JSX.Element => {
   ------------------------------------------------------------------ */
   useEffect(() => {
     const getInit = async () => {
-      if (!editMode) {
-        reset();
-        setDataLoaded(true);
-        return;
-      }
       try {
+        openProcessing();
         const data = (await getComponyDetail({ request: Number(id) })).data;
         if (!data?.id) {
           openSnackbar(AlertType.ERROR, '会社情報の取得に失敗しました。再度お試しください。');
@@ -79,18 +77,24 @@ export const CompanyComponent = (): JSX.Element => {
           return;
         }
 
+        const depInit: DepartmentData[] =
+          data?.departmentInfo.length > 0
+            ? data?.departmentInfo
+            : [{ id: '', name: '', disabled: false, delete_flag: false }];
+
         const initData: CompanyDetailFormValues = {
-          id: '-',
-          departmentInfo: [{ id: '', name: '', disabled: false }],
-          employmentTypeInfo: [
+          id: data?.id ? data?.id.toString() : '-',
+          departmentInfo: depInit,
+          employmentStatusInfo: [
             {
               id: '',
-              name: '',
-              isCreditCard: false,
-              isPayPay: false,
-              isDeduction: false,
-              burdenAmount: '0',
+              employment_status_name: '',
+              credit_flag: false,
+              paypay_flag: false,
+              deduction_flag: false,
+              set_meal_burden: 0,
               disabled: false,
+              delete_flag: false,
             },
           ],
           company_name: data?.company_name ?? '',
@@ -105,8 +109,8 @@ export const CompanyComponent = (): JSX.Element => {
           mailaddress: data?.mailaddress ?? '',
           memo: data?.memo ?? '',
           location: data?.location ?? '',
-          offer_time_from: data?.offer_time_from ? convertTimeToDate(data.offer_time_from) : null,
-          offer_time_to: data?.offer_time_to ? convertTimeToDate(data.offer_time_to) : null,
+          offer_time_from: data.offer_time_from ?? null,
+          offer_time_to: data?.offer_time_to ?? null,
           cancel_period_day: data?.cancel_period_day ? data?.cancel_period_day.toString() : '',
           cancel_period_hour: data?.cancel_period_hour ? data?.cancel_period_hour.toString() : '',
           cancel_period_minute: data?.cancel_period_minute ? data?.cancel_period_minute.toString() : '',
@@ -126,9 +130,15 @@ export const CompanyComponent = (): JSX.Element => {
         closeProcessing();
       }
     };
-    getInit();
+    if (!editMode) {
+      reset();
+      setDataLoaded(true);
+      return;
+    } else {
+      getInit();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editMode, id, reset]);
+  }, []);
 
   /* useFieldArray 部署情報
   ------------------------------------------------------------------ */
@@ -139,7 +149,7 @@ export const CompanyComponent = (): JSX.Element => {
   } = useFieldArray({ control: control, name: 'departmentInfo' });
 
   const addField_dep = () => {
-    append_dep({ name: '', id: '', disabled: false });
+    append_dep({ id: '', name: '', disabled: false, delete_flag: false });
   };
 
   // 削除対象の部署
@@ -147,7 +157,9 @@ export const CompanyComponent = (): JSX.Element => {
 
   const removeField_dep = (index: number) => {
     if (fields_dep[index].id) {
-      deleteDepArray.push(fields_dep[index] as DepartmentData);
+      const deleteData = fields_dep[index] as DepartmentData;
+      deleteData.delete_flag = true;
+      deleteDepArray.push(deleteData);
     }
     remove_deb(index);
     console.log('deleteDepArray:', deleteDepArray);
@@ -159,17 +171,18 @@ export const CompanyComponent = (): JSX.Element => {
     fields: fields_emp,
     append: append_emp,
     remove: remove_emp,
-  } = useFieldArray({ control: control, name: 'employmentTypeInfo' });
+  } = useFieldArray({ control: control, name: 'employmentStatusInfo' });
 
   const addField_emp = () => {
     append_emp({
       id: '',
-      name: '',
-      isCreditCard: false,
-      isPayPay: false,
-      isDeduction: false,
-      burdenAmount: '0',
+      employment_status_name: '',
+      credit_flag: false,
+      paypay_flag: false,
+      deduction_flag: false,
+      set_meal_burden: 0,
       disabled: false,
+      delete_flag: false,
     });
   };
 
@@ -178,7 +191,9 @@ export const CompanyComponent = (): JSX.Element => {
 
   const removeField_emp = (index: number) => {
     if (fields_emp[index].id) {
-      deleteEmpArray.push(fields_emp[index] as EmploymentData);
+      const deleteData = fields_emp[index] as EmploymentData;
+      deleteData.delete_flag = true;
+      deleteEmpArray.push(deleteData);
     }
     remove_emp(index);
     console.log('deleteEmpArray:', deleteEmpArray);
@@ -191,7 +206,10 @@ export const CompanyComponent = (): JSX.Element => {
   const insertHandler: SubmitHandler<CompanyDetailFormValues> = async (data) => {
     console.log('登録データ:', data);
     openProcessing();
-    const res = await insertComponyDetail({ request: data });
+    // const res = await insertComponyDetail({ request: data });
+    const res = await insertComponyDetailTEST({
+      request: data,
+    });
     if (res.error) {
       openSnackbar(AlertType.ERROR, '会社情報の新規登録に失敗しました。再度お試しください。' + res.error);
     } else {
@@ -203,15 +221,29 @@ export const CompanyComponent = (): JSX.Element => {
 
   /* 更新ハンドラー */
   const updateHandler: SubmitHandler<CompanyDetailFormValues> = async (data) => {
+    openProcessing();
     console.log('更新データ:', data);
-    const res = await insertComponyDetail({ request: data }); // TODO:updateに差し替え
+    const res = await updateComponyDetailTEST({
+      request: {
+        ...data,
+        departmentInfo: [...data.departmentInfo, ...deleteDepArray],
+        employmentStatusInfo: [...data.employmentStatusInfo, ...deleteEmpArray],
+      },
+    }); // TODO:updateに差し替え
     if (res.error) {
       openSnackbar(AlertType.ERROR, '会社情報の更新に失敗しました。再度お試しください。' + res.error);
     } else {
       openSnackbar(AlertType.SUCCESS, '会社情報の更新が完了しました。');
-      router.push(`/companyDetail/${res.data}`);
+      router.replace(pathname); // 遷移をトリガー
+      router.refresh(); // 上手いこと言ってないす。
+
+      // setKey((prev) => prev + 1);　あってもいいけど微妙やな、全部同じことするんか
+      // window.location.reload(); // リダイレクトなのでopenSnackbarが消える。使えない。
     }
+    closeProcessing();
   };
+
+  console.log('dirtyFields', dirtyFields);
 
   /* "URLと案内文をコピー"ハンドラー */
   const message =
@@ -235,8 +267,6 @@ export const CompanyComponent = (): JSX.Element => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  console.log(dirtyFields);
 
   /* mockData ※のちすて
   ------------------------------------------------------------------ */
@@ -320,9 +350,9 @@ export const CompanyComponent = (): JSX.Element => {
             </Button>
           </Box>
         )}
-        <Box sx={{ m: 3 }}>
+        <Box sx={{ m: 3 }} key={key}>
           {dataLoaded && (
-            <form onSubmit={handleSubmit(editMode ? insertHandler : insertHandler)}>
+            <form onSubmit={handleSubmit(editMode ? updateHandler : insertHandler)}>
               <Grid container rowSpacing={2} columnSpacing={{ xs: 1, sm: 2, md: 3 }} direction="column">
                 {editMode && (
                   <>
@@ -572,9 +602,18 @@ export const CompanyComponent = (): JSX.Element => {
                         ampm={false}
                         timeSteps={{ hours: 1, minutes: 15 }}
                         sx={TimePickerStyle}
-                        slotProps={{ textField: { size: 'small' }, inputAdornment: {} }}
+                        slotProps={{
+                          textField: { size: 'small' },
+                          inputAdornment: {},
+                        }}
                       />
-                      <Box sx={{ height: '40px', display: 'flex', alignItems: 'center' }}>
+                      <Box
+                        sx={{
+                          height: '40px',
+                          display: 'flex',
+                          alignItems: 'center',
+                        }}
+                      >
                         <Typography sx={{ mx: 1 }}>{'～'}</Typography>
                       </Box>{' '}
                       <TimePickerElement
@@ -606,7 +645,13 @@ export const CompanyComponent = (): JSX.Element => {
                       options={selectOptions.day}
                       sx={{ width: '80px' }}
                     ></SelectElement>
-                    <Box sx={{ height: '40px', display: 'flex', alignItems: 'center' }}>
+                    <Box
+                      sx={{
+                        height: '40px',
+                        display: 'flex',
+                        alignItems: 'center',
+                      }}
+                    >
                       <Typography sx={{ whiteSpace: 'nowrap' }}>{'日前'}</Typography>
                     </Box>
                     <SelectElement
@@ -617,7 +662,13 @@ export const CompanyComponent = (): JSX.Element => {
                       options={selectOptions.hours}
                       sx={{ width: '80px' }}
                     ></SelectElement>
-                    <Box sx={{ height: '40px', display: 'flex', alignItems: 'center' }}>
+                    <Box
+                      sx={{
+                        height: '40px',
+                        display: 'flex',
+                        alignItems: 'center',
+                      }}
+                    >
                       <Typography sx={{ whiteSpace: 'nowrap' }}>{'時'}</Typography>
                     </Box>
                     <SelectElement
@@ -628,7 +679,13 @@ export const CompanyComponent = (): JSX.Element => {
                       options={selectOptions.minutes}
                       sx={{ width: '80px' }}
                     ></SelectElement>
-                    <Box sx={{ height: '40px', display: 'flex', alignItems: 'center' }}>
+                    <Box
+                      sx={{
+                        height: '40px',
+                        display: 'flex',
+                        alignItems: 'center',
+                      }}
+                    >
                       <Typography sx={{ whiteSpace: 'nowrap' }}>{'分'}</Typography>
                     </Box>
                   </Box>
@@ -651,7 +708,13 @@ export const CompanyComponent = (): JSX.Element => {
                       options={selectOptions.day}
                       sx={{ width: '80px' }}
                     ></SelectElement>
-                    <Box sx={{ height: '40px', display: 'flex', alignItems: 'center' }}>
+                    <Box
+                      sx={{
+                        height: '40px',
+                        display: 'flex',
+                        alignItems: 'center',
+                      }}
+                    >
                       <Typography sx={{ whiteSpace: 'nowrap' }}>{'日前'}</Typography>
                     </Box>
                     <SelectElement
@@ -662,7 +725,13 @@ export const CompanyComponent = (): JSX.Element => {
                       options={selectOptions.hours}
                       sx={{ width: '80px' }}
                     ></SelectElement>
-                    <Box sx={{ height: '40px', display: 'flex', alignItems: 'center' }}>
+                    <Box
+                      sx={{
+                        height: '40px',
+                        display: 'flex',
+                        alignItems: 'center',
+                      }}
+                    >
                       <Typography sx={{ whiteSpace: 'nowrap' }}>{'時'}</Typography>
                     </Box>
                     <SelectElement
@@ -673,7 +742,13 @@ export const CompanyComponent = (): JSX.Element => {
                       options={selectOptions.minutes}
                       sx={{ width: '80px' }}
                     ></SelectElement>
-                    <Box sx={{ height: '40px', display: 'flex', alignItems: 'center' }}>
+                    <Box
+                      sx={{
+                        height: '40px',
+                        display: 'flex',
+                        alignItems: 'center',
+                      }}
+                    >
                       <Typography sx={{ whiteSpace: 'nowrap' }}>{'分'}</Typography>
                     </Box>
                   </Box>
@@ -709,16 +784,17 @@ const TimePickerStyle = {
 /** formValues初期値 */
 const defalutData: CompanyDetailFormValues = {
   id: '-',
-  departmentInfo: [{ id: '', name: '', disabled: false }],
-  employmentTypeInfo: [
+  departmentInfo: [{ id: '', name: '', disabled: false, delete_flag: false }],
+  employmentStatusInfo: [
     {
       id: '',
-      name: '',
-      isCreditCard: false,
-      isPayPay: false,
-      isDeduction: false,
-      burdenAmount: '0',
+      employment_status_name: '',
+      credit_flag: false,
+      paypay_flag: false,
+      deduction_flag: false,
+      set_meal_burden: 0,
       disabled: false,
+      delete_flag: false,
     },
   ],
   company_name: '',

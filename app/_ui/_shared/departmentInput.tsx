@@ -1,6 +1,6 @@
 import { Add, Delete } from '@mui/icons-material';
 import { Box, Button, Grid2 as Grid, IconButton, Typography } from '@mui/material';
-import { JSX } from 'react';
+import { JSX, Suspense } from 'react';
 import { Control, FieldArrayWithId, TextFieldElement } from 'react-hook-form-mui';
 
 import { CompanyDetailFormValues } from '@/app/_types/types';
@@ -43,7 +43,7 @@ export const DepartmentInput = (props: Props): JSX.Element => {
               <TextFieldElement
                 control={props.control}
                 name={`departmentInfo.${index}.name`}
-                disabled={field.disabled}
+                // disabled={field?.disabled ?? true}　描画注意・警告出る
                 slotProps={{ htmlInput: { maxLength: 256 } }}
                 size="small"
                 color={'primary'}
@@ -52,6 +52,7 @@ export const DepartmentInput = (props: Props): JSX.Element => {
                 }}
                 fullWidth
               />
+
               {props.fields && props.fields.length > 1 ? (
                 <IconButton
                   disabled={field.disabled}

@@ -146,7 +146,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* 読込中表示 */}
         <OpenProcessing />
         {/* 離脱確認ダイアログ */}
-        <ConfirmDialog open={openConfirmDialog} routerPush={() => pushHandler()} closeConform={() => closeConform()} />
+        <ConfirmDialog
+          open={openConfirmDialog}
+          routerPush={() => pushHandler()}
+          closeConform={() => closeConform()}
+          title={'離脱確認'}
+          message={`変更が保存されていません。\nこのページから移動してよろしいですか？`}
+        />
         {/* 全体 */}
         <Box sx={{ display: 'flex' }}>
           {/* ヘッダー */}
@@ -290,7 +296,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   }}
                   disabled={disabledTitle('/userDetail/-')}
                 >
-                  <ListItemText primary={'ユーザー詳細(後で除外)'} />
+                  <ListItemText primary={'ユーザー詳細(実際は非表示)'} />
                 </ListItemButton>
               </ListItem>
             </List>

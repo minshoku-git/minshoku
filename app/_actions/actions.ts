@@ -1,17 +1,20 @@
 'use server';
 
+import { getAllTodoName } from '@/app/_lib/supabase/supabaseFunction';
+
 import {
   get_companyDetail,
-  get_shopDetail,
-  getAllTodoName,
   insert_companyDetail,
-  insert_shopDetail,
   search_companyList,
+} from '../_lib/supabase/functions/companyFunction';
+import {
+  get_shopDetail,
+  insert_shopDetail,
   search_shopList,
-  search_userList,
   update_shopDetail,
-} from '@/app/_lib/supabase/supabaseFunction';
-
+} from '../_lib/supabase/functions/shopFunction';
+import { search_userList } from '../_lib/supabase/functions/userFuction';
+import { insert_companyDetail_TEST, update_companyDetail_TEST } from '../_lib/supabase/traTest';
 import { ApiRequest } from '../_lib/supabase/types';
 import {
   CompanyDetailFormValues,
@@ -61,6 +64,14 @@ export async function getComponyDetail(value: ApiRequest<number>) {
 
 export async function insertComponyDetail(value: ApiRequest<CompanyDetailFormValues>) {
   return await insert_companyDetail(value);
+}
+
+export async function insertComponyDetailTEST(value: ApiRequest<CompanyDetailFormValues>) {
+  return await insert_companyDetail_TEST(value);
+}
+
+export async function updateComponyDetailTEST(value: ApiRequest<CompanyDetailFormValues>) {
+  return await update_companyDetail_TEST(value);
 }
 
 /* ユーザー検索

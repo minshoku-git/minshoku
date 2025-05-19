@@ -182,3 +182,47 @@ export type t_menu_schedule_classic = {
   /** 更新日時 */
   updated_at?: DATE;
 };
+
+/** 企業部署情報テーブル */
+export type t_companies_department = {
+  /** ID（メニュースケジュールID） */
+  id?: number;
+  /** 企業ID */
+  t_companies_id?: number;
+  /** 部署名 */
+  department_name?: string;
+  /** 表示順 */
+  display_order?: number;
+  /** 削除フラグ 0:有効/1:削除 */
+  delete_flag?: number;
+  /** 登録日時 */
+  created_at?: DATE;
+  /** 更新日時 */
+  updated_at?: DATE;
+};
+
+/** 企業雇用形態テーブル */
+export type t_companies_employment_status = {
+  /** ID（企業雇用形態ID） */
+  id?: number;
+  /** 企業ID */
+  t_companies_id?: number;
+  /** 雇用形態名 */
+  employment_status_name?: string;
+  /** 表示順 */
+  display_order?: number;
+  /** 負担額 */
+  set_meal_burden?: number;
+  /** 削除フラグ ※0:有効/1:削除 */
+  delete_flag?: number;
+  /** 給与天引きFlag ※0:非/1:可 */
+  deduction_flag?: number;
+  /** クレジットカードFlag ※0:非/1:可 */
+  credit_flag?: number;
+  /** PaypayFlag ※0:非/1:可 */
+  paypay_flag?: number;
+  /** 登録日時 */
+  created_at?: DATE;
+  /** 更新日時 */
+  updated_at?: DATE;
+};

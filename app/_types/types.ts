@@ -192,7 +192,6 @@ export const CompanyDetailSchema = z
     /* 会社名 */
     company_name: z
       .string()
-      .trim()
       .nonempty({ message: formatString(MSG_REQUIRED, '会社名') })
       .max(64, formatString(MSG_MAX, '会社名', '64')),
     /* 支店名 */
@@ -246,33 +245,34 @@ export const CompanyDetailSchema = z
     departmentInfo: z
       .object({
         /* 部署ID */
-        id: z.string().optional(),
+        id: z.string(),
         /* 部署名 */
-        name: z.string().optional(),
-        /* 編集不可 true:編集不可(非活性),false:編集可能(活性) */
+        name: z.string(),
+        /* 編集不可 ※true:編集不可(非活性)/false:編集可能(活性) */
         disabled: z.boolean(),
+        /* 削除フラグ ※true:削除/false:有効 */
+        delete_flag: z.boolean(),
       })
       .array(),
     /* 雇用種別情報(Array) */
-    employmentTypeInfo: z
+    employmentStatusInfo: z
       .object({
         /* 雇用種別ID */
         id: z.string().optional(),
         /* 雇用種別名 */
-        name: z.string().optional(),
+        employment_status_name: z.string().optional(),
         /* 決済方法(控除) */
-        isDeduction: z.boolean(),
+        deduction_flag: z.boolean(),
         /* 決済方法(クレジットカード) */
-        isCreditCard: z.boolean(),
+        credit_flag: z.boolean(),
         /* 決済方法(PayPay) */
-        isPayPay: z.boolean(),
+        paypay_flag: z.boolean(),
         /* 会社負担 */
-        burdenAmount: z
-          .string()
-          .nonempty({ message: formatString(MSG_REQUIRED, '会社負担') })
-          .regex(/^[0-9]+$/, '会社負担は半角数字で入力してください。'),
+        set_meal_burden: z.number(),
         /* 編集不可 true:編集不可(非活性),false:編集可能(活性) */
         disabled: z.boolean(),
+        /* 削除フラグ ※true:削除/false:有効 */
+        delete_flag: z.boolean(),
       })
       .array(),
     /* 任意項目1(項目名) */
@@ -355,12 +355,14 @@ export const CompanyDetailSchema = z
   })
   /* 雇用種別情報 雇用形態名の重複 */
   .superRefine((data, ctx) => {
-    data.employmentTypeInfo.forEach((item, index) => {
-      const filterLength = data.employmentTypeInfo.filter((f) => f.name === item.name).length;
+    data.employmentStatusInfo.forEach((item, index) => {
+      const filterLength = data.employmentStatusInfo.filter(
+        (f) => f.employment_status_name === item.employment_status_name
+      ).length;
       if (filterLength > 1) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          path: [`employmentTypeInfo.${index}.name`],
+          path: [`employmentStatusInfo.${index}.employment_status_name`],
           message: '雇用形態名が重複しています。',
         });
       }
@@ -368,34 +370,34 @@ export const CompanyDetailSchema = z
   })
   /* 雇用種別情報 チェックボックスがすべてOFFはOUT */
   .superRefine((data, ctx) => {
-    data.employmentTypeInfo.forEach((e, index) => {
-      if (!e.name && (e.isDeduction || e.isCreditCard || e.isPayPay)) {
+    data.employmentStatusInfo.forEach((e, index) => {
+      if (!e.employment_status_name && (e.deduction_flag || e.credit_flag || e.paypay_flag)) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          path: [`employmentTypeInfo.${index}.name`],
+          path: [`employmentStatusInfo.${index}.employment_status_name`],
           message: formatString(MSG_REQUIRED, '雇用形態名'),
         });
       }
-      if (e.name && !e.isDeduction && !e.isCreditCard && !e.isPayPay) {
+      if (e.employment_status_name && !e.deduction_flag && !e.credit_flag && !e.paypay_flag) {
         // チェックボックスにメッセージが収まらないので、業務形態名で出します！
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          path: [`employmentTypeInfo.${index}.name`],
+          path: [`employmentStatusInfo.${index}.employment_status_name`],
           message: '決済方法を1つ以上選択してください。',
         });
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          path: [`employmentTypeInfo.${index}.isDeduction`],
+          path: [`employmentStatusInfo.${index}.deduction_flag`],
           message: '',
         });
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          path: [`employmentTypeInfo.${index}.isCreditCard`],
+          path: [`employmentStatusInfo.${index}.credit_flag`],
           message: '',
         });
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          path: [`employmentTypeInfo.${index}.isPayPay`],
+          path: [`employmentStatusInfo.${index}.paypay_flag`],
           message: '',
         });
       }
@@ -537,6 +539,11 @@ export const UserSearchSchema = z.object({
   user_name: z.string().optional(),
   /* 会社名 */
   company_name: z
+    .string()
+    .max(64, formatString(MSG_MAX, '会社名', '64'))
+    .optional(),
+  /* 支店名 */
+  branch_name: z
     .string()
     .max(64, formatString(MSG_MAX, '会社名', '64'))
     .optional(),
