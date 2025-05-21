@@ -24,19 +24,19 @@ export const search_userList = async (
 
   let query = supabase
     .from('t_user')
-    .select(`id,user_name,user_name_kana,t_companies_id,t_companies!inner(company_name,branch_name)`)
+    .select(`id,user_name,user_name_kana,t_companies_id,t_companies!inner(company_name,branch_name),usage_state`)
     .range(startRange, endRange);
   let queryCount = supabase
     .from('t_user')
-    .select(`id,user_name,user_name_kana,t_companies_id,t_companies!inner(company_name,branch_name)`, {
+    .select(`id,user_name,user_name_kana,t_companies_id,t_companies!inner(company_name,branch_name),usage_state`, {
       count: 'exact',
       head: true,
     });
 
   // ユーザー名
   if (req.user_name) {
-    query = query.ilike('user_name', `%${req.user_name}%`);
-    queryCount = queryCount.ilike('user_name', `%${req.user_name}%`);
+    query = query.or(`user_name.ilike.%${req.user_name}%, user_name_kana.ilike.%${req.user_name}%`);
+    queryCount = queryCount.or(`user_name.ilike.%${req.user_name}%, user_name_kana.ilike.%${req.user_name}%`);
   }
   // 会社名
   if (req.company_name) {
@@ -78,6 +78,7 @@ export const search_userList = async (
   // 件数取得
   const { count, error: countError } = (await queryCount) as PostgrestSingleResponse<SearchResult_UserList[]>;
   if (countError) {
+    console.log(countError);
     return {
       data: null,
       error: countError.message,
@@ -93,7 +94,9 @@ export const search_userList = async (
 
   // 明細行取得
   const { data, error } = (await query) as PostgrestSingleResponse<SearchResult_UserList[]>;
+
   if (error) {
+    console.log(error);
     return {
       data: null,
       error: error.message,

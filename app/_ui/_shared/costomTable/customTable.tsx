@@ -42,15 +42,8 @@ export const CustomTable = ({
   ------------------------------------------------------------------ */
   return (
     <>
-      <Divider sx={{ my: 3 }} />
       {count > 0 ? (
         <>
-          {/* 検索件数 */}
-          <Box sx={{ display: 'flex', alignItems: 'end' }}>
-            <Box color="inherit" sx={{ flexGrow: 1, fontSize: '14px' }}>
-              {paginate?.startRow} ~ {paginate?.endRow}件 / {count}件
-            </Box>
-          </Box>
           {/* 検索結果 */}
           <TableContainer sx={{ mt: 1, mb: 3 }}>
             <Table className={'table-bordered'} sx={{ tableLayout: 'auto', width: '100%' }}>

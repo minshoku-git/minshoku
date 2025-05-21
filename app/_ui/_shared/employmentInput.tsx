@@ -21,7 +21,7 @@ type Props = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   control: Control<any>;
   addField: () => void;
-  removeField: (index: number) => void;
+  removeField: (index: string) => void;
   fields?: FieldArrayWithId<CompanyDetailFormValues, 'employmentStatusInfo', 'id'>[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   setValue: any;
@@ -81,7 +81,7 @@ export const EmploymentInput = (props: Props): JSX.Element => {
                   {/* body */}
                   <TableBody>
                     {props.fields.map((field, index) => (
-                      <TableRow key={index}>
+                      <TableRow key={field.id}>
                         {/* 雇用形態名 */}
                         <TableCell align="center">
                           <TextFieldElement
@@ -132,7 +132,7 @@ export const EmploymentInput = (props: Props): JSX.Element => {
                         {/* 削除 */}
                         <TableCell align="center" sx={{ p: '2px' }}>
                           {props.fields && props.fields.length > 1 ? (
-                            <IconButton onClick={() => props.removeField(index)} disabled={field.disabled}>
+                            <IconButton onClick={() => props.removeField(field.id)} disabled={field.disabled}>
                               <Delete />
                             </IconButton>
                           ) : (

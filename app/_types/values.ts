@@ -31,3 +31,7 @@ export const IMAGE_TYPES = () => {
 export const HYPHEN = () => {
   return '-';
 };
+
+export const TEMP_HYPHEN = () => {
+  return 'temp-';
+};

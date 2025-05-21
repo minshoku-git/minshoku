@@ -1,19 +1,12 @@
-import { PostgrestSingleResponse } from "@supabase/supabase-js";
+import { PostgrestSingleResponse } from '@supabase/supabase-js';
 
-import {
-  CompanyDetailFormValues,
-  CompanySearchFormValues,
-} from "@/app/_types/types";
+import { CompanyDetailFormValues, CompanySearchFormValues } from '@/app/_types/types';
 
-import { DepartmentData, EmploymentData } from "../../createMockData";
-import { convertTimeToDate, getPagenationsItems, getRange } from "../../utill";
-import { supabase } from "../supabase";
-import {
-  t_companies,
-  t_companies_department,
-  t_companies_employment_status,
-} from "../tableTypes";
-import { ApiRequest, ApiResponse, SearchResult_CompanyList } from "../types";
+import { DepartmentData, EmploymentData } from '../../createMockData';
+import { convertTimeToDate, getPagenationsItems, getRange } from '../../utill';
+import { supabase } from '../supabase';
+import { t_companies, t_companies_department, t_companies_employment_status } from '../tableTypes';
+import { ApiRequest, ApiResponse, SearchResult_CompanyList } from '../types';
 
 /* 会社一覧
 ------------------------------------------------------------------ */
@@ -30,68 +23,58 @@ export const search_companyList = async (
 ): Promise<ApiResponse<SearchResult_CompanyList[]>> => {
   const { startRange, endRange } = getRange(values.sortItems?.nextPage ?? 0);
 
-  let query = supabase
-    .from("t_companies")
-    .select("*")
-    .range(startRange, endRange);
-  let queryCount = supabase
-    .from("t_companies")
-    .select("*", { count: "exact", head: true });
+  let query = supabase.from('t_companies').select('*').range(startRange, endRange);
+  let queryCount = supabase.from('t_companies').select('*', { count: 'exact', head: true });
 
   const req = values.request;
 
   // 会社名
   if (req.company_name) {
-    query = query.ilike("company_name", `%${req.company_name}%`);
-    queryCount = queryCount.ilike("company_name", `%${req.company_name}%`);
+    query = query.ilike('company_name', `%${req.company_name}%`);
+    queryCount = queryCount.ilike('company_name', `%${req.company_name}%`);
   }
   // 支店名
   if (req.branch_name) {
-    query = query.ilike("branch_name", `%${req.branch_name}%`);
-    queryCount = queryCount.ilike("branch_name", `%${req.branch_name}%`);
+    query = query.ilike('branch_name', `%${req.branch_name}%`);
+    queryCount = queryCount.ilike('branch_name', `%${req.branch_name}%`);
   }
   // 住所_都道府県
   if (req.prefectures) {
-    query = query.eq("prefectures", req.prefectures);
-    queryCount = queryCount.eq("prefectures", req.prefectures);
+    query = query.eq('prefectures', req.prefectures);
+    queryCount = queryCount.eq('prefectures', req.prefectures);
     // 住所_市区
     if (req.municipalities) {
-      query = query.eq("municipalities", req.municipalities);
-      queryCount = queryCount.eq("municipalities", req.municipalities);
+      query = query.eq('municipalities', req.municipalities);
+      queryCount = queryCount.eq('municipalities', req.municipalities);
       // 住所_町村
       if (req.town_area) {
-        query = query.eq("town_area", req.town_area);
-        queryCount = queryCount.eq("town_area", req.town_area);
+        query = query.eq('town_area', req.town_area);
+        queryCount = queryCount.eq('town_area', req.town_area);
       }
     }
   }
   // 利用ステータス
-  if (req.usage_state) {
-    query = query.eq("usage_state", req.usage_state);
-    queryCount = queryCount.eq("usage_state", req.usage_state);
+  if (req.companies_usage_state) {
+    query = query.eq('companies_usage_state', req.companies_usage_state);
+    queryCount = queryCount.eq('companies_usage_state', req.companies_usage_state);
   }
 
   // ソート順序
-  const sortConditions: Array<string> = [
-    "company_name",
-    "branch_name",
-    "address",
-    "usage_state",
-  ];
+  const sortConditions: Array<string> = ['company_name', 'branch_name', 'address', 'companies_usage_state'];
   // ソート用住所
   const sortConditionsAddress: Array<string> = [
-    "post_code",
-    "prefectures",
-    "municipalities",
-    "town_area",
-    "area_block_number",
-    "building_name",
+    'post_code',
+    'prefectures',
+    'municipalities',
+    'town_area',
+    'area_block_number',
+    'building_name',
   ];
 
-  const sortColumn = values.sortItems?.sortColumn ?? "company_name";
+  const sortColumn = values.sortItems?.sortColumn ?? 'company_name';
 
   // ソートの最優先項目を設定
-  if (sortColumn === "address") {
+  if (sortColumn === 'address') {
     for (const columnAdd of sortConditionsAddress) {
       query = query.order(columnAdd, {
         ascending: values.sortItems?.ascending,
@@ -104,7 +87,7 @@ export const search_companyList = async (
   // 2番目以降のソートを設定
   for (const column of sortConditions) {
     if (column !== sortColumn) {
-      if (column === "address") {
+      if (column === 'address') {
         for (const columnAdd of sortConditionsAddress) {
           query = query.order(columnAdd, { ascending: true });
         }
@@ -115,10 +98,7 @@ export const search_companyList = async (
   }
 
   // 件数取得
-  const {
-    count,
-    error: countError,
-  }: PostgrestSingleResponse<SearchResult_CompanyList[]> = await queryCount;
+  const { count, error: countError }: PostgrestSingleResponse<SearchResult_CompanyList[]> = await queryCount;
   if (countError) {
     return {
       data: null,
@@ -134,8 +114,7 @@ export const search_companyList = async (
   }
 
   // 明細行取得
-  const { data, error }: PostgrestSingleResponse<SearchResult_CompanyList[]> =
-    await query;
+  const { data, error }: PostgrestSingleResponse<SearchResult_CompanyList[]> = await query;
   if (error) {
     return {
       data: null,
@@ -151,11 +130,7 @@ export const search_companyList = async (
   }
 
   // 結果返却
-  const { startRow, endRow, totalPage } = getPagenationsItems(
-    startRange,
-    data.length,
-    count ?? 0
-  );
+  const { startRow, endRow, totalPage } = getPagenationsItems(startRange, data.length, count ?? 0);
   return {
     data,
     error: null,
@@ -179,48 +154,43 @@ export const search_companyList = async (
  * @param {ApiRequest<number>} values - 検索条件
  * @returns {Promise<ApiResponse<any>>} 検索結果
  */
-export const get_companyDetail = async (
-  values: ApiRequest<number>
-): Promise<ApiResponse<CompanyDetailFormValues>> => {
+export const get_companyDetail = async (values: ApiRequest<number>): Promise<ApiResponse<CompanyDetailFormValues>> => {
   // 1.会社情報取得
-  const query = supabase
-    .from("t_companies")
-    .select("*")
-    .eq("id", values.request)
-    .single();
+  const query = supabase.from('t_companies').select('*').eq('id', values.request).single();
   const { data, error } = (await query) as PostgrestSingleResponse<t_companies>;
 
   if (error) {
+    console.log(error);
     return { data: null, error: error.message };
   }
 
   // 2.部署情報取得
   const queryDep = supabase
-    .from("t_companies_department")
-    .select("*")
-    .eq("t_companies_id", values.request)
-    .eq("delete_flag", 0)
-    .order("id", { ascending: true }); // TODO: display_orderカラム追加と修正対応
-  const { data: dataDep, error: errorDep } =
-    (await queryDep) as PostgrestSingleResponse<t_companies_department[]>;
+    .from('t_companies_department')
+    .select('*')
+    .eq('t_companies_id', values.request)
+    .eq('delete_flag', 0)
+    .order('id', { ascending: true });
+  const { data: dataDep, error: errorDep } = (await queryDep) as PostgrestSingleResponse<t_companies_department[]>;
 
   if (errorDep) {
+    console.log(errorDep);
     return { data: null, error: errorDep.message };
   }
 
   // 3.雇用種別情報取得
   const queryEmp = supabase
-    .from("t_companies_employment_status")
-    .select("*")
-    .eq("t_companies_id", values.request)
-    .eq("delete_flag", 0)
-    .order("display_order", { ascending: true });
-  const { data: dataEmp, error: errorEmp } =
-    (await queryEmp) as PostgrestSingleResponse<
-      t_companies_employment_status[]
-    >;
+    .from('t_companies_employment_status')
+    .select('*')
+    .eq('t_companies_id', values.request)
+    .eq('delete_flag', 0)
+    .order('id', { ascending: true });
+  const { data: dataEmp, error: errorEmp } = (await queryEmp) as PostgrestSingleResponse<
+    t_companies_employment_status[]
+  >;
 
   if (errorEmp) {
+    console.log(errorEmp);
     return { data: null, error: errorEmp.message };
   }
 
@@ -229,8 +199,8 @@ export const get_companyDetail = async (
     ? dataDep.map((m) => {
         return {
           id: m.id!.toString(),
-          name: m.department_name ?? "",
-          disabled: true,
+          name: m.department_name ?? '',
+          disabled: false,
           delete_flag: false,
         };
       })
@@ -241,53 +211,52 @@ export const get_companyDetail = async (
         return {
           id: m.id!.toString(),
           t_companies_id: m.t_companies_id,
-          employment_status_name: m.employment_status_name ?? "",
+          employment_status_name: m.employment_status_name ?? '',
           disabled: true,
           deduction_flag: m.deduction_flag === 0 ? false : true,
           credit_flag: m.credit_flag === 0 ? false : true,
           paypay_flag: m.paypay_flag === 0 ? false : true,
-          set_meal_burden: m.set_meal_burden ?? 0,
+          set_meal_burden: m.set_meal_burden ? m.set_meal_burden.toString() : '0',
           delete_flag: false,
         };
       })
     : [];
 
+  console.log(data.companies_usage_state);
+
+  const res: CompanyDetailFormValues = {
+    id: data.id?.toString(),
+    company_name: data.company_name ?? '',
+    branch_name: data.branch_name ?? '',
+    post_code: data.post_code ?? '',
+    prefectures: data.prefectures ?? '',
+    municipalities: data.municipalities ?? '',
+    town_area: data.town_area ?? '',
+    area_block_number: data.area_block_number ?? '',
+    building_name: data.building_name ?? '',
+    restaurant_name: data.restaurant_name ?? '',
+    location: data.location ?? '',
+    mailaddress: data.mailaddress ?? '',
+    memo: data.memo ?? '',
+    optional_item_title_1: data.optional_item_title_1 ?? '',
+    optional_item_title_2: data.optional_item_title_2 ?? '',
+    optional_item_notes_1: data.optional_item_notes_1 ?? '',
+    optional_item_notes_2: data.optional_item_notes_2 ?? '',
+    offer_time_from: data.offer_time_from ? convertTimeToDate(data.offer_time_from) : null,
+    offer_time_to: data.offer_time_to ? convertTimeToDate(data.offer_time_to) : null,
+    order_period_day: data.order_period_day?.toString() ?? '',
+    order_period_time: data.order_period_time ? convertTimeToDate(data.order_period_time) : null,
+    cancel_period_day: data.cancel_period_day?.toString() ?? '',
+    cancel_period_time: data.cancel_period_time ? convertTimeToDate(data.cancel_period_time) : null,
+    departmentInfo: depInit,
+    employmentStatusInfo: empInit,
+    companies_usage_state: data.companies_usage_state,
+  };
+
+  console.log(res);
+
   return {
-    data: data
-      ? {
-          id: data.id?.toString(),
-          company_name: data.company_name ?? "",
-          branch_name: data.branch_name ?? "",
-          post_code: data.post_code ?? "",
-          prefectures: data.prefectures ?? "",
-          municipalities: data.municipalities ?? "",
-          town_area: data.town_area ?? "",
-          area_block_number: data.area_block_number ?? "",
-          building_name: data.building_name ?? "",
-          restaurant_name: data.restaurant_name ?? "",
-          location: data.location ?? "",
-          mailaddress: data.mailaddress ?? "",
-          memo: data.memo ?? "",
-          optional_item_title_1: data.optional_item_title_1 ?? "",
-          optional_item_title_2: data.optional_item_title_2 ?? "",
-          optional_item_notes_1: data.optional_item_notes_1 ?? "",
-          optional_item_notes_2: data.optional_item_notes_2 ?? "",
-          offer_time_from: data.offer_time_from
-            ? convertTimeToDate(data.offer_time_from)
-            : null,
-          offer_time_to: data.offer_time_to
-            ? convertTimeToDate(data.offer_time_to)
-            : null,
-          order_period_day: data.order_period_day?.toString() ?? "",
-          order_period_hour: data.order_period_hour?.toString() ?? "",
-          order_period_minute: data.order_period_minute?.toString() ?? "",
-          cancel_period_day: data.cancel_period_day?.toString() ?? "",
-          cancel_period_hour: data.cancel_period_hour?.toString() ?? "",
-          cancel_period_minute: data.cancel_period_minute?.toString() ?? "",
-          departmentInfo: depInit,
-          employmentStatusInfo: empInit,
-        }
-      : null,
+    data: data ? res : null,
     error: null,
   };
 };
@@ -304,8 +273,8 @@ export const insert_companyDetail = async (
 ): Promise<ApiResponse<number>> => {
   const req = values.request;
 
-  const { data: testData, error: testError } = await supabase.rpc("testtest", {
-    departments: ["てすと"], // trigger_errorを加えるとエラーを発生させることができます
+  const { data: testData, error: testError } = await supabase.rpc('testtest', {
+    departments: ['てすと'], // trigger_errorを加えるとエラーを発生させることができます
     employment_status: [],
     t_companies: {
       company_name: req.company_name,
@@ -319,21 +288,19 @@ export const insert_companyDetail = async (
       restaurant_name: req.restaurant_name,
       location: req.location,
       mailaddress: req.mailaddress,
-      memo: "ソースだよ",
+      memo: 'ソースだよ',
       usage_state: 0,
       optional_item_title_1: req.optional_item_title_1,
       optional_item_title_2: req.optional_item_title_2,
       optional_item_notes_1: req.optional_item_notes_1,
       optional_item_notes_2: req.optional_item_notes_2,
-      url_key: "",
+      url_key: '',
       offer_time_from: req.offer_time_from,
       offer_time_to: req.offer_time_to,
       order_period_day: Number(req.order_period_day),
-      order_period_hour: Number(req.order_period_hour),
-      order_period_minute: Number(req.order_period_minute),
+      order_period_time: req.order_period_time,
       cancel_period_day: Number(req.cancel_period_day),
-      cancel_period_hour: Number(req.cancel_period_hour),
-      cancel_period_minute: Number(req.cancel_period_minute),
+      cancel_period_time: req.order_period_time,
     },
   });
 

@@ -40,9 +40,9 @@ export enum UsageRestrictionsStatus {
   DEACTIVATION = '1', // 利用停止
 }
 
-/* 企業利用ステータス(契約ステータス？) */
-export enum UsageCompanyStatus {
-  USING = '0', // 利用中
+/* 会社利用ステータス(契約ステータス？) */
+export enum CompaniesUsageStatus {
+  AVAILABLE = '0', // 利用可能
   DEACTIVATION = '1', // 利用停止
 }
 

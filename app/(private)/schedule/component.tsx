@@ -17,6 +17,7 @@ import { AlertType, SortType, UserUsageStatus } from '@/app/_types/enum';
 import { HeaderStatus, ScheduleSearchFormValues, ScheduleSearchSchema } from '@/app/_types/types';
 import { CustomTable } from '@/app/_ui/_shared/costomTable/customTable';
 import ItemBase from '@/app/_ui/_shared/itemBase';
+import { ResultsCounter } from '@/app/_ui/_shared/resultsCounter';
 import { useProcessing } from '@/app/_ui/processing/processingContext';
 import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
 
@@ -312,31 +313,44 @@ export const ScheduleComponent = () => {
             </Grid>
           </form>
           {isSearch && result && (
-            <CustomTable
-              paginate={result.paginate}
-              header={resultHeader}
-              sortHandler={() => {}}
-              pageChangeHandler={() => {}}
-              renderBody={() =>
-                /* 検索結果 */
-                result.data?.map((row, index) => (
-                  <TableRow key={index} hover>
-                    <TableCell sx={{ whiteSpace: 'pre' }}>{row.delivery_day}</TableCell>
-                    <TableCell>
-                      {row.company_name}
-                      <br />
-                      {row.branch_name}
-                    </TableCell>
-                    <TableCell>{row.shop_name}</TableCell>
-                    <TableCell>{row.menu_name}</TableCell>
-                    <TableCell sx={{ width: '20px' }} align="right">
-                      {row.count}
-                    </TableCell>
-                    <TableCell sx={{ width: '20px' }}>{row.allergies.join(' / ')}</TableCell>
-                  </TableRow>
-                ))
-              }
-            />
+            <>
+              <Divider sx={{ my: 3 }} />
+              {result.paginate?.count && result.paginate?.count > 0 && (
+                <>
+                  <Box sx={{ display: 'flex', alignItems: 'end' }}>
+                    {/* 検索件数 */}
+                    <ResultsCounter startRow={result.paginate?.startRow} endRow={result.paginate?.endRow} count={result.paginate?.count} />
+                    {/* 合計食数 */}
+                    <Typography sx={{ fontSize: '14px', ml: 2 }}>合計食数 : 1000</Typography>
+                  </Box>
+                </>
+              )}
+              <CustomTable
+                paginate={result.paginate}
+                header={resultHeader}
+                sortHandler={() => { }}
+                pageChangeHandler={() => { }}
+                renderBody={() =>
+                  /* 検索結果 */
+                  result.data?.map((row, index) => (
+                    <TableRow key={index} hover>
+                      <TableCell sx={{ whiteSpace: 'pre' }}>{row.delivery_day}</TableCell>
+                      <TableCell>
+                        {row.company_name}
+                        <br />
+                        {row.branch_name}
+                      </TableCell>
+                      <TableCell>{row.shop_name}</TableCell>
+                      <TableCell>{row.menu_name}</TableCell>
+                      <TableCell sx={{ width: '20px' }} align="right">
+                        {row.count}
+                      </TableCell>
+                      <TableCell sx={{ width: '20px' }}>{row.allergies.join(' / ')}</TableCell>
+                    </TableRow>
+                  ))
+                }
+              />
+            </>
           )}
         </Box>
       </Paper>

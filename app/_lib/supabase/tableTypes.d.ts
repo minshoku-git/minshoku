@@ -1,3 +1,5 @@
+import { CompaniesUsageStatus } from '@/app/_types/enum';
+
 /** ユーザーテーブル */
 export type t_user = {
   /** ユーザー名 */
@@ -33,8 +35,6 @@ export type t_companies = {
   mailaddress?: string;
   /** メモ */
   memo?: string;
-  /** 利用ステータス */
-  usage_state?: number;
   /** 任意項目_項目名1 */
   optional_item_title_1?: string;
   /** 任意項目_注釈1 */
@@ -49,18 +49,16 @@ export type t_companies = {
   offer_time_from?: string;
   /** 提供時間_To */
   offer_time_to?: string;
-  /** 注文期限_Day */
+  /** 注文期限_日 */
   order_period_day?: number;
-  /** 注文期限_時 */
-  order_period_hour?: number;
-  /** 注文期限_分 */
-  order_period_minute?: number;
-  /** キャンセル期限_Day */
+  /** 注文期限_時間 */
+  order_period_time?: string;
+  /** キャンセル期限_日 */
   cancel_period_day?: number;
-  /** キャンセル期限_時 */
-  cancel_period_hour?: number;
-  /** キャンセル期限_分 */
-  cancel_period_minute?: number;
+  /** キャンセル期限_時間 */
+  cancel_period_time?: string;
+  /** 会社利用ステータス */
+  companies_usage_state: CompaniesUsageStatus;
   /** 登録日時 */
   created_at?: Date;
   /** 更新日時 */
@@ -191,8 +189,6 @@ export type t_companies_department = {
   t_companies_id?: number;
   /** 部署名 */
   department_name?: string;
-  /** 表示順 */
-  display_order?: number;
   /** 削除フラグ 0:有効/1:削除 */
   delete_flag?: number;
   /** 登録日時 */
@@ -209,8 +205,6 @@ export type t_companies_employment_status = {
   t_companies_id?: number;
   /** 雇用形態名 */
   employment_status_name?: string;
-  /** 表示順 */
-  display_order?: number;
   /** 負担額 */
   set_meal_burden?: number;
   /** 削除フラグ ※0:有効/1:削除 */

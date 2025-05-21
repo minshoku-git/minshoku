@@ -1,3 +1,4 @@
+import { UserUsageStatus } from '../_types/enum';
 import {
   SearchResult_CompanyList,
   SearchResult_orderList,
@@ -24,6 +25,7 @@ export function MockDataCreate_UserResult() {
         branch_name: i % 2 ? '本郷事業所' : i % 3 ? 'XXXX支店' : 'OOOO支店',
       },
       user_name_kana: 'ユーザーネーム' + i,
+      usage_state: 0,
     });
   }
   return result;
@@ -35,16 +37,17 @@ export function MockDataCreate_OrderResult() {
     result.push({
       id: 'id' + i.toString().padStart(4, '0'),
       delivery_day: '2025/04/' + i.toString().padStart(2, '0'),
-      user_name: 'userName' + i,
+      user_name_kana: 'userName' + i,
       company_name:
         i % 2
           ? '株式会社リファクト'
           : i % 3
             ? '株式会社エブリイホーミイホールディングス'
             : '株式会社YPYエデュケーション',
-      amount: 100 + i,
+      branch_name: i % 2 ? '本郷事業所' : i % 3 ? 'XXXX支店' : 'OOOO支店',
       count: i,
       payment_state: i % 2 ? '0' : i % 3 ? '1' : '2',
+      order_state: i % 2 ? '0' : i % 3 ? '1' : '2',
     });
   }
   return result;
@@ -101,7 +104,7 @@ export function MockDataCreate_CompanySearchResult() {
         i % 2
           ? '東京都文京区本郷３丁目４０−３ トーセービル 4階'
           : '北海道札幌市中央区北二条西三丁目 札幌北2条ビル 8階 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
-      usage_state: i % 2 ? '利用可能' : i % 3 ? '利用可能' : '利用停止',
+      companies_usage_state: i % 2 ? '利用可能' : i % 3 ? '利用可能' : '利用停止',
       area_block_number: '',
       building_name: '',
       municipalities: '',
@@ -123,7 +126,7 @@ export const MOCKDATA_employmentInfo: EmploymentData[] = [
     deduction_flag: true,
     credit_flag: true,
     paypay_flag: true,
-    set_meal_burden: 500,
+    set_meal_burden: '500',
     disabled: true,
     delete_flag: false,
   },
@@ -133,7 +136,7 @@ export const MOCKDATA_employmentInfo: EmploymentData[] = [
     deduction_flag: false,
     credit_flag: true,
     paypay_flag: true,
-    set_meal_burden: 0,
+    set_meal_burden: '0',
     disabled: true,
     delete_flag: false,
   },
@@ -143,7 +146,7 @@ export const MOCKDATA_employmentInfo: EmploymentData[] = [
     deduction_flag: false,
     credit_flag: true,
     paypay_flag: true,
-    set_meal_burden: 0,
+    set_meal_burden: '0',
     disabled: false,
     delete_flag: false,
   },
@@ -174,7 +177,7 @@ export type EmploymentData = {
   // 決済方法(PayPay)
   paypay_flag: boolean;
   // 会社負担
-  set_meal_burden: number;
+  set_meal_burden: string;
   // 編集不可 ※true:編集不可(非活性),false:編集可能(活性)
   disabled: boolean;
   // 削除フラグ ※true:削除/false:有効

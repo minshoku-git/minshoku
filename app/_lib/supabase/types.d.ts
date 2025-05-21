@@ -1,3 +1,5 @@
+import { UserUsageStatus } from '@/app/_types/enum';
+
 /* API Request / Response Type
 ------------------------------------------------------------------ */
 export type ApiRequest<T> = {
@@ -48,7 +50,7 @@ export type SearchResult_CompanyList = {
   /** 建物名 */
   building_name: string;
   /** 利用ステータス */
-  usage_state: string;
+  companies_usage_state: string;
 };
 
 /** 検索結果 ユーザー一覧 */
@@ -68,6 +70,7 @@ export type SearchResult_UserList = {
     /** 支店名 */
     branch_name: string;
   };
+  usage_state: number;
 };
 
 /** 検索結果 店舗一覧 */
@@ -90,16 +93,18 @@ export type SearchResult_orderList = {
   id: string;
   /** 納品日 */
   delivery_day: string;
-  /** ユーザー名 */
-  user_name: string;
+  /** ユーザー名カナ */
+  user_name_kana: string;
   /** 会社名 */
   company_name: string;
+  /** 支店名 */
+  branch_name: string;
   /** 個数 */
   count: number;
-  /** 総額 */
-  amount: number;
   /** 支払いステータス */
-  payment_state?: string;
+  payment_state: string;
+  /** 注文ステータス */
+  order_state: string;
 };
 
 /** 検索結果 スケジュール一覧 */

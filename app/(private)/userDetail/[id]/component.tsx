@@ -45,7 +45,7 @@ export const UserDetailComponent = (): JSX.Element => {
   /* useState
   ------------------------------------------------------------------ */
   // TODO:ユーザー情報のユーザーステータスに差し替えする。
-  const [userUsageStatus, setUserUsageStatus] = useState<UserUsageStatus>(UserUsageStatus.REGISTERED);
+  const [userUsageStatus, setUserUsageStatus] = useState<UserUsageStatus>(UserUsageStatus.PENDING);
   const [showNini, setShowNini] = useState<boolean>(true);
 
   // ステータス変更確認ダイアログ
@@ -90,7 +90,7 @@ export const UserDetailComponent = (): JSX.Element => {
       }, 3000);
     };
     // dialog setting
-    setDialogMessage(`ユーザー情報を"否認"します。\n変更後、引き戻しはできませんがよろしいですか？`);
+    setDialogMessage(`ユーザー情報を"否認"します。\nよろしいですか？`);
     setDialogActionHandler(() => handler);
     setOpenDialog(true);
   };
@@ -102,7 +102,7 @@ export const UserDetailComponent = (): JSX.Element => {
       // TODO:承認APIの呼出し
       setTimeout(() => {
         closeProcessing();
-        setUserUsageStatus(UserUsageStatus.REGISTERED);
+        setUserUsageStatus(UserUsageStatus.NOLIMIT);
         openSnackbar(AlertType.INFO, 'ユーザー情報を承認しました。');
       }, 3000);
     };
@@ -119,12 +119,29 @@ export const UserDetailComponent = (): JSX.Element => {
       // TODO:削除APIの呼出し
       setTimeout(() => {
         closeProcessing();
+        setUserUsageStatus(UserUsageStatus.DELETE);
         openSnackbar(AlertType.INFO, 'ユーザー情報を削除しました。');
-        router.push('/user');
       }, 3000);
     };
     // dialog setting
     setDialogMessage(`ユーザー情報を"削除"します。\n変更後、引き戻しはできませんがよろしいですか？`);
+    setDialogActionHandler(() => handler);
+    setOpenDialog(true);
+  };
+
+  /** 引き戻し */
+  const pullBackHandler = () => {
+    const handler = () => {
+      openProcessing();
+      // TODO:引き戻しAPIの呼出し
+      setTimeout(() => {
+        closeProcessing();
+        setUserUsageStatus(UserUsageStatus.PENDING);
+        openSnackbar(AlertType.INFO, 'ユーザー情報を引き戻しました。');
+      }, 3000);
+    };
+    // dialog setting
+    setDialogMessage(`ユーザー情報のステータスを"否認"から"申請中"に引き戻します。\nよろしいですか？`);
     setDialogActionHandler(() => handler);
     setOpenDialog(true);
   };
@@ -144,9 +161,9 @@ export const UserDetailComponent = (): JSX.Element => {
 
   /* mockData ※のちすて
   ------------------------------------------------------------------ */
-  // 登録中ステータス
-  const modeChangeHandler_REGISTERED = () => {
-    setUserUsageStatus(UserUsageStatus.REGISTERED);
+  // 制限なしステータス
+  const modeChangeHandler_NOLIMIT = () => {
+    setUserUsageStatus(UserUsageStatus.NOLIMIT);
   };
   // 申請中ステータス
   const modeChangeHandler_PENDING = () => {
@@ -155,6 +172,10 @@ export const UserDetailComponent = (): JSX.Element => {
   // 否認ステータス
   const modeChangeHandler_DISAPPROVAL = () => {
     setUserUsageStatus(UserUsageStatus.DISAPPROVAL);
+  };
+  // 削除ステータス
+  const modeChangeHandler_DELETE = () => {
+    setUserUsageStatus(UserUsageStatus.DELETE);
   };
 
   /* JSX
@@ -181,6 +202,7 @@ export const UserDetailComponent = (): JSX.Element => {
             {pageName}
           </Typography>
           <Box sx={{ flexGrow: 1 }} />
+          {/* モック用部品 */}
           <Typography>{'モック用　'}</Typography>
           <FormControlLabel
             value="end"
@@ -197,10 +219,12 @@ export const UserDetailComponent = (): JSX.Element => {
             labelPlacement="end"
           />
           <ButtonGroup sx={{ mr: 3 }}>
-            <Button onClick={() => modeChangeHandler_REGISTERED()}>登録中ステータス</Button>
+            <Button onClick={() => modeChangeHandler_NOLIMIT()}>制限なしステータス</Button>
             <Button onClick={() => modeChangeHandler_PENDING()}>申請中ステータス</Button>
             <Button onClick={() => modeChangeHandler_DISAPPROVAL()}>否認ステータス</Button>
+            <Button onClick={() => modeChangeHandler_DELETE()}>削除ステータス</Button>
           </ButtonGroup>
+          {/* モック用部品 */}
         </Grid>
         <Divider />
         <Box sx={{ m: 3 }}>
@@ -329,15 +353,21 @@ export const UserDetailComponent = (): JSX.Element => {
                   sx={{ backgroundColor: 'lightgray' }}
                   disabled
                   value={
-                    userUsageStatus === UserUsageStatus.PENDING
-                      ? '申請中'
-                      : userUsageStatus === UserUsageStatus.DISAPPROVAL
-                        ? '否認'
-                        : '登録中'
+                    UserUsageStatus.NOLIMIT === userUsageStatus
+                      ? '制限なし'
+                      : UserUsageStatus.PENDING === userUsageStatus
+                        ? '申請中'
+                        : UserUsageStatus.DEACTIVATION === userUsageStatus
+                          ? '利用停止'
+                          : UserUsageStatus.DISAPPROVAL === userUsageStatus
+                            ? '否認'
+                            : UserUsageStatus.DELETE === userUsageStatus
+                              ? '削除'
+                              : '登録中'
                   }
                 />
               </ItemBase>
-              {userUsageStatus === UserUsageStatus.REGISTERED && (
+              {userUsageStatus === UserUsageStatus.NOLIMIT && (
                 <>
                   <ItemBase name={'利用制限'} isRequired={0}>
                     <SelectElement
@@ -368,24 +398,35 @@ export const UserDetailComponent = (): JSX.Element => {
               )}
             </Grid>
             <Grid size={{ xs: 12 }} sx={{ display: 'flex', mt: 2, gap: 2 }}>
-              {/* 登録中の場合 */}
-              {userUsageStatus === UserUsageStatus.REGISTERED && (
+              {/* 制限なしの場合 */}
+              {userUsageStatus === UserUsageStatus.NOLIMIT && (
                 <Button fullWidth variant="contained" type={'submit'}>
                   更新
                 </Button>
               )}
               {/* 否認の場合 */}
               {userUsageStatus === UserUsageStatus.DISAPPROVAL && (
-                <Button
-                  fullWidth
-                  variant="contained"
-                  color="error"
-                  onClick={() => {
-                    deletelHandler();
-                  }}
-                >
-                  削除
-                </Button>
+                <>
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    onClick={() => {
+                      pullBackHandler();
+                    }}
+                  >
+                    引き戻し
+                  </Button>
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    color="error"
+                    onClick={() => {
+                      deletelHandler();
+                    }}
+                  >
+                    削除
+                  </Button>
+                </>
               )}
               {/* 申請中の場合 */}
               {userUsageStatus === UserUsageStatus.PENDING && (

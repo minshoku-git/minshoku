@@ -12,6 +12,7 @@ import { ApiRequest, ApiResponse, SearchResult_ShopList } from '@/app/_lib/supab
 import { AlertType, SortType, UserUsageStatus } from '@/app/_types/enum';
 import { HeaderStatus, ShopSearchFormValues, ShopSearchSchema } from '@/app/_types/types';
 import { CustomTable } from '@/app/_ui/_shared/costomTable/customTable';
+import { ResultsCounter } from '@/app/_ui/_shared/resultsCounter';
 import { useProcessing } from '@/app/_ui/processing/processingContext';
 import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
 
@@ -308,54 +309,64 @@ export const ShopComponent = (): JSX.Element => {
               </Button>
             </Grid>
             {isSearch && result && (
-              <CustomTable
-                paginate={result.paginate}
-                header={resultHeader}
-                sortHandler={sortHandler}
-                pageChangeHandler={pageChangeHandler}
-                renderBody={() =>
-                  result.data?.map((row, index) => (
-                    <TableRow
-                      key={index}
-                      hover
-                      sx={{ '&:hover': { cursor: 'pointer' } }}
-                      onClick={() => {
-                        linkHandler(row.id);
-                      }}
-                    >
-                      <TableCell sx={{ whiteSpace: 'pre' }} width={'20%'}>
-                        {row.shop_name}
-                      </TableCell>
-                      <TableCell
-                        width={'50%'}
-                        sx={{
-                          whiteSpace: 'pre-wrap',
-                          wordBreak: 'break-all',
-                          overflowWrap: 'break-word',
+              <>
+                <Divider sx={{ my: 3 }} />
+                {result.paginate?.count && result.paginate?.count > 0 && (
+                  <>
+                    <Box sx={{ display: 'flex', alignItems: 'end' }}>
+                      {/* 検索件数 */}
+                      <ResultsCounter startRow={result.paginate?.startRow} endRow={result.paginate?.endRow} count={result.paginate?.count} />
+                    </Box>
+                  </>
+                )}
+                <CustomTable
+                  paginate={result.paginate}
+                  header={resultHeader}
+                  sortHandler={sortHandler}
+                  pageChangeHandler={pageChangeHandler}
+                  renderBody={() =>
+                    result.data?.map((row, index) => (
+                      <TableRow
+                        key={index}
+                        hover
+                        sx={{ '&:hover': { cursor: 'pointer' } }}
+                        onClick={() => {
+                          linkHandler(row.id);
                         }}
                       >
-                        〒{row.shop_post_code}
-                        <br />
-                        {row.address}
-                      </TableCell>
-                      <TableCell width={'10%'}>
-                        {UserUsageStatus.NOLIMIT === row.usage_state
-                          ? '制限なし'
-                          : UserUsageStatus.PENDING === row.usage_state
-                            ? '申請中'
-                            : UserUsageStatus.DEACTIVATION === row.usage_state
-                              ? '利用停止'
-                              : UserUsageStatus.DISAPPROVAL === row.usage_state
-                                ? '否認'
-                                : UserUsageStatus.DELETE === row.usage_state
-                                  ? '削除'
-                                  : '登録中'}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                }
-              />
-            )}
+                        <TableCell sx={{ whiteSpace: 'pre' }} width={'20%'}>
+                          {row.shop_name}
+                        </TableCell>
+                        <TableCell
+                          width={'50%'}
+                          sx={{
+                            whiteSpace: 'pre-wrap',
+                            wordBreak: 'break-all',
+                            overflowWrap: 'break-word',
+                          }}
+                        >
+                          〒{row.shop_post_code}
+                          <br />
+                          {row.address}
+                        </TableCell>
+                        <TableCell width={'10%'}>
+                          {UserUsageStatus.NOLIMIT === row.usage_state
+                            ? '制限なし'
+                            : UserUsageStatus.PENDING === row.usage_state
+                              ? '申請中'
+                              : UserUsageStatus.DEACTIVATION === row.usage_state
+                                ? '利用停止'
+                                : UserUsageStatus.DISAPPROVAL === row.usage_state
+                                  ? '否認'
+                                  : UserUsageStatus.DELETE === row.usage_state
+                                    ? '削除'
+                                    : '登録中'}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  }
+                />
+              </>)}
           </form>
         </Box>
       </Paper>

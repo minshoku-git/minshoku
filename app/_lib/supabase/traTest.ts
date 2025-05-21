@@ -3,7 +3,7 @@ import { Client } from 'pg';
 import { CompanyDetailFormValues } from '@/app/_types/types';
 
 import { getTimeString, getToday } from '../getDateTime';
-import { getPostgreSqlItems } from '../utill';
+import { checkTempId, getPostgreSqlItems } from '../utill';
 import { t_companies, t_companies_department, t_companies_employment_status } from './tableTypes';
 import { ApiRequest, ApiResponse } from './types';
 
@@ -47,7 +47,6 @@ export const insert_companyDetail_TEST = async (
       location: req.location,
       mailaddress: req.mailaddress,
       memo: 'ソースだよ',
-      usage_state: 0,
       optional_item_title_1: req.optional_item_title_1,
       optional_item_title_2: req.optional_item_title_2,
       optional_item_notes_1: req.optional_item_notes_1,
@@ -56,11 +55,10 @@ export const insert_companyDetail_TEST = async (
       offer_time_from: getTimeString(req.offer_time_from!),
       offer_time_to: getTimeString(req.offer_time_to!),
       order_period_day: Number(req.order_period_day),
-      order_period_hour: Number(req.order_period_hour),
-      order_period_minute: Number(req.order_period_minute),
+      order_period_time: getTimeString(req.order_period_time!),
       cancel_period_day: Number(req.cancel_period_day),
-      cancel_period_hour: Number(req.cancel_period_hour),
-      cancel_period_minute: Number(req.cancel_period_minute),
+      cancel_period_time: getTimeString(req.cancel_period_time!),
+      companies_usage_state: req.companies_usage_state,
     };
     const { columns, placeholders, values } = getPostgreSqlItems(insertValues);
     const insertCompanyText = `INSERT INTO t_companies (${columns.join(',')}) VALUES (${placeholders}) RETURNING id;`;
@@ -94,18 +92,16 @@ export const insert_companyDetail_TEST = async (
     /* Insert - t_companies_employment_status
   　------------------------------------------------------------------ */
     if (req.employmentStatusInfo.length > 0) {
-      let display_order: number = 1;
       for (const item of req.employmentStatusInfo) {
         // InsertData setting
         const insertValuesEmp: Omit<t_companies_employment_status, 'id' | 'created_at' | 'updated_at'> = {
           t_companies_id: newCompanyId,
           employment_status_name: item.employment_status_name,
-          display_order: display_order,
           delete_flag: 0,
           deduction_flag: item.deduction_flag ? 1 : 0,
           credit_flag: item.credit_flag ? 1 : 0,
           paypay_flag: item.paypay_flag ? 1 : 0,
-          set_meal_burden: item.set_meal_burden,
+          set_meal_burden: Number(item.set_meal_burden),
         };
 
         const {
@@ -117,7 +113,6 @@ export const insert_companyDetail_TEST = async (
 
         // Insert
         await client.query(insertEmploymentStatusText, valuesEmp);
-        display_order++;
       }
     }
     /* --------------------------------------------------------------- */
@@ -188,7 +183,6 @@ export const update_companyDetail_TEST = async (
       location: req.location,
       mailaddress: req.mailaddress,
       memo: req.memo,
-      usage_state: 0,
       optional_item_title_1: req.optional_item_title_1,
       optional_item_title_2: req.optional_item_title_2,
       optional_item_notes_1: req.optional_item_notes_1,
@@ -196,11 +190,10 @@ export const update_companyDetail_TEST = async (
       offer_time_from: getTimeString(req.offer_time_from!),
       offer_time_to: getTimeString(req.offer_time_to!),
       order_period_day: Number(req.order_period_day),
-      order_period_hour: Number(req.order_period_hour),
-      order_period_minute: Number(req.order_period_minute),
+      order_period_time: getTimeString(req.order_period_time!),
       cancel_period_day: Number(req.cancel_period_day),
-      cancel_period_hour: Number(req.cancel_period_hour),
-      cancel_period_minute: Number(req.cancel_period_minute),
+      cancel_period_time: getTimeString(req.cancel_period_time!),
+      companies_usage_state: req.companies_usage_state,
       updated_at: timestamp,
     };
     const { columns, values } = getPostgreSqlItems(updateValues);
@@ -217,10 +210,15 @@ export const update_companyDetail_TEST = async (
 
     /* Dalete/Update/Insert - t_companies_department
   　------------------------------------------------------------------ */
+
     if (req.departmentInfo.length > 0) {
-      const deleteList = req.departmentInfo.filter((f) => f.id && f.delete_flag) ?? null;
-      const updateList = req.departmentInfo.filter((f) => f.id && !f.delete_flag) ?? null;
-      const insertList = req.departmentInfo.filter((f) => !f.id && !f.delete_flag) ?? null;
+      const deleteList = req.departmentInfo.filter((f) => !checkTempId(f.id) && f.delete_flag) ?? null;
+      const updateList = req.departmentInfo.filter((f) => !checkTempId(f.id) && !f.delete_flag) ?? null;
+      const insertList = req.departmentInfo.filter((f) => checkTempId(f.id) && !f.delete_flag) ?? null;
+
+      console.log('deleteList', deleteList);
+      console.log('updateList', updateList);
+      console.log('insertList', insertList);
 
       if (deleteList) {
         for (const item of deleteList) {
@@ -243,19 +241,11 @@ export const update_companyDetail_TEST = async (
       }
 
       if (insertList) {
-        // 最大ソート番号を取得
-        const maxDisplayOrderText = `SELECT display_order FROM t_companies_department WHERE t_companies_id = $1 ORDER BY display_order DESC LIMIT 1;`;
-        const maxDisplayOrderResult = await client.query(maxDisplayOrderText, [Number(req.id)]);
-        let maxDisplayOrder = maxDisplayOrderResult.rows.length > 0 ? maxDisplayOrderResult.rows[0].display_order : 0; // データがなければ 0 にする例
-
-        console.log('maxDisplayOrderResult' + maxDisplayOrder);
-
         for (const item of insertList) {
           const insertValuesDep: Omit<t_companies_department, 'id' | 'created_at' | 'updated_at'> = {
             t_companies_id: updatedId,
             department_name: item.name,
             delete_flag: 0,
-            display_order: ++maxDisplayOrder,
           };
           const {
             columns: columnsDep,
@@ -276,9 +266,9 @@ export const update_companyDetail_TEST = async (
     /* Dalete/Update/Insert - t_companies_employment_status
   　------------------------------------------------------------------ */
     if (req.employmentStatusInfo.length > 0) {
-      const deleteList = req.employmentStatusInfo.filter((f) => f.id && f.delete_flag) ?? null;
-      const updateList = req.employmentStatusInfo.filter((f) => f.id && !f.delete_flag) ?? null;
-      const insertList = req.employmentStatusInfo.filter((f) => !f.id && !f.delete_flag) ?? null;
+      const deleteList = req.employmentStatusInfo.filter((f) => !checkTempId(f.id) && f.delete_flag) ?? null;
+      const updateList = req.employmentStatusInfo.filter((f) => !checkTempId(f.id) && !f.delete_flag) ?? null;
+      const insertList = req.employmentStatusInfo.filter((f) => checkTempId(f.id) && !f.delete_flag) ?? null;
 
       if (deleteList) {
         for (const item of deleteList) {
@@ -291,29 +281,42 @@ export const update_companyDetail_TEST = async (
       }
       if (updateList) {
         for (const item of updateList) {
-          const updateCompanyText = `UPDATE t_companies_employment_status SET employment_status_name = $1, updated_at = $2 WHERE id = $3;`;
-          const res = await client.query(updateCompanyText, [item.employment_status_name, timestamp, item.id]);
+          const updateCompanyText = `
+            UPDATE 
+              t_companies_employment_status
+            SET 
+              employment_status_name = $1,
+              deduction_flag = $2,
+              credit_flag = $3,
+              paypay_flag = $4,
+              set_meal_burden = $5,
+              updated_at = $6
+            WHERE 
+              id = $7;`;
+          const res = await client.query(updateCompanyText, [
+            item.employment_status_name,
+            item.deduction_flag ? 1 : 0,
+            item.credit_flag ? 1 : 0,
+            item.paypay_flag ? 1 : 0,
+            item.set_meal_burden,
+            timestamp,
+            item.id,
+          ]);
           if (res.rowCount === 0) {
             throw new Error('企業雇用形態情報の更新処理に失敗しました。');
           }
         }
       }
       if (insertList) {
-        // 最大ソート番号を取得
-        const maxDisplayOrderText = `SELECT display_order FROM t_companies_employment_status WHERE t_companies_id = $1 ORDER BY display_order DESC LIMIT 1;`;
-        const maxDisplayOrderResult = await client.query(maxDisplayOrderText, [req.id]);
-        let maxDisplayOrder = maxDisplayOrderResult.rows.length > 0 ? maxDisplayOrderResult.rows[0].display_order : 0;
-
         for (const item of insertList) {
           const insertValuesEmp: Omit<t_companies_employment_status, 'id' | 'created_at' | 'updated_at'> = {
             t_companies_id: updatedId,
             employment_status_name: item.employment_status_name,
-            display_order: ++maxDisplayOrder,
             delete_flag: 0,
             deduction_flag: item.deduction_flag ? 1 : 0,
             credit_flag: item.credit_flag ? 1 : 0,
             paypay_flag: item.paypay_flag ? 1 : 0,
-            set_meal_burden: item.set_meal_burden,
+            set_meal_burden: Number(item.set_meal_burden),
           };
           const {
             columns: columnsEmp,

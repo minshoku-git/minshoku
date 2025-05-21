@@ -1,4 +1,4 @@
-import { HYPHEN, pageMaxCount } from '../_types/values';
+import { HYPHEN, pageMaxCount, TEMP_HYPHEN } from '../_types/values';
 /**
  * getFile.ts
  * 汎用的な関数を管理します。
@@ -92,4 +92,15 @@ export const getPostgreSqlItems = (
   const values = Object.values(insertValues);
 
   return { columns, placeholders, values };
+};
+
+/**
+ * checkTempId
+ * 会社情報の部署情報、雇用種別情報の新規登録データを確認する。
+ * "temp-"から始まるIDは新規登録データです。
+ * @param {string} id 入力内容
+ * @returns {boolean} TRUE:新規登録データ、FALSE:既存データ
+ */
+export const checkTempId = (id: string): boolean => {
+  return id.indexOf(TEMP_HYPHEN()) === 0 ? true : false;
 };

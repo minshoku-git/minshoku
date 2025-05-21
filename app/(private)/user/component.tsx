@@ -9,9 +9,10 @@ import { SelectElement, TextFieldElement } from 'react-hook-form-mui';
 
 import { searchUserList } from '@/app/_actions/actions';
 import { ApiRequest, ApiResponse, SearchResult_UserList } from '@/app/_lib/supabase/types';
-import { AlertType, SortType } from '@/app/_types/enum';
+import { AlertType, SortType, UserUsageStatus } from '@/app/_types/enum';
 import { HeaderStatus, UserSearchFormValues, UserSearchSchema } from '@/app/_types/types';
 import { CustomTable } from '@/app/_ui/_shared/costomTable/customTable';
+import { ResultsCounter } from '@/app/_ui/_shared/resultsCounter';
 import { useProcessing } from '@/app/_ui/processing/processingContext';
 import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
 
@@ -29,6 +30,7 @@ const resultHeader: Array<HeaderStatus> = [
   { name: 'ユーザー名', variableName: 'user_name', sort: SortType.ASC },
   { name: '会社名', variableName: 'company_name', sort: SortType.ASC },
   { name: '支店名', variableName: 'branch_name', sort: SortType.ASC },
+  { name: 'ステータス', variableName: 'usage_state', sort: SortType.ASC },
 ];
 
 /**
@@ -264,32 +266,55 @@ export const UserComponent = ({ todos }: Props): JSX.Element => {
             </Grid>
             {/* ======= 検索結果 ========================================== */}
             {isSearch && result && (
-              <CustomTable
-                paginate={result.paginate}
-                header={resultHeader}
-                sortHandler={sortHandler}
-                pageChangeHandler={() => {}}
-                renderBody={() =>
-                  /* 検索結果 */
-                  result.data?.map((row, index) => (
-                    <TableRow
-                      key={index}
-                      hover
-                      sx={{ '&:hover': { cursor: 'pointer' } }}
-                      onClick={() => {
-                        linkHandler(row.id);
-                      }}
-                    >
-                      <TableCell sx={{ whiteSpace: 'pre' }}>
-                        {row.user_name} / {row.user_name_kana}
-                      </TableCell>
-                      <TableCell sx={{ whiteSpace: 'pre' }}>{row.t_companies.company_name}</TableCell>
-                      <TableCell sx={{ whiteSpace: 'pre' }}>{row.t_companies.branch_name}</TableCell>
-                    </TableRow>
-                  ))
-                }
-              />
-            )}
+              <>
+                <Divider sx={{ my: 3 }} />
+                {result.paginate?.count && result.paginate?.count > 0 && (
+                  <>
+                    <Box sx={{ display: 'flex', alignItems: 'end' }}>
+                      {/* 検索件数 */}
+                      <ResultsCounter startRow={result.paginate?.startRow} endRow={result.paginate?.endRow} count={result.paginate?.count} />
+                    </Box>
+                  </>
+                )}
+                <CustomTable
+                  paginate={result.paginate}
+                  header={resultHeader}
+                  sortHandler={sortHandler}
+                  pageChangeHandler={() => { }}
+                  renderBody={() =>
+                    /* 検索結果 */
+                    result.data?.map((row, index) => (
+                      <TableRow
+                        key={index}
+                        hover
+                        sx={{ '&:hover': { cursor: 'pointer' } }}
+                        onClick={() => {
+                          linkHandler(row.id);
+                        }}
+                      >
+                        <TableCell sx={{ whiteSpace: 'pre' }}>
+                          {row.user_name} / {row.user_name_kana}
+                        </TableCell>
+                        <TableCell sx={{ whiteSpace: 'pre' }}>{row.t_companies.company_name}</TableCell>
+                        <TableCell sx={{ whiteSpace: 'pre' }}>{row.t_companies.branch_name}</TableCell>
+                        <TableCell sx={{ whiteSpace: 'pre' }}>
+                          {UserUsageStatus.NOLIMIT === row.usage_state.toString()
+                            ? '制限なし'
+                            : UserUsageStatus.PENDING === row.usage_state.toString()
+                              ? '申請中'
+                              : UserUsageStatus.DEACTIVATION === row.usage_state.toString()
+                                ? '利用停止'
+                                : UserUsageStatus.DISAPPROVAL === row.usage_state.toString()
+                                  ? '否認'
+                                  : UserUsageStatus.DELETE === row.usage_state.toString()
+                                    ? '削除'
+                                    : '登録中'}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  }
+                />
+              </>)}
           </form>
         </Box>
       </Paper>

@@ -1,5 +1,5 @@
 import { Close } from '@mui/icons-material';
-import { IconButton } from '@mui/material';
+import { Button, IconButton } from '@mui/material';
 import Box from '@mui/material/Box';
 import Modal from '@mui/material/Modal';
 import Typography from '@mui/material/Typography';
@@ -60,9 +60,9 @@ const CustomModal = (props: CustomModalProps): JSX.Element => {
             </Typography>
           )}
           <Box sx={{ flexGrow: 1 }} />
-          <IconButton onClick={props.onClose}>
-            <Close />
-          </IconButton>
+          <Button variant="contained" type="submit" color="info" startIcon={<Close />} onClick={props.onClose}>
+            閉じる
+          </Button>
         </Box>
         {props.children}
       </Box>

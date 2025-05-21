@@ -9,7 +9,7 @@ type Props = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   control: Control<any>;
   addField: () => void;
-  removeField: (index: number) => void;
+  removeField: (index: string) => void;
   fields?: FieldArrayWithId<CompanyDetailFormValues, 'departmentInfo', 'id'>[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   setValue: any;
@@ -30,7 +30,7 @@ export const DepartmentInput = (props: Props): JSX.Element => {
     <Grid container>
       {props.fields && props.fields.length > 0 ? (
         props.fields.map((field, index) => (
-          <Grid key={index}>
+          <Grid key={field.id}>
             <Box
               sx={{
                 display: 'flex',
@@ -43,7 +43,6 @@ export const DepartmentInput = (props: Props): JSX.Element => {
               <TextFieldElement
                 control={props.control}
                 name={`departmentInfo.${index}.name`}
-                // disabled={field?.disabled ?? true}　描画注意・警告出る
                 slotProps={{ htmlInput: { maxLength: 256 } }}
                 size="small"
                 color={'primary'}
@@ -57,7 +56,7 @@ export const DepartmentInput = (props: Props): JSX.Element => {
                 <IconButton
                   disabled={field.disabled}
                   onClick={() => {
-                    props.removeField(index);
+                    props.removeField(field.id);
                   }}
                 >
                   <Delete />

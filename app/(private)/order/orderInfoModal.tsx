@@ -1,4 +1,14 @@
-import { Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
+import {
+  Box,
+  Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Typography,
+} from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import * as React from 'react';
 
@@ -93,20 +103,23 @@ const OrderInfoModal = (props: OrderInfoModalProps): React.JSX.Element => {
                     <TableCell>チキンカレー：1個</TableCell>
                     <TableCell>500円</TableCell>
                     <TableCell>クレジットカード</TableCell>
-                    <TableCell>{props.orderStatus === OrderStatus.VALID ? '有効' : 'キャンセル'}</TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        {props.orderStatus === OrderStatus.VALID ? '有効' : 'キャンセル'}
+                        <Box sx={{ flexGrow: 1 }} />
+                        {props.orderStatus === OrderStatus.VALID && (
+                          <Button variant="contained" type="submit" color="error" onClick={props.cancelHandler}>
+                            キャンセル
+                          </Button>
+                        )}
+                      </Box>
+                    </TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
             </TableContainer>
           </Grid>
         </Grid>
-        {props.orderStatus === OrderStatus.VALID && (
-          <Grid sx={{ mt: 2 }} size={{ xs: 12 }}>
-            <Button fullWidth variant="contained" type="submit" color="error" onClick={props.cancelHandler}>
-              キャンセル
-            </Button>
-          </Grid>
-        )}
       </CustomModal>
     </>
   );

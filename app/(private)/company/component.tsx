@@ -9,9 +9,10 @@ import { SelectElement, TextFieldElement } from 'react-hook-form-mui';
 
 import { searchComponyList } from '@/app/_actions/actions';
 import { ApiRequest, ApiResponse, SearchResult_CompanyList } from '@/app/_lib/supabase/types';
-import { AlertType, SortType, UserUsageStatus } from '@/app/_types/enum';
+import { AlertType, CompaniesUsageStatus, SortType, UserUsageStatus } from '@/app/_types/enum';
 import { CompanySearchFormValues, CompanySearchSchema, HeaderStatus } from '@/app/_types/types';
 import { CustomTable } from '@/app/_ui/_shared/costomTable/customTable';
+import { ResultsCounter } from '@/app/_ui/_shared/resultsCounter';
 import { useProcessing } from '@/app/_ui/processing/processingContext';
 import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
 
@@ -25,7 +26,7 @@ const resultHeader: Array<HeaderStatus> = [
   { name: '会社名', variableName: 'company_name', sort: SortType.ASC },
   { name: '支店名', variableName: 'branch_name', sort: SortType.ASC },
   { name: '住所', variableName: 'address', sort: SortType.ASC },
-  { name: 'ステータス', variableName: 'usage_state', sort: SortType.ASC },
+  { name: '会社利用ステータス', variableName: 'companies_usage_state', sort: SortType.ASC },
 ];
 
 /**
@@ -49,7 +50,7 @@ export const CompanyComponent = (): JSX.Element => {
       prefectures: '',
       municipalities: '',
       town_area: '',
-      usage_state: '',
+      companies_usage_state: undefined,
     },
     sortItems: {
       nextPage: 1,
@@ -81,7 +82,7 @@ export const CompanyComponent = (): JSX.Element => {
       prefectures: '',
       municipalities: '',
       town_area: '',
-      usage_state: '',
+      companies_usage_state: undefined,
     },
   });
 
@@ -287,7 +288,7 @@ export const CompanyComponent = (): JSX.Element => {
                   ></SelectElement>
                 </Box>
               </ItemBase>
-              <ItemBase name={'ステータス'} isRequired={2}>
+              <ItemBase name={'会社利用ステータス'} isRequired={2}>
                 <Box
                   sx={{
                     display: 'flex',
@@ -299,13 +300,12 @@ export const CompanyComponent = (): JSX.Element => {
                   <SelectElement
                     control={control}
                     size="small"
-                    name="usage_state"
+                    name="companies_usage_state"
                     fullWidth
                     options={[
                       { id: '', label: '未選択' },
-                      { id: '10', label: '契約ステータス1' },
-                      { id: '20', label: '契約ステータス2' },
-                      { id: '30', label: '契約ステータス3' },
+                      { id: CompaniesUsageStatus.AVAILABLE, label: '利用可能' },
+                      { id: CompaniesUsageStatus.DEACTIVATION, label: '利用停止' },
                     ]}
                   ></SelectElement>
                 </Box>
@@ -331,7 +331,16 @@ export const CompanyComponent = (): JSX.Element => {
               </Button>
             </Grid>
             {/* ======= 検索結果 ========================================== */}
-            {isSearch && result && (
+            {isSearch && result && (<>
+              <Divider sx={{ my: 3 }} />
+              {result.paginate?.count && result.paginate?.count > 0 && (
+                <>
+                  <Box sx={{ display: 'flex', alignItems: 'end' }}>
+                    {/* 検索件数 */}
+                    <ResultsCounter startRow={result.paginate?.startRow} endRow={result.paginate?.endRow} count={result.paginate?.count} />
+                  </Box>
+                </>
+              )}
               <CustomTable
                 paginate={result.paginate}
                 header={resultHeader}
@@ -367,23 +376,13 @@ export const CompanyComponent = (): JSX.Element => {
                         {row.building_name}
                       </TableCell>
                       <TableCell width={'10%'}>
-                        {UserUsageStatus.NOLIMIT === row.usage_state
-                          ? '制限なし'
-                          : UserUsageStatus.PENDING === row.usage_state
-                            ? '申請中'
-                            : UserUsageStatus.DEACTIVATION === row.usage_state
-                              ? '利用停止'
-                              : UserUsageStatus.DISAPPROVAL === row.usage_state
-                                ? '否認'
-                                : UserUsageStatus.DELETE === row.usage_state
-                                  ? '削除'
-                                  : '登録中'}
+                        {CompaniesUsageStatus.AVAILABLE === row.companies_usage_state ? '利用可能' : '利用停止'}
                       </TableCell>
                     </TableRow>
                   ))
                 }
               />
-            )}
+            </>)}
           </form>
         </Box>
       </Paper>

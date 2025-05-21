@@ -14,9 +14,10 @@ import { DatePickerElement } from 'react-hook-form-mui/date-pickers';
 
 import { MockDataCreate_OrderResult } from '@/app/_lib/createMockData';
 import { getLastMonthEndDay, getLastMonthStartDay, getToday, getTomorrow, getYesterday } from '@/app/_lib/getDateTime';
-import { ApiRequest, ApiResponse, SearchResult_orderList, SearchResult_ShopList } from '@/app/_lib/supabase/types';
+import { ApiRequest, ApiResponse, SearchResult_orderList } from '@/app/_lib/supabase/types';
 import { AlertType, OrderStatus, PaymentStatus, SortType } from '@/app/_types/enum';
 import { CustomTable } from '@/app/_ui/_shared/costomTable/customTable';
+import { ResultsCounter } from '@/app/_ui/_shared/resultsCounter';
 import ConfirmDialog from '@/app/_ui/dirty/conformDialog';
 import { useProcessing } from '@/app/_ui/processing/processingContext';
 import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
@@ -31,10 +32,10 @@ const pageName = 'オーダー一覧';
 const resultHeader: Array<HeaderStatus> = [
   { name: '配達日', variableName: 'delivery_day', sort: SortType.ASC },
   { name: 'ユーザー名', variableName: 'user_name', sort: SortType.ASC },
-  { name: '会社名', variableName: 'company_name', sort: SortType.ASC },
+  { name: '会社名 / 支店名', variableName: 'company_name', sort: SortType.ASC },
   { name: '食数', variableName: 'count', sort: SortType.ASC },
-  { name: '金額', variableName: 'amount', sort: SortType.ASC },
   { name: '決済方法', variableName: 'payment_state', sort: SortType.ASC },
+  { name: '注文ステータス', variableName: 'order_state', sort: SortType.ASC },
 ];
 
 /**
@@ -54,7 +55,7 @@ export const OrderComponent = (): JSX.Element => {
   // ステータス変更確認ダイアログ
   const [openDialog, setOpenDialog] = useState<boolean>(false);
   const [dialogActionHandler, setDialogActionHandler] = useState<() => void>(() => {
-    return () => {};
+    return () => { };
   });
 
   /* useState
@@ -436,7 +437,7 @@ export const OrderComponent = (): JSX.Element => {
                   <TextFieldElement control={control} size="small" color={'primary'} name="userName" fullWidth />
                 </Box>
               </ItemBase>
-              <ItemBase name={'会社名'} isRequired={2}>
+              <ItemBase name={'会社名 / 支店名'} isRequired={2}>
                 <Box
                   sx={{
                     display: 'flex',
@@ -448,19 +449,7 @@ export const OrderComponent = (): JSX.Element => {
                   <TextFieldElement control={control} size="small" color={'primary'} name="companyName" fullWidth />
                 </Box>
               </ItemBase>
-              <ItemBase name={'支店名'} isRequired={2}>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    width: '640px',
-                  }}
-                >
-                  <TextFieldElement control={control} size="small" color={'primary'} name="branchName" fullWidth />
-                </Box>
-              </ItemBase>
-              <ItemBase name={'契約ステータス'} isRequired={2}>
+              <ItemBase name={'注文ステータス'} isRequired={2}>
                 <Box
                   sx={{
                     display: 'flex',
@@ -476,8 +465,8 @@ export const OrderComponent = (): JSX.Element => {
                     fullWidth
                     options={[
                       { id: '', label: '未選択' },
-                      { id: '10', label: '利用中' },
-                      { id: '20', label: '利用停止' },
+                      { id: '10', label: '有効' },
+                      { id: '20', label: 'キャンセル' },
                     ]}
                   ></SelectElement>
                 </Box>
@@ -504,6 +493,16 @@ export const OrderComponent = (): JSX.Element => {
             </Grid>
             {isSearch && result && (
               <>
+                <Divider sx={{ my: 3 }} />
+                {result.paginate?.count && result.paginate?.count > 0 && (
+                  <>
+                    <Box sx={{ display: 'flex', alignItems: 'end' }}>
+                      {/* 検索件数 */}
+                      <ResultsCounter startRow={result.paginate?.startRow} endRow={result.paginate?.endRow} count={result.paginate?.count} />
+                    </Box>
+                  </>
+                )}
+                {/* 検索結果 */}
                 <CustomTable
                   paginate={result.paginate}
                   header={resultHeader}
@@ -515,11 +514,14 @@ export const OrderComponent = (): JSX.Element => {
                       <TableRow key={index} hover sx={{ '&:hover': { cursor: 'pointer' } }} onClick={openModal}>
                         <TableCell>{row.delivery_day}</TableCell>
                         <TableCell sx={{ whiteSpace: 'pre' }} key={index}>
-                          {row.user_name}
+                          {row.user_name_kana}
                         </TableCell>
-                        <TableCell>{row.company_name}</TableCell>
+                        <TableCell>
+                          {row.company_name}
+                          <br />
+                          {row.branch_name}
+                        </TableCell>
                         <TableCell align={'right'}>{row.count}</TableCell>
-                        <TableCell align={'right'}>{row.amount}</TableCell>
                         <TableCell>
                           {PaymentStatus.SALAEY_DEDUCTIONS === row.payment_state
                             ? '会社清算'
@@ -527,6 +529,7 @@ export const OrderComponent = (): JSX.Element => {
                               ? 'クレジットカード'
                               : 'PayPay'}
                         </TableCell>
+                        <TableCell>{OrderStatus.CANCEL === row.order_state ? 'キャンセル' : '有効'}</TableCell>
                       </TableRow>
                     ))
                   }
