@@ -5,7 +5,7 @@ import Grid from '@mui/material/Grid2';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { ja } from 'date-fns/locale';
-import { useState } from 'react';
+import { JSX, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { TextFieldElement } from 'react-hook-form-mui';
 import { DatePickerElement } from 'react-hook-form-mui/date-pickers';
@@ -37,7 +37,7 @@ const resultHeader: Array<HeaderStatus> = [
  * スケジュール一覧Component
  * @returns {JSX.Element} JSX
  */
-export const ScheduleComponent = () => {
+export const ScheduleComponent = (): JSX.Element => {
   /* initialize
   ------------------------------------------------------------------ */
   const { openSnackbar } = useSnackBar();
@@ -45,7 +45,14 @@ export const ScheduleComponent = () => {
 
   /* useState
   ------------------------------------------------------------------ */
-  const [isSearch, setIsSearch] = useState(false); // 検索状態
+  /* ソート配列 */
+  const [sortArray, setSortArray] = useState<HeaderStatus[]>(resultHeader);
+  /* 現在のソート対象項目 */
+  const [sortTarget, setSortTarget] = useState<HeaderStatus>(resultHeader[0]);
+
+  /* 検索結果 */
+  const [isSearch, setIsSearch] = useState(false);
+  /* 検索条件 */
   const [condition, setCondition] = useState<ApiRequest<ScheduleSearchFormValues>>({
     request: {
       company_name: '',
@@ -59,6 +66,7 @@ export const ScheduleComponent = () => {
       ascending: true,
     },
   });
+  /* 検索結果 */
   const [result, setResult] = useState<ApiResponse<SearchResult_ScheduleList[]> | null>({
     data: null,
     error: null,
@@ -70,6 +78,7 @@ export const ScheduleComponent = () => {
       totalPage: 0,
     },
   });
+
   /* useForm
   ------------------------------------------------------------------ */
   const { reset, control, setValue, handleSubmit } = useForm<ScheduleSearchFormValues>({
@@ -315,7 +324,7 @@ export const ScheduleComponent = () => {
           {isSearch && result && (
             <>
               <Divider sx={{ my: 3 }} />
-              {result.paginate?.count && result.paginate?.count > 0 && (
+              {result.paginate?.count && result.paginate?.count > 0 ? (
                 <>
                   <Box sx={{ display: 'flex', alignItems: 'end' }}>
                     {/* 検索件数 */}
@@ -324,12 +333,16 @@ export const ScheduleComponent = () => {
                     <Typography sx={{ fontSize: '14px', ml: 2 }}>合計食数 : 1000</Typography>
                   </Box>
                 </>
-              )}
+              ) : (<></>)}
               <CustomTable
                 paginate={result.paginate}
-                header={resultHeader}
                 sortHandler={() => { }}
                 pageChangeHandler={() => { }}
+                header={resultHeader}
+                sortArray={sortArray}
+                setSortArray={setSortArray}
+                sortTarget={sortTarget}
+                setSortTarget={setSortTarget}
                 renderBody={() =>
                   /* 検索結果 */
                   result.data?.map((row, index) => (
@@ -345,7 +358,7 @@ export const ScheduleComponent = () => {
                       <TableCell sx={{ width: '20px' }} align="right">
                         {row.count}
                       </TableCell>
-                      <TableCell sx={{ width: '20px' }}>{row.allergies.join(' / ')}</TableCell>
+                      <TableCell sx={{ width: '20px' }}>{row.allergen_labelling.join(' / ')}</TableCell>
                     </TableRow>
                   ))
                 }

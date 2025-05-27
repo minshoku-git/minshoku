@@ -1,6 +1,5 @@
 'use client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Add, Delete } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -13,7 +12,7 @@ import Grid from '@mui/material/Grid2';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
 import { ja } from 'date-fns/locale/ja';
-import { useParams, usePathname, useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { JSX, useEffect, useMemo, useState } from 'react';
 import { SubmitHandler, useFieldArray, useForm } from 'react-hook-form';
 import {
@@ -25,12 +24,13 @@ import { TimePickerElement } from 'react-hook-form-mui/date-pickers';
 
 import {
   getComponyDetail,
-  insertComponyDetailTEST,
-  updateComponyDetailTEST,
+  insertComponyDetail,
+  updateComponyDetail,
 } from '@/app/_actions/actions';
 import { DepartmentData, EmploymentData } from '@/app/_lib/createMockData';
+import { getTodayZeroHour } from '@/app/_lib/getDateTime';
 import { checkTempId, getEditFlag } from '@/app/_lib/utill';
-import { AlertType, CompaniesUsageStatus } from '@/app/_types/enum';
+import { AlertType, UsageStatus } from '@/app/_types/enum';
 import {
   CompanyDetailFormValues,
   CompanyDetailSchema,
@@ -61,7 +61,6 @@ export const CompanyComponent = (): JSX.Element => {
   const router = useRouter();
   const params = useParams();
   const id = (params.id as string) ?? '-';
-  const pathname = usePathname();
   const tempHypen = TEMP_HYPHEN()
 
   /* useState
@@ -89,91 +88,12 @@ export const CompanyComponent = (): JSX.Element => {
     mode: 'onSubmit',
     reValidateMode: 'onSubmit',
     resolver: zodResolver(CompanyDetailSchema),
-    defaultValues: defalutData,
+    defaultValues: getInitData(null),
   });
 
   /* useEffect
   ------------------------------------------------------------------ */
   useEffect(() => {
-    const getInit = async () => {
-      try {
-        openProcessing();
-        const data = (await getComponyDetail({ request: Number(id) })).data;
-        if (!data?.id) {
-          openSnackbar(
-            AlertType.ERROR,
-            '会社情報の取得に失敗しました。再度お試しください。'
-          );
-          router.push('/company');
-          return;
-        }
-
-        const depInit: DepartmentData[] =
-          data.departmentInfo.length > 0
-            ? data?.departmentInfo
-            : [
-              {
-                id: '',
-                name: '設定なし',
-                disabled: false,
-                delete_flag: false,
-              },
-            ];
-
-        const initData: CompanyDetailFormValues = {
-          id: data?.id ? data?.id.toString() : '-',
-          departmentInfo: depInit,
-          employmentStatusInfo: data.employmentStatusInfo
-            ? data.employmentStatusInfo
-            : [
-              {
-                id: '',
-                employment_status_name: '社員',
-                credit_flag: false,
-                paypay_flag: false,
-                deduction_flag: false,
-                set_meal_burden: '0',
-                disabled: false,
-                delete_flag: false,
-              },
-            ],
-          company_name: data?.company_name ?? '',
-          branch_name: data?.branch_name ?? '',
-          post_code: data?.post_code ?? '',
-          prefectures: data?.prefectures ?? '',
-          municipalities: data?.municipalities ?? '',
-          town_area: data?.town_area ?? '',
-          area_block_number: data?.area_block_number ?? '',
-          building_name: data?.building_name ?? '',
-          restaurant_name: data?.restaurant_name ?? '',
-          mailaddress: data?.mailaddress ?? '',
-          memo: data?.memo ?? '',
-          location: data?.location ?? '',
-          offer_time_from: data.offer_time_from ?? null,
-          offer_time_to: data?.offer_time_to ?? null,
-          cancel_period_day: data?.cancel_period_day
-            ? data?.cancel_period_day.toString()
-            : '',
-          cancel_period_time: data?.cancel_period_time ?? null,
-          order_period_day: data?.order_period_day
-            ? data?.order_period_day.toString()
-            : '',
-          order_period_time: data?.order_period_time ?? null,
-          optional_item_title_1: data?.optional_item_title_1 ?? '',
-          optional_item_title_2: data?.optional_item_title_2 ?? '',
-          optional_item_notes_1: data?.optional_item_notes_1 ?? '',
-          optional_item_notes_2: data?.optional_item_notes_2 ?? '',
-          companies_usage_state:
-            data?.companies_usage_state ?? CompaniesUsageStatus.AVAILABLE,
-        };
-        reset(initData);
-      } catch (error) {
-        console.error('取得失敗:', error);
-      } finally {
-        setDataLoaded(true);
-        closeProcessing();
-      }
-    };
     if (!editMode) {
       reset();
       setDataLoaded(true);
@@ -184,10 +104,30 @@ export const CompanyComponent = (): JSX.Element => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /** 初期表示データ取得 */
+  const getInit = async () => {
+    try {
+      openProcessing();
+      const data = (await getComponyDetail({ request: Number(id) })).data;
+      if (!data?.id) {
+        openSnackbar(
+          AlertType.ERROR,
+          '会社情報の取得に失敗しました。再度お試しください。'
+        );
+        router.push('/company');
+        return;
+      }
+      reset(getInitData(data));
+    } catch (error) {
+      console.error('取得失敗:', error);
+    } finally {
+      setDataLoaded(true);
+      closeProcessing();
+    }
+  };
+
   /* useFieldArray 部署情報
   ------------------------------------------------------------------ */
-
-
   const {
     fields: fields_dep,
     append: append_dep,
@@ -203,9 +143,6 @@ export const CompanyComponent = (): JSX.Element => {
     });
     setTempIdCounterDep((x) => x + 1);
   };
-
-  // 削除対象の部署
-
 
   const removeField_dep = (id: string) => {
     const delIndex = fields_dep.findIndex((f) => f.id === id);
@@ -254,15 +191,13 @@ export const CompanyComponent = (): JSX.Element => {
 
   /* functions
   ------------------------------------------------------------------ */
-
   /* 新規登録ハンドラー */
   const insertHandler: SubmitHandler<CompanyDetailFormValues> = async (
     data
   ) => {
     console.log('登録データ:', data);
     openProcessing();
-    // const res = await insertComponyDetail({ request: data });
-    const res = await insertComponyDetailTEST({
+    const res = await insertComponyDetail({
       request: data,
     });
     if (res.error) {
@@ -282,26 +217,23 @@ export const CompanyComponent = (): JSX.Element => {
     data
   ) => {
     openProcessing();
-    console.log('更新データ:', data);
-    const res = await updateComponyDetailTEST({
+    const res = await updateComponyDetail({
       request: {
         ...data,
         departmentInfo: [...data.departmentInfo, ...deleteDepArray],
         employmentStatusInfo: [...data.employmentStatusInfo, ...deleteEmpArray],
       },
-    }); // TODO:updateに差し替え
+    });
+
     if (res.error) {
       openSnackbar(
         AlertType.ERROR,
         '会社情報の更新に失敗しました。再度お試しください。' + res.error
       );
     } else {
+      await getInit();
+      window.scrollTo(0, 0)
       openSnackbar(AlertType.SUCCESS, '会社情報の更新が完了しました。');
-      router.replace(pathname); // 遷移をトリガー
-      router.refresh(); // 上手いこと言ってないす。
-
-      // setKey((prev) => prev + 1);　あってもいいけど微妙やな、全部同じことするんか
-      // window.location.reload(); // リダイレクトなのでopenSnackbarが消える。使えない。
     }
     closeProcessing();
   };
@@ -668,18 +600,18 @@ export const CompanyComponent = (): JSX.Element => {
                     />
                   </Box>
                 </ItemBase>
-                <LocalizationProvider
-                  dateAdapter={AdapterDateFns}
-                  adapterLocale={ja}
-                >
-                  <ItemBase name={'提供時間'} isRequired={0}>
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        flexDirection: 'row',
-                        alignItems: 'flex-start',
-                        width: '640px',
-                      }}
+                <ItemBase name={'提供時間'} isRequired={0}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'row',
+                      alignItems: 'flex-start',
+                      width: '640px',
+                    }}
+                  >
+                    <LocalizationProvider
+                      dateAdapter={AdapterDateFns}
+                      adapterLocale={ja}
                     >
                       <TimePickerElement
                         control={control}
@@ -709,37 +641,42 @@ export const CompanyComponent = (): JSX.Element => {
                         sx={TimePickerStyle}
                         slotProps={{ textField: { size: 'small' } }}
                       />
-                    </Box>
-                  </ItemBase>
-                  <ItemBase name={'注文期限'} isRequired={0}>
+                    </LocalizationProvider>
+                  </Box>
+                </ItemBase>
+                <ItemBase name={'注文期限'} isRequired={0}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'row',
+                      alignItems: 'flex-start',
+                      width: '640px',
+                    }}
+                    gap={1}
+                  >
+                    <SelectElement
+                      control={control}
+                      size='small'
+                      name='order_period_day'
+                      fullWidth
+                      options={selectOptions.day}
+                      sx={{ width: '80px' }}
+                    ></SelectElement>
                     <Box
                       sx={{
+                        height: '40px',
                         display: 'flex',
-                        flexDirection: 'row',
-                        alignItems: 'flex-start',
-                        width: '640px',
+                        alignItems: 'center',
                       }}
-                      gap={1}
                     >
-                      <SelectElement
-                        control={control}
-                        size='small'
-                        name='order_period_day'
-                        fullWidth
-                        options={selectOptions.day}
-                        sx={{ width: '80px' }}
-                      ></SelectElement>
-                      <Box
-                        sx={{
-                          height: '40px',
-                          display: 'flex',
-                          alignItems: 'center',
-                        }}
-                      >
-                        <Typography sx={{ whiteSpace: 'nowrap' }}>
-                          {'日前'}
-                        </Typography>
-                      </Box>
+                      <Typography sx={{ whiteSpace: 'nowrap' }}>
+                        {'日前'}
+                      </Typography>
+                    </Box>
+                    <LocalizationProvider
+                      dateAdapter={AdapterDateFns}
+                      adapterLocale={ja}
+                    >
                       <TimePickerElement
                         control={control}
                         name={'order_period_time'}
@@ -750,38 +687,42 @@ export const CompanyComponent = (): JSX.Element => {
                           textField: { size: 'small' },
                           inputAdornment: {},
                         }}
-                      />
-                    </Box>
-                  </ItemBase>
-                  <ItemBase name={'キャンセル期限'} isRequired={0}>
+                      /></LocalizationProvider>
+                  </Box>
+                </ItemBase>
+                <ItemBase name={'キャンセル期限'} isRequired={0}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'row',
+                      alignItems: 'flex-start',
+                      width: '640px',
+                    }}
+                    gap={1}
+                  >
+                    <SelectElement
+                      control={control}
+                      size='small'
+                      name='cancel_period_day'
+                      fullWidth
+                      options={selectOptions.day}
+                      sx={{ width: '80px' }}
+                    ></SelectElement>
                     <Box
                       sx={{
+                        height: '40px',
                         display: 'flex',
-                        flexDirection: 'row',
-                        alignItems: 'flex-start',
-                        width: '640px',
+                        alignItems: 'center',
                       }}
-                      gap={1}
                     >
-                      <SelectElement
-                        control={control}
-                        size='small'
-                        name='cancel_period_day'
-                        fullWidth
-                        options={selectOptions.day}
-                        sx={{ width: '80px' }}
-                      ></SelectElement>
-                      <Box
-                        sx={{
-                          height: '40px',
-                          display: 'flex',
-                          alignItems: 'center',
-                        }}
-                      >
-                        <Typography sx={{ whiteSpace: 'nowrap' }}>
-                          {'日前'}
-                        </Typography>
-                      </Box>
+                      <Typography sx={{ whiteSpace: 'nowrap' }}>
+                        {'日前'}
+                      </Typography>
+                    </Box>
+                    <LocalizationProvider
+                      dateAdapter={AdapterDateFns}
+                      adapterLocale={ja}
+                    >
                       <TimePickerElement
                         control={control}
                         name={'cancel_period_time'}
@@ -793,19 +734,20 @@ export const CompanyComponent = (): JSX.Element => {
                           inputAdornment: {},
                         }}
                       />
-                    </Box>
-                  </ItemBase>
-                </LocalizationProvider>
-                <ItemBase name={'会社利用ステータス'} isRequired={0}>
+                    </LocalizationProvider>
+                  </Box>
+                </ItemBase>
+
+                <ItemBase name={'利用ステータス'} isRequired={0}>
                   <SelectElement
                     control={control}
                     size='small'
-                    name='companies_usage_state'
+                    name='usage_status'
                     fullWidth
                     options={[
-                      { id: CompaniesUsageStatus.AVAILABLE, label: '利用可能' },
+                      { id: UsageStatus.AVAILABLE, label: '利用可能' },
                       {
-                        id: CompaniesUsageStatus.DEACTIVATION,
+                        id: UsageStatus.DEACTIVATION,
                         label: '利用停止',
                       },
                     ]}
@@ -840,44 +782,67 @@ const TimePickerStyle = {
 };
 
 /** formValues初期値 */
-const defalutData: CompanyDetailFormValues = {
-  id: '-',
-  departmentInfo: [
-    { id: TEMP_HYPHEN() + 0, name: '設定なし', disabled: false, delete_flag: false },
-  ],
-  employmentStatusInfo: [
-    {
-      id: '',
-      employment_status_name: '社員',
-      credit_flag: false,
-      paypay_flag: false,
-      deduction_flag: false,
-      set_meal_burden: '0',
-      disabled: false,
-      delete_flag: false,
-    },
-  ],
-  company_name: '',
-  branch_name: '',
-  post_code: '',
-  prefectures: '',
-  municipalities: '',
-  town_area: '',
-  area_block_number: '',
-  building_name: '',
-  restaurant_name: '',
-  mailaddress: '',
-  memo: '',
-  location: '',
-  offer_time_from: null,
-  offer_time_to: null,
-  order_period_day: '',
-  order_period_time: null,
-  cancel_period_day: '',
-  cancel_period_time: null,
-  optional_item_title_1: '',
-  optional_item_title_2: '',
-  optional_item_notes_1: '',
-  optional_item_notes_2: '',
-  companies_usage_state: CompaniesUsageStatus.AVAILABLE,
-};
+const getInitData = (data: CompanyDetailFormValues | null) => {
+
+  const depInit: DepartmentData[] =
+    (data && data.departmentInfo.length > 0)
+      ? data?.departmentInfo
+      : [{
+        id: TEMP_HYPHEN() + 0,
+        name: '設定なし',
+        disabled: false,
+        delete_flag: false
+      }];
+
+  const empInit: EmploymentData[] =
+    (data && data.employmentStatusInfo.length > 0)
+      ? data.employmentStatusInfo
+      : [
+        {
+          id: TEMP_HYPHEN() + 0,
+          employment_status_name: '社員',
+          credit_flag: false,
+          paypay_flag: false,
+          deduction_flag: false,
+          set_meal_burden: '0',
+          disabled: false,
+          delete_flag: false,
+        },
+      ];
+
+  const initData: CompanyDetailFormValues = {
+    id: data?.id ? data?.id.toString() : '-',
+    departmentInfo: depInit,
+    employmentStatusInfo: empInit,
+    company_name: data?.company_name ?? '',
+    branch_name: data?.branch_name ?? '',
+    post_code: data?.post_code ?? '',
+    prefectures: data?.prefectures ?? '',
+    municipalities: data?.municipalities ?? '',
+    town_area: data?.town_area ?? '',
+    area_block_number: data?.area_block_number ?? '',
+    building_name: data?.building_name ?? '',
+    restaurant_name: data?.restaurant_name ?? '',
+    mailaddress: data?.mailaddress ?? '',
+    memo: data?.memo ?? '',
+    location: data?.location ?? '',
+    offer_time_from: data?.offer_time_from ?? getTodayZeroHour(),
+    offer_time_to: data?.offer_time_to ?? getTodayZeroHour(),
+    cancel_period_day: data?.cancel_period_day
+      ? data?.cancel_period_day.toString()
+      : '',
+    cancel_period_time: data?.cancel_period_time ?? getTodayZeroHour(),
+    order_period_day: data?.order_period_day
+      ? data?.order_period_day.toString()
+      : '',
+    order_period_time: data?.order_period_time ?? getTodayZeroHour(),
+    optional_item_title_1: data?.optional_item_title_1 ?? '',
+    optional_item_title_2: data?.optional_item_title_2 ?? '',
+    optional_item_notes_1: data?.optional_item_notes_1 ?? '',
+    optional_item_notes_2: data?.optional_item_notes_2 ?? '',
+    usage_status:
+      data?.usage_status ?? UsageStatus.AVAILABLE,
+  };
+
+  return initData
+}

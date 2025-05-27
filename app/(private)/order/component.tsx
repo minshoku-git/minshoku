@@ -15,7 +15,7 @@ import { DatePickerElement } from 'react-hook-form-mui/date-pickers';
 import { MockDataCreate_OrderResult } from '@/app/_lib/createMockData';
 import { getLastMonthEndDay, getLastMonthStartDay, getToday, getTomorrow, getYesterday } from '@/app/_lib/getDateTime';
 import { ApiRequest, ApiResponse, SearchResult_orderList } from '@/app/_lib/supabase/types';
-import { AlertType, OrderStatus, PaymentStatus, SortType } from '@/app/_types/enum';
+import { AlertType, OrderStatus, PaymentTypes, SortType } from '@/app/_types/enum';
 import { CustomTable } from '@/app/_ui/_shared/costomTable/customTable';
 import { ResultsCounter } from '@/app/_ui/_shared/resultsCounter';
 import ConfirmDialog from '@/app/_ui/dirty/conformDialog';
@@ -60,6 +60,11 @@ export const OrderComponent = (): JSX.Element => {
 
   /* useState
   ------------------------------------------------------------------ */
+  // ソート配列
+  const [sortArray, setSortArray] = useState<HeaderStatus[]>(resultHeader);
+  // 現在のソート対象項目
+  const [sortTarget, setSortTarget] = useState<HeaderStatus>(resultHeader[0]);
+
   // 検索状態
   const [isSearch, setIsSearch] = useState(false);
   /* 検索条件 */
@@ -198,6 +203,8 @@ export const OrderComponent = (): JSX.Element => {
       setResult(null);
       setIsSearch(false);
     } else {
+      setSortArray(resultHeader)
+      setSortTarget(resultHeader[0])
       setCondition(req);
       setResult(res);
       setIsSearch(true);
@@ -247,13 +254,6 @@ export const OrderComponent = (): JSX.Element => {
     setOpen(true);
   };
 
-  /** 明細行リンクハンドラ */
-  const linkHandler = (id: string) => {
-    // TODO:具体的な遷移方法を考える。idでデータを管理する？
-    router.push('/userDetail');
-    reset();
-  };
-
   /** キャンセルハンドラ */
   const cancelHandler = () => {
     const handler = () => {
@@ -290,7 +290,7 @@ export const OrderComponent = (): JSX.Element => {
     document.getElementById('csvLinkButton')?.click();
   };
 
-  /* DOM
+  /* JSX
   ------------------------------------------------------------------ */
   return (
     <>
@@ -494,20 +494,21 @@ export const OrderComponent = (): JSX.Element => {
             {isSearch && result && (
               <>
                 <Divider sx={{ my: 3 }} />
-                {result.paginate?.count && result.paginate?.count > 0 && (
-                  <>
-                    <Box sx={{ display: 'flex', alignItems: 'end' }}>
-                      {/* 検索件数 */}
-                      <ResultsCounter startRow={result.paginate?.startRow} endRow={result.paginate?.endRow} count={result.paginate?.count} />
-                    </Box>
-                  </>
-                )}
+                {result.paginate?.count && result.paginate?.count > 0 ? (
+                  <Box sx={{ display: 'flex', alignItems: 'end' }}>
+                    <ResultsCounter startRow={result.paginate?.startRow} endRow={result.paginate?.endRow} count={result.paginate?.count} />
+                  </Box>
+                ) : (<></>)}
                 {/* 検索結果 */}
                 <CustomTable
                   paginate={result.paginate}
-                  header={resultHeader}
                   sortHandler={sortHandler}
                   pageChangeHandler={pageChangeHandler}
+                  header={resultHeader}
+                  sortArray={sortArray}
+                  setSortArray={setSortArray}
+                  sortTarget={sortTarget}
+                  setSortTarget={setSortTarget}
                   renderBody={() =>
                     /* 検索結果 */
                     result.data?.map((row, index) => (
@@ -523,9 +524,9 @@ export const OrderComponent = (): JSX.Element => {
                         </TableCell>
                         <TableCell align={'right'}>{row.count}</TableCell>
                         <TableCell>
-                          {PaymentStatus.SALAEY_DEDUCTIONS === row.payment_state
+                          {PaymentTypes.SALAEY_DEDUCTIONS === row.payment_state
                             ? '会社清算'
-                            : PaymentStatus.CREDITCARD === row.payment_state
+                            : PaymentTypes.CREDITCARD === row.payment_state
                               ? 'クレジットカード'
                               : 'PayPay'}
                         </TableCell>

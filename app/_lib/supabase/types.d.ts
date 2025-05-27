@@ -50,7 +50,7 @@ export type SearchResult_CompanyList = {
   /** 建物名 */
   building_name: string;
   /** 利用ステータス */
-  companies_usage_state: string;
+  usage_status: string | UsageStatus;
 };
 
 /** 検索結果 ユーザー一覧 */
@@ -70,7 +70,47 @@ export type SearchResult_UserList = {
     /** 支店名 */
     branch_name: string;
   };
-  usage_state: number;
+  /** ユーザー利用ステータス */
+  user_usage_status: string | UserUsageStatus;
+};
+
+/** 取得結果 ユーザー詳細 */
+export type DetailResult_UserData = {
+  /** ID */
+  id: string;
+  /** ユーザー名 */
+  user_name: string;
+  /** ユーザー名カナ */
+  user_name_kana: string;
+  /** 任意項目_回答1 */
+  optional_item_answer_1?: string;
+  /** 任意項目_回答2 */
+  optional_item_answer_2?: string;
+  /** メールアドレス */
+  user_email?: string;
+  /** ユーザー利用ステータス */
+  user_usage_status: string | UserUsageStatus;
+  /** 利用ステータス */
+  usage_status: string | UsageStatus;
+  /** メモ（マスタ） */
+  master_memo?: string;
+  /** 会社情報 */
+  t_companies: {
+    /** 会社名 */
+    company_name: string;
+    /** 支店名 */
+    branch_name: string;
+  };
+  /** 部署情報 */
+  t_companies_department: {
+    /** 部署名 */
+    department_name?: string;
+  };
+  /** 会社雇用形態情報 */
+  t_companies_employment_status: {
+    /** 雇用形態名 */
+    employment_status_name?: string;
+  };
 };
 
 /** 検索結果 店舗一覧 */
@@ -84,7 +124,7 @@ export type SearchResult_ShopList = {
   /** 住所 */
   address?: string;
   /** 利用ステータス */
-  usage_state?: string;
+  usage_status?: string;
 };
 
 /** 検索結果 オーダー一覧 */
@@ -124,5 +164,5 @@ export type SearchResult_ScheduleList = {
   /** 食数 */
   count: number;
   /** アレルギー */
-  allergies: Array<string>;
+  allergen_labelling: Array<string>;
 };

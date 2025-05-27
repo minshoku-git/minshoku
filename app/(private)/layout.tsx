@@ -178,7 +178,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               />
               <Box sx={{ flexGrow: 1 }} />
               <Link href="/login">
-                <Button className="underline" color="inherit" onClick={async () => {}}>
+                <Button className="underline" color="inherit" onClick={async () => { }}>
                   ログアウト
                 </Button>
               </Link>
@@ -292,9 +292,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <ListItemButton
                   component="button"
                   onClick={() => {
-                    confirmNavigation('/userDetail/-');
+                    confirmNavigation('/userDetail/1');
                   }}
-                  disabled={disabledTitle('/userDetail/-')}
+                  disabled={disabledTitle('/userDetail/1')}
                 >
                   <ListItemText primary={'ユーザー詳細(実際は非表示)'} />
                 </ListItemButton>

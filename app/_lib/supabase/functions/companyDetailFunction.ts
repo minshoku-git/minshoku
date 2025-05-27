@@ -2,10 +2,10 @@ import { Client } from 'pg';
 
 import { CompanyDetailFormValues } from '@/app/_types/types';
 
-import { getTimeString, getToday } from '../getDateTime';
-import { checkTempId, getPostgreSqlItems } from '../utill';
-import { t_companies, t_companies_department, t_companies_employment_status } from './tableTypes';
-import { ApiRequest, ApiResponse } from './types';
+import { getTimeString, getToday } from '../../getDateTime';
+import { checkTempId, getPostgreSqlItems } from '../../utill';
+import { t_companies, t_companies_department, t_companies_employment_status } from './../tableTypes';
+import { ApiRequest, ApiResponse } from './../types';
 
 /**
  * insert_companyDetail
@@ -13,7 +13,7 @@ import { ApiRequest, ApiResponse } from './types';
  * @param {ApiRequest<CompanyDetailFormValues>} values 入力内容
  * @returns {Promise<ApiResponse<number>>} 企業ID
  */
-export const insert_companyDetail_TEST = async (
+export const insert_companyDetail = async (
   values: ApiRequest<CompanyDetailFormValues>
 ): Promise<ApiResponse<number>> => {
   const req = values.request;
@@ -148,7 +148,7 @@ export const insert_companyDetail_TEST = async (
  * @param {ApiRequest<CompanyDetailFormValues>} values - 入力内容
  * @returns {Promise<ApiResponse<number>>} 企業ID
  */
-export const update_companyDetail_TEST = async (
+export const update_companyDetail = async (
   values: ApiRequest<CompanyDetailFormValues>
 ): Promise<ApiResponse<number>> => {
   const req = values.request;

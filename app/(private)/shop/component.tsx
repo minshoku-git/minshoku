@@ -9,7 +9,7 @@ import { SelectElement, TextFieldElement } from 'react-hook-form-mui';
 
 import { searchShopList } from '@/app/_actions/actions';
 import { ApiRequest, ApiResponse, SearchResult_ShopList } from '@/app/_lib/supabase/types';
-import { AlertType, SortType, UserUsageStatus } from '@/app/_types/enum';
+import { AlertType, SortType, UsageStatus, UserUsageStatus } from '@/app/_types/enum';
 import { HeaderStatus, ShopSearchFormValues, ShopSearchSchema } from '@/app/_types/types';
 import { CustomTable } from '@/app/_ui/_shared/costomTable/customTable';
 import { ResultsCounter } from '@/app/_ui/_shared/resultsCounter';
@@ -25,7 +25,7 @@ const pageName = '店舗一覧';
 const resultHeader: Array<HeaderStatus> = [
   { name: '店舗名', variableName: 'shop_name', sort: SortType.ASC },
   { name: '住所', variableName: 'address', sort: SortType.ASC },
-  { name: 'ステータス', variableName: 'usage_state', sort: SortType.ASC },
+  { name: '利用ステータス', variableName: 'usage_status', sort: SortType.ASC },
 ];
 
 /**
@@ -41,6 +41,11 @@ export const ShopComponent = (): JSX.Element => {
 
   /* useState
   ------------------------------------------------------------------ */
+  // ソート配列
+  const [sortArray, setSortArray] = useState<HeaderStatus[]>(resultHeader);
+  // 現在のソート対象項目
+  const [sortTarget, setSortTarget] = useState<HeaderStatus>(resultHeader[0]);
+
   const [isSearch, setIsSearch] = useState(false);
   const [condition, setCondition] = useState<ApiRequest<ShopSearchFormValues>>({
     request: {
@@ -48,7 +53,7 @@ export const ShopComponent = (): JSX.Element => {
       prefectures: '',
       municipalities: '',
       town_area: '',
-      usage_state: '',
+      usage_status: '',
     },
     sortItems: {
       nextPage: 1,
@@ -79,7 +84,7 @@ export const ShopComponent = (): JSX.Element => {
       prefectures: '',
       municipalities: '',
       town_area: '',
-      usage_state: '',
+      usage_status: '',
     },
   });
 
@@ -105,6 +110,8 @@ export const ShopComponent = (): JSX.Element => {
       setResult(null);
       setIsSearch(false);
     } else {
+      setSortArray(resultHeader)
+      setSortTarget(resultHeader[0])
       setCondition(req);
       setResult(res);
       setIsSearch(true);
@@ -266,7 +273,7 @@ export const ShopComponent = (): JSX.Element => {
                   ></SelectElement>
                 </Box>
               </ItemBase>
-              <ItemBase name={'ステータス'} isRequired={2}>
+              <ItemBase name={'利用ステータス'} isRequired={2}>
                 <Box
                   sx={{
                     display: 'flex',
@@ -278,12 +285,12 @@ export const ShopComponent = (): JSX.Element => {
                   <SelectElement
                     control={control}
                     size="small"
-                    name="usage_state"
+                    name="usage_status"
                     fullWidth
                     options={[
                       { id: '', label: '未選択' },
-                      { id: '10', label: '利用可能' },
-                      { id: '20', label: '利用停止' },
+                      { id: UsageStatus.AVAILABLE, label: '利用可能' },
+                      { id: UsageStatus.DEACTIVATION, label: '利用停止' },
                     ]}
                   ></SelectElement>
                 </Box>
@@ -311,19 +318,23 @@ export const ShopComponent = (): JSX.Element => {
             {isSearch && result && (
               <>
                 <Divider sx={{ my: 3 }} />
-                {result.paginate?.count && result.paginate?.count > 0 && (
-                  <>
-                    <Box sx={{ display: 'flex', alignItems: 'end' }}>
-                      {/* 検索件数 */}
-                      <ResultsCounter startRow={result.paginate?.startRow} endRow={result.paginate?.endRow} count={result.paginate?.count} />
-                    </Box>
-                  </>
-                )}
+                {result.paginate?.count && result.paginate?.count > 0 ? (
+                  <Box sx={{ display: 'flex', alignItems: 'end' }}>
+                    <ResultsCounter
+                      startRow={result.paginate?.startRow}
+                      endRow={result.paginate?.endRow}
+                      count={result.paginate?.count} />
+                  </Box>
+                ) : (<></>)}
                 <CustomTable
                   paginate={result.paginate}
-                  header={resultHeader}
                   sortHandler={sortHandler}
                   pageChangeHandler={pageChangeHandler}
+                  header={resultHeader}
+                  sortArray={sortArray}
+                  setSortArray={setSortArray}
+                  sortTarget={sortTarget}
+                  setSortTarget={setSortTarget}
                   renderBody={() =>
                     result.data?.map((row, index) => (
                       <TableRow
@@ -350,17 +361,7 @@ export const ShopComponent = (): JSX.Element => {
                           {row.address}
                         </TableCell>
                         <TableCell width={'10%'}>
-                          {UserUsageStatus.NOLIMIT === row.usage_state
-                            ? '制限なし'
-                            : UserUsageStatus.PENDING === row.usage_state
-                              ? '申請中'
-                              : UserUsageStatus.DEACTIVATION === row.usage_state
-                                ? '利用停止'
-                                : UserUsageStatus.DISAPPROVAL === row.usage_state
-                                  ? '否認'
-                                  : UserUsageStatus.DELETE === row.usage_state
-                                    ? '削除'
-                                    : '登録中'}
+                          {row.usage_status}
                         </TableCell>
                       </TableRow>
                     ))

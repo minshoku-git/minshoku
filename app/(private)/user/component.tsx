@@ -30,7 +30,7 @@ const resultHeader: Array<HeaderStatus> = [
   { name: 'ユーザー名', variableName: 'user_name', sort: SortType.ASC },
   { name: '会社名', variableName: 'company_name', sort: SortType.ASC },
   { name: '支店名', variableName: 'branch_name', sort: SortType.ASC },
-  { name: 'ステータス', variableName: 'usage_state', sort: SortType.ASC },
+  { name: 'ステータス', variableName: 'user_usage_state', sort: SortType.ASC },
 ];
 
 /**
@@ -47,6 +47,11 @@ export const UserComponent = ({ todos }: Props): JSX.Element => {
 
   /* useState
   ------------------------------------------------------------------ */
+  // ソート配列
+  const [sortArray, setSortArray] = useState<HeaderStatus[]>(resultHeader);
+  // 現在のソート対象項目
+  const [sortTarget, setSortTarget] = useState<HeaderStatus>(resultHeader[0]);
+
   /* 検索結果 */
   const [isSearch, setIsSearch] = useState(false);
   /* 検索条件 */
@@ -55,7 +60,7 @@ export const UserComponent = ({ todos }: Props): JSX.Element => {
       user_name: '',
       company_name: '',
       branch_name: '',
-      usage_state: '',
+      user_usage_status: undefined,
     },
     sortItems: {
       nextPage: 1,
@@ -86,7 +91,7 @@ export const UserComponent = ({ todos }: Props): JSX.Element => {
       user_name: '',
       company_name: '',
       branch_name: '',
-      usage_state: '',
+      user_usage_status: undefined,
     },
   });
 
@@ -111,11 +116,14 @@ export const UserComponent = ({ todos }: Props): JSX.Element => {
       setResult(null);
       setIsSearch(false);
     } else {
-      console.log(res);
+      setSortArray(resultHeader)
+      setSortTarget(resultHeader[0])
       setCondition(req);
       setResult(res);
       setIsSearch(true);
     }
+    console.log('これ見れてます？')
+    console.log(resultHeader)
     closeProcessing();
   };
 
@@ -230,16 +238,16 @@ export const UserComponent = ({ todos }: Props): JSX.Element => {
                   <SelectElement
                     control={control}
                     size="small"
-                    name="usage_state"
+                    name="user_usage_status"
                     fullWidth
                     options={[
                       { id: '', label: '未選択' },
-                      { id: '0', label: '制限なし' },
-                      { id: '1', label: '申請中' },
-                      { id: '2', label: '利用停止' },
-                      { id: '3', label: '否認' },
-                      { id: '4', label: '削除' },
-                      { id: '5', label: '登録中' },
+                      { id: UserUsageStatus.NOLIMIT, label: '制限なし' },
+                      { id: UserUsageStatus.PENDING, label: '申請中' },
+                      { id: UserUsageStatus.DEACTIVATION, label: '利用停止' },
+                      { id: UserUsageStatus.DISAPPROVAL, label: '否認' },
+                      { id: UserUsageStatus.DELETE, label: '削除' },
+                      { id: UserUsageStatus.REGISTERED, label: '登録中' },
                     ]}
                   ></SelectElement>
                 </Box>
@@ -268,19 +276,20 @@ export const UserComponent = ({ todos }: Props): JSX.Element => {
             {isSearch && result && (
               <>
                 <Divider sx={{ my: 3 }} />
-                {result.paginate?.count && result.paginate?.count > 0 && (
-                  <>
-                    <Box sx={{ display: 'flex', alignItems: 'end' }}>
-                      {/* 検索件数 */}
-                      <ResultsCounter startRow={result.paginate?.startRow} endRow={result.paginate?.endRow} count={result.paginate?.count} />
-                    </Box>
-                  </>
-                )}
+                {result.paginate?.count && result.paginate?.count > 0 ? (
+                  <Box sx={{ display: 'flex', alignItems: 'end' }}>
+                    <ResultsCounter startRow={result.paginate?.startRow} endRow={result.paginate?.endRow} count={result.paginate?.count} />
+                  </Box>
+                ) : (<></>)}
                 <CustomTable
                   paginate={result.paginate}
-                  header={resultHeader}
                   sortHandler={sortHandler}
                   pageChangeHandler={() => { }}
+                  header={resultHeader}
+                  sortArray={sortArray}
+                  setSortArray={setSortArray}
+                  sortTarget={sortTarget}
+                  setSortTarget={setSortTarget}
                   renderBody={() =>
                     /* 検索結果 */
                     result.data?.map((row, index) => (
@@ -298,17 +307,7 @@ export const UserComponent = ({ todos }: Props): JSX.Element => {
                         <TableCell sx={{ whiteSpace: 'pre' }}>{row.t_companies.company_name}</TableCell>
                         <TableCell sx={{ whiteSpace: 'pre' }}>{row.t_companies.branch_name}</TableCell>
                         <TableCell sx={{ whiteSpace: 'pre' }}>
-                          {UserUsageStatus.NOLIMIT === row.usage_state.toString()
-                            ? '制限なし'
-                            : UserUsageStatus.PENDING === row.usage_state.toString()
-                              ? '申請中'
-                              : UserUsageStatus.DEACTIVATION === row.usage_state.toString()
-                                ? '利用停止'
-                                : UserUsageStatus.DISAPPROVAL === row.usage_state.toString()
-                                  ? '否認'
-                                  : UserUsageStatus.DELETE === row.usage_state.toString()
-                                    ? '削除'
-                                    : '登録中'}
+                          {row.user_usage_status}
                         </TableCell>
                       </TableRow>
                     ))

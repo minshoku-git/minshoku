@@ -1,5 +1,6 @@
 import { PostgrestSingleResponse } from '@supabase/supabase-js';
 
+import { convertUsageStatusName, UsageStatus } from '@/app/_types/enum';
 import { ShopDetailFormValues, ShopSearchFormValues } from '@/app/_types/types';
 
 import { getToday } from '../../getDateTime';
@@ -29,8 +30,8 @@ export const search_shopList = async (
 
   // 店舗名
   if (req.shop_name) {
-    query = query.ilike('shop_name', `%${req.shop_name}%`);
-    queryCount = queryCount.ilike('shop_name', `%${req.shop_name}%`);
+    query = query.or(`shop_name.ilike.%${req.shop_name}%, shop_name_kana.ilike.%${req.shop_name}%`);
+    queryCount = queryCount.or(`shop_name.ilike.%${req.shop_name}%, shop_name_kana.ilike.%${req.shop_name}%`);
   }
   // 住所_都道府県
   if (req.prefectures) {
@@ -48,13 +49,13 @@ export const search_shopList = async (
     }
   }
   // 利用ステータス
-  if (req.usage_state) {
-    query = query.eq('usage_state', req.usage_state);
-    queryCount = queryCount.eq('usage_state', req.usage_state);
+  if (req.usage_status) {
+    query = query.eq('usage_status', req.usage_status);
+    queryCount = queryCount.eq('usage_status', req.usage_status);
   }
 
   // ソート順序
-  const sortConditions: Array<string> = ['shop_name', 'address', 'usage_state'];
+  const sortConditions: Array<string> = ['shop_name', 'address', 'usage_status'];
   // ソート用住所
   const sortConditionsAddress: Array<string> = [
     'shop_post_code',
@@ -92,6 +93,7 @@ export const search_shopList = async (
   // 件数取得
   const { count, error: countError } = (await queryCount) as PostgrestSingleResponse<t_shops[]>;
   if (countError) {
+    console.log('countError', countError);
     return {
       data: null,
       error: countError.message,
@@ -108,6 +110,7 @@ export const search_shopList = async (
   // 明細行取得
   const { data, error } = (await query) as PostgrestSingleResponse<t_shops[]>;
   if (error) {
+    console.log('error', error);
     return {
       data: null,
       error: error.message,
@@ -121,23 +124,25 @@ export const search_shopList = async (
     };
   }
 
+  const res: SearchResult_ShopList[] = data.map((m) => {
+    return {
+      ...m,
+      id: m.id!.toString(),
+      shop_post_code: m?.shop_post_code ? getPostCodeAddHyphen(m?.shop_post_code) : '',
+      address:
+        m.shop_prefectures +
+        (m?.shop_municipalities ?? '') +
+        m.shop_town_area +
+        m.shop_area_block_number +
+        m.shop_building_name,
+      usage_status: convertUsageStatusName(m.usage_status as UsageStatus),
+    };
+  });
+
   // 結果返却
   const { startRow, endRow, totalPage } = getPagenationsItems(startRange, data.length, count ?? 0);
   return {
-    data: data.map((m) => {
-      return {
-        ...m,
-        id: m.id!.toString(),
-        shop_post_code: m?.shop_post_code ? getPostCodeAddHyphen(m?.shop_post_code) : '',
-        address:
-          m.shop_prefectures +
-          (m?.shop_municipalities ?? '') +
-          m.shop_town_area +
-          m.shop_area_block_number +
-          m.shop_building_name,
-        usage_state: m.usage_state?.toString(),
-      };
-    }),
+    data: res,
     error: null,
     paginate: {
       count,
@@ -197,7 +202,7 @@ export const insert_shopDetail = async (values: ApiRequest<ShopDetailFormValues>
       specified_commercial_transaction_act: req.specified_commercial_transaction_act,
       shop_image: '', // TODO: 画像保存をどうするのか。
       memo: req.memo,
-      usage_state: 0, // TODO: 店舗新規登録時、何のステータスを設定したらいいのか要確認。
+      usage_status: req.usage_status,
       gmo_shop_code: '', // TODO: 店舗新規登録時、何を設定したらいいのか要確認。
       gmo_shop_password: '', // TODO: 店舗新規登録時、何を設定したらいいのか要確認。
       // updated_at: timestamp,　// MEMO:自動でタイムスタンプ押される。
@@ -243,7 +248,7 @@ export const update_shopDetail = async (values: ApiRequest<ShopDetailFormValues>
       specified_commercial_transaction_act: req.specified_commercial_transaction_act,
       shop_image: '', // TODO: 画像保存をどうするのか。
       memo: req.memo,
-      usage_state: 0, // TODO: 店舗新規登録時、何のステータスを設定したらいいのか要確認。
+      usage_status: req.usage_status,
       gmo_shop_code: '', // TODO: 店舗新規登録時、何を設定したらいいのか要確認。
       gmo_shop_password: '', // TODO: 店舗新規登録時、何を設定したらいいのか要確認。
       updated_at: timestamp,

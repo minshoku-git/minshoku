@@ -93,7 +93,7 @@ const OrderInfoModal = (props: OrderInfoModalProps): React.JSX.Element => {
                     <TableCell>注文内容</TableCell>
                     <TableCell>金額</TableCell>
                     <TableCell>決済方法</TableCell>
-                    <TableCell>ステータス</TableCell>
+                    <TableCell>注文ステータス</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody sx={{ maxWidth: 300 }}>

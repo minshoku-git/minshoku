@@ -17,7 +17,9 @@ import { JSX, useEffect, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { SelectElement, TextareaAutosizeElement } from 'react-hook-form-mui';
 
-import { AlertType, UserUsageStatus } from '@/app/_types/enum';
+import { getUserDetail } from '@/app/_actions/actions';
+import { DetailResult_UserData } from '@/app/_lib/supabase/types';
+import { AlertType, UsageStatus, UserUsageStatus } from '@/app/_types/enum';
 import { UserDetailFormValues, UserDetailSchema } from '@/app/_types/types';
 import ItemBase from '@/app/_ui/_shared/itemBase';
 import ConfirmDialog from '@/app/_ui/dirty/conformDialog';
@@ -37,6 +39,7 @@ export const UserDetailComponent = (): JSX.Element => {
   ------------------------------------------------------------------ */
   const params = useParams();
   const router = useRouter();
+  const id = (params.id as string) ?? '-';
   const { openSnackbar } = useSnackBar();
   const { openProcessing, closeProcessing } = useProcessing();
 
@@ -47,12 +50,15 @@ export const UserDetailComponent = (): JSX.Element => {
   // TODO:ユーザー情報のユーザーステータスに差し替えする。
   const [userUsageStatus, setUserUsageStatus] = useState<UserUsageStatus>(UserUsageStatus.PENDING);
   const [showNini, setShowNini] = useState<boolean>(true);
+  const [dataLoaded, setDataLoaded] = useState(false);
+
 
   // ステータス変更確認ダイアログ
   const [openDialog, setOpenDialog] = useState<boolean>(false);
   const [dialogMessage, setDialogMessage] = useState<string>('');
+  const [userData, setUserData] = useState<DetailResult_UserData | undefined>();
   const [dialogActionHandler, setDialogActionHandler] = useState<() => void>(() => {
-    return () => {};
+    return () => { };
   });
 
   /* useForm
@@ -60,16 +66,51 @@ export const UserDetailComponent = (): JSX.Element => {
   const {
     control,
     handleSubmit,
+    reset,
     formState: { isDirty },
   } = useForm<UserDetailFormValues>({
     mode: 'onSubmit',
     reValidateMode: 'onSubmit',
     resolver: zodResolver(UserDetailSchema),
     defaultValues: {
-      restriction: '10',
+      usage_status: UsageStatus.DEACTIVATION,
       memo: '',
     },
   });
+
+  /* useEffect
+------------------------------------------------------------------ */
+  useEffect(() => {
+    getInit();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /** 初期表示データ取得 */
+  const getInit = async () => {
+    try {
+      openProcessing()
+      const data = (await getUserDetail({ request: Number(id) })).data;
+      if (!data?.id) {
+        openSnackbar(
+          AlertType.ERROR,
+          '店舗情報の取得に失敗しました。再度お試しください。'
+        );
+        router.push('/user');
+        return;
+      }
+      setUserData(data)
+      reset({
+        'usage_status': data?.usage_status,
+        'memo': data?.master_memo
+      });
+    } catch (error) {
+      console.error('取得失敗:', error);
+    } finally {
+      setDataLoaded(true);
+      closeProcessing();
+    }
+  };
+
 
   /* functions
   ------------------------------------------------------------------ */
@@ -203,7 +244,7 @@ export const UserDetailComponent = (): JSX.Element => {
           </Typography>
           <Box sx={{ flexGrow: 1 }} />
           {/* モック用部品 */}
-          <Typography>{'モック用　'}</Typography>
+          <Typography>{'モック用 '}</Typography>
           <FormControlLabel
             value="end"
             control={
@@ -228,233 +269,234 @@ export const UserDetailComponent = (): JSX.Element => {
         </Grid>
         <Divider />
         <Box sx={{ m: 3 }}>
-          <form onSubmit={handleSubmit(submitHandler)}>
-            <Grid container rowSpacing={2} columnSpacing={{ xs: 1, sm: 2, md: 3 }} direction="column">
-              <ItemBase name={'ユーザーID'} isRequired={2}>
-                <TextField
-                  size="small"
-                  color={'primary'}
-                  name="shopId"
-                  fullWidth
-                  disabled
-                  sx={{ backgroundColor: 'lightgray' }}
-                  value={'ユーザーID'}
-                />
-              </ItemBase>
-              <ItemBase name={'ユーザー名'} isRequired={2}>
-                <TextField
-                  size="small"
-                  color={'primary'}
-                  name="shopName"
-                  fullWidth
-                  sx={{ backgroundColor: 'lightgray' }}
-                  disabled
-                  value={'ユーザー名'}
-                />
-              </ItemBase>
-              <ItemBase name={'ユーザー名(カナ)'} isRequired={2}>
-                <TextField
-                  size="small"
-                  color={'primary'}
-                  name="shopName"
-                  fullWidth
-                  sx={{ backgroundColor: 'lightgray' }}
-                  disabled
-                  value={'ユーザー名(カナ)'}
-                />
-              </ItemBase>
-              <ItemBase name={'メールアドレス'} isRequired={2}>
-                <TextField
-                  size="small"
-                  color={'primary'}
-                  name="shopName"
-                  fullWidth
-                  sx={{ backgroundColor: 'lightgray' }}
-                  disabled
-                  value={'xxxxxxxx@refact.co.jp'}
-                />
-              </ItemBase>
-              <ItemBase name={'会社名'} isRequired={2}>
-                <TextField
-                  size="small"
-                  color={'primary'}
-                  name="shopName"
-                  fullWidth
-                  sx={{ backgroundColor: 'lightgray' }}
-                  disabled
-                  value={'株式会社リファクト'}
-                />
-              </ItemBase>
-              <ItemBase name={'支店名'} isRequired={2}>
-                <TextField
-                  size="small"
-                  color={'primary'}
-                  name="shopName"
-                  fullWidth
-                  sx={{ backgroundColor: 'lightgray' }}
-                  disabled
-                  value={'本郷事業所'}
-                />
-              </ItemBase>
-              <ItemBase name={'部署名'} isRequired={2}>
-                <TextField
-                  size="small"
-                  color={'primary'}
-                  name="shopName"
-                  fullWidth
-                  sx={{ backgroundColor: 'lightgray' }}
-                  disabled
-                  value={'第一システム開発本部'}
-                />
-              </ItemBase>
-              <ItemBase name={'雇用形態名'} isRequired={2}>
-                <TextField
-                  size="small"
-                  color={'primary'}
-                  name="shopName"
-                  fullWidth
-                  sx={{ backgroundColor: 'lightgray' }}
-                  disabled
-                  value={'正社員'}
-                />
-              </ItemBase>
-              {showNini && (
-                <>
-                  <ItemBase name={'任意項目1'} isRequired={2}>
-                    <TextField
-                      size="small"
-                      color={'primary'}
-                      name="shopName"
-                      fullWidth
-                      sx={{ backgroundColor: 'lightgray' }}
-                      disabled
-                      value={'任意項目1'}
-                    />
-                  </ItemBase>
-                  <ItemBase name={'任意項目2'} isRequired={2}>
-                    <TextField
-                      size="small"
-                      color={'primary'}
-                      name="shopName"
-                      fullWidth
-                      sx={{ backgroundColor: 'lightgray' }}
-                      disabled
-                      value={'任意項目2'}
-                    />
-                  </ItemBase>
-                </>
-              )}
-              <ItemBase name={'ステータス'} isRequired={2}>
-                <TextField
-                  size="small"
-                  color={'primary'}
-                  name="shopName"
-                  fullWidth
-                  sx={{ backgroundColor: 'lightgray' }}
-                  disabled
-                  value={
-                    UserUsageStatus.NOLIMIT === userUsageStatus
-                      ? '制限なし'
-                      : UserUsageStatus.PENDING === userUsageStatus
-                        ? '申請中'
-                        : UserUsageStatus.DEACTIVATION === userUsageStatus
-                          ? '利用停止'
-                          : UserUsageStatus.DISAPPROVAL === userUsageStatus
-                            ? '否認'
-                            : UserUsageStatus.DELETE === userUsageStatus
-                              ? '削除'
-                              : '登録中'
-                  }
-                />
-              </ItemBase>
-              {userUsageStatus === UserUsageStatus.NOLIMIT && (
-                <>
-                  <ItemBase name={'利用制限'} isRequired={0}>
-                    <SelectElement
-                      control={control}
-                      size="small"
-                      name="restriction"
-                      fullWidth
-                      options={[
-                        { id: '', label: '未選択' },
-                        { id: '10', label: '利用可能' },
-                        { id: '20', label: '利用停止' },
-                      ]}
-                    ></SelectElement>
-                  </ItemBase>
-                  <ItemBase name={'メモ'} isRequired={1}>
-                    <TextareaAutosizeElement
-                      control={control}
-                      size="small"
-                      color={'primary'}
-                      name="memo"
-                      minRows={3}
-                      resizeStyle="vertical"
-                      placeholder="500文字以内で入力してください。"
-                      fullWidth
-                    />
-                  </ItemBase>
-                </>
-              )}
-            </Grid>
-            <Grid size={{ xs: 12 }} sx={{ display: 'flex', mt: 2, gap: 2 }}>
-              {/* 制限なしの場合 */}
-              {userUsageStatus === UserUsageStatus.NOLIMIT && (
-                <Button fullWidth variant="contained" type={'submit'}>
-                  更新
-                </Button>
-              )}
-              {/* 否認の場合 */}
-              {userUsageStatus === UserUsageStatus.DISAPPROVAL && (
-                <>
-                  <Button
+          {dataLoaded && (
+            <form onSubmit={handleSubmit(submitHandler)}>
+              <Grid container rowSpacing={2} columnSpacing={{ xs: 1, sm: 2, md: 3 }} direction="column">
+                <ItemBase name={'ユーザーID'} isRequired={2}>
+                  <TextField
+                    size="small"
+                    color={'primary'}
+                    name="shopId"
                     fullWidth
-                    variant="contained"
-                    onClick={() => {
-                      pullBackHandler();
-                    }}
-                  >
-                    引き戻し
-                  </Button>
-                  <Button
+                    disabled
+                    sx={{ backgroundColor: 'lightgray' }}
+                    value={userData?.id}
+                  />
+                </ItemBase>
+                <ItemBase name={'ユーザー名'} isRequired={2}>
+                  <TextField
+                    size="small"
+                    color={'primary'}
+                    name="shopName"
                     fullWidth
-                    variant="contained"
-                    color="error"
-                    onClick={() => {
-                      deletelHandler();
-                    }}
-                  >
-                    削除
-                  </Button>
-                </>
-              )}
-              {/* 申請中の場合 */}
-              {userUsageStatus === UserUsageStatus.PENDING && (
-                <>
-                  <Button
+                    sx={{ backgroundColor: 'lightgray' }}
+                    disabled
+                    value={userData?.user_name}
+                  />
+                </ItemBase>
+                <ItemBase name={'ユーザー名(カナ)'} isRequired={2}>
+                  <TextField
+                    size="small"
+                    color={'primary'}
+                    name="shopName"
                     fullWidth
-                    variant="contained"
-                    color="error"
-                    onClick={() => {
-                      disapprovalHandler();
-                    }}
-                  >
-                    否認
-                  </Button>
-                  <Button
+                    sx={{ backgroundColor: 'lightgray' }}
+                    disabled
+                    value={userData?.user_name_kana}
+                  />
+                </ItemBase>
+                <ItemBase name={'メールアドレス'} isRequired={2}>
+                  <TextField
+                    size="small"
+                    color={'primary'}
+                    name="shopName"
                     fullWidth
-                    variant="contained"
-                    color="success"
-                    onClick={() => {
-                      approvalHandler();
-                    }}
-                  >
-                    承認
+                    sx={{ backgroundColor: 'lightgray' }}
+                    disabled
+                    value={userData?.user_email}
+                  />
+                </ItemBase>
+                <ItemBase name={'会社名'} isRequired={2}>
+                  <TextField
+                    size="small"
+                    color={'primary'}
+                    name="shopName"
+                    fullWidth
+                    sx={{ backgroundColor: 'lightgray' }}
+                    disabled
+                    value={userData?.t_companies?.company_name}
+                  />
+                </ItemBase>
+                <ItemBase name={'支店名'} isRequired={2}>
+                  <TextField
+                    size="small"
+                    color={'primary'}
+                    name="shopName"
+                    fullWidth
+                    sx={{ backgroundColor: 'lightgray' }}
+                    disabled
+                    value={userData?.t_companies?.branch_name}
+                  />
+                </ItemBase>
+                <ItemBase name={'部署名'} isRequired={2}>
+                  <TextField
+                    size="small"
+                    color={'primary'}
+                    name="shopName"
+                    fullWidth
+                    sx={{ backgroundColor: 'lightgray' }}
+                    disabled
+                    value={userData?.t_companies_department?.department_name}
+                  />
+                </ItemBase>
+                <ItemBase name={'雇用形態名'} isRequired={2}>
+                  <TextField
+                    size="small"
+                    color={'primary'}
+                    name="shopName"
+                    fullWidth
+                    sx={{ backgroundColor: 'lightgray' }}
+                    disabled
+                    value={userData?.t_companies_employment_status?.employment_status_name}
+                  />
+                </ItemBase>
+                {showNini && (
+                  <>
+                    <ItemBase name={'任意項目1'} isRequired={2}>
+                      <TextField
+                        size="small"
+                        color={'primary'}
+                        name="shopName"
+                        fullWidth
+                        sx={{ backgroundColor: 'lightgray' }}
+                        disabled
+                        value={'任意項目1'}
+                      />
+                    </ItemBase>
+                    <ItemBase name={'任意項目2'} isRequired={2}>
+                      <TextField
+                        size="small"
+                        color={'primary'}
+                        name="shopName"
+                        fullWidth
+                        sx={{ backgroundColor: 'lightgray' }}
+                        disabled
+                        value={'任意項目2'}
+                      />
+                    </ItemBase>
+                  </>
+                )}
+                <ItemBase name={'ステータス'} isRequired={2}>
+                  <TextField
+                    size="small"
+                    color={'primary'}
+                    name="shopName"
+                    fullWidth
+                    sx={{ backgroundColor: 'lightgray' }}
+                    disabled
+                    value={
+                      UserUsageStatus.NOLIMIT === userUsageStatus
+                        ? '制限なし'
+                        : UserUsageStatus.PENDING === userUsageStatus
+                          ? '申請中'
+                          : UserUsageStatus.DEACTIVATION === userUsageStatus
+                            ? '利用停止'
+                            : UserUsageStatus.DISAPPROVAL === userUsageStatus
+                              ? '否認'
+                              : UserUsageStatus.DELETE === userUsageStatus
+                                ? '削除'
+                                : '登録中'
+                    }
+                  />
+                </ItemBase>
+                {userUsageStatus === UserUsageStatus.NOLIMIT && (
+                  <>
+                    <ItemBase name={'利用ステータス'} isRequired={0}>
+                      <SelectElement
+                        control={control}
+                        size="small"
+                        name="usage_status"
+                        fullWidth
+                        options={[
+                          { id: UsageStatus.AVAILABLE, label: '利用可能' },
+                          { id: UsageStatus.DEACTIVATION, label: '利用停止' },
+                        ]}
+                      ></SelectElement>
+                    </ItemBase>
+                    <ItemBase name={'メモ'} isRequired={1}>
+                      <TextareaAutosizeElement
+                        control={control}
+                        size="small"
+                        color={'primary'}
+                        name="memo"
+                        minRows={3}
+                        resizeStyle="vertical"
+                        placeholder="500文字以内で入力してください。"
+                        fullWidth
+                      />
+                    </ItemBase>
+                  </>
+                )}
+              </Grid>
+              <Grid size={{ xs: 12 }} sx={{ display: 'flex', mt: 2, gap: 2 }}>
+                {/* 制限なしの場合 */}
+                {userUsageStatus === UserUsageStatus.NOLIMIT && (
+                  <Button fullWidth variant="contained" type={'submit'}>
+                    更新
                   </Button>
-                </>
-              )}
-            </Grid>
-          </form>
+                )}
+                {/* 否認の場合 */}
+                {userUsageStatus === UserUsageStatus.DISAPPROVAL && (
+                  <>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      onClick={() => {
+                        pullBackHandler();
+                      }}
+                    >
+                      引き戻し
+                    </Button>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      color="error"
+                      onClick={() => {
+                        deletelHandler();
+                      }}
+                    >
+                      削除
+                    </Button>
+                  </>
+                )}
+                {/* 申請中の場合 */}
+                {userUsageStatus === UserUsageStatus.PENDING && (
+                  <>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      color="error"
+                      onClick={() => {
+                        disapprovalHandler();
+                      }}
+                    >
+                      否認
+                    </Button>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      color="success"
+                      onClick={() => {
+                        approvalHandler();
+                      }}
+                    >
+                      承認
+                    </Button>
+                  </>
+                )}
+              </Grid>
+            </form>
+          )}
         </Box>
       </Paper>
     </>

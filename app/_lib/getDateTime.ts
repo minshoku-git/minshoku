@@ -6,6 +6,15 @@ import { toZonedTime } from 'date-fns-tz';
  */
 
 /**
+ * 現在日0時の取得
+ * @returns date 日付(本日)
+ */
+export function getTodayZeroHour() {
+  const d = getToday();
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0);
+}
+
+/**
  * 現在日の取得
  * @returns date 日付(本日)
  */

@@ -2,19 +2,15 @@
 
 import { getAllTodoName } from '@/app/_lib/supabase/supabaseFunction';
 
-import {
-  get_companyDetail,
-  insert_companyDetail,
-  search_companyList,
-} from '../_lib/supabase/functions/companyFunction';
+import { insert_companyDetail, update_companyDetail } from '../_lib/supabase/functions/companyDetailFunction';
+import { get_companyDetail, search_companyList } from '../_lib/supabase/functions/companyFunction';
 import {
   get_shopDetail,
   insert_shopDetail,
   search_shopList,
   update_shopDetail,
 } from '../_lib/supabase/functions/shopFunction';
-import { search_userList } from '../_lib/supabase/functions/userFuction';
-import { insert_companyDetail_TEST, update_companyDetail_TEST } from '../_lib/supabase/traTest';
+import { get_userDetail, search_userList } from '../_lib/supabase/functions/userFuction';
 import { ApiRequest } from '../_lib/supabase/types';
 import {
   CompanyDetailFormValues,
@@ -66,16 +62,16 @@ export async function insertComponyDetail(value: ApiRequest<CompanyDetailFormVal
   return await insert_companyDetail(value);
 }
 
-export async function insertComponyDetailTEST(value: ApiRequest<CompanyDetailFormValues>) {
-  return await insert_companyDetail_TEST(value);
-}
-
-export async function updateComponyDetailTEST(value: ApiRequest<CompanyDetailFormValues>) {
-  return await update_companyDetail_TEST(value);
+export async function updateComponyDetail(value: ApiRequest<CompanyDetailFormValues>) {
+  return await update_companyDetail(value);
 }
 
 /* ユーザー検索
 ------------------------------------------------------------------ */
 export async function searchUserList(value: ApiRequest<UserSearchFormValues>) {
   return await search_userList(value);
+}
+
+export async function getUserDetail(value: ApiRequest<number>) {
+  return await get_userDetail(value);
 }

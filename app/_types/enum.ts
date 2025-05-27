@@ -34,20 +34,52 @@ export enum UserUsageStatus {
   REGISTERED = '5',
 }
 
-/* 利用制限ステータス */
-export enum UsageRestrictionsStatus {
-  AVAILABLE = '0', // 利用可能
-  DEACTIVATION = '1', // 利用停止
+/**
+ * ユーザー利用ステータスの論理名を取得します。
+ * @param {UserUsageStatus} value - 締め切り番号
+ * @returns {string} - 論理名
+ */
+export const convertUserUsageStatusName = (value: UserUsageStatus): string => {
+  switch (value) {
+    case UserUsageStatus.NOLIMIT:
+      return '制限なし';
+    case UserUsageStatus.PENDING:
+      return '申請中';
+    case UserUsageStatus.DEACTIVATION:
+      return '利用停止';
+    case UserUsageStatus.DISAPPROVAL:
+      return '否認';
+    case UserUsageStatus.DELETE:
+      return '削除';
+    case UserUsageStatus.REGISTERED:
+      return '登録中';
+  }
+};
+
+/** 利用ステータス */
+export enum UsageStatus {
+  /** 0:利用可能 */
+  AVAILABLE = '0',
+  /** 1:利用停止 */
+  DEACTIVATION = '1',
 }
 
-/* 会社利用ステータス(契約ステータス？) */
-export enum CompaniesUsageStatus {
-  AVAILABLE = '0', // 利用可能
-  DEACTIVATION = '1', // 利用停止
-}
+/**
+ * 利用ステータスの論理名を取得します。
+ * @param {UsageStatus} value - 区分値
+ * @returns {string} - 論理名
+ */
+export const convertUsageStatusName = (value: UsageStatus): string => {
+  switch (value) {
+    case UsageStatus.AVAILABLE:
+      return '利用可能';
+    case UsageStatus.DEACTIVATION:
+      return '利用停止';
+  }
+};
 
-/* 支払いステータス */
-export enum PaymentStatus {
+/** 支払い種別 */
+export enum PaymentTypes {
   /** 0:会社清算 */
   SALAEY_DEDUCTIONS = '0',
   /** 1:クレジットカード */

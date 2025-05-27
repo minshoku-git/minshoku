@@ -1,5 +1,6 @@
 import { PostgrestSingleResponse } from '@supabase/supabase-js';
 
+import { convertUsageStatusName, UsageStatus } from '@/app/_types/enum';
 import { CompanyDetailFormValues, CompanySearchFormValues } from '@/app/_types/types';
 
 import { DepartmentData, EmploymentData } from '../../createMockData';
@@ -10,6 +11,8 @@ import { ApiRequest, ApiResponse, SearchResult_CompanyList } from '../types';
 
 /* 会社一覧
 ------------------------------------------------------------------ */
+
+export const revalidate = 0;
 
 /**
  * search_companyList
@@ -54,13 +57,13 @@ export const search_companyList = async (
     }
   }
   // 利用ステータス
-  if (req.companies_usage_state) {
-    query = query.eq('companies_usage_state', req.companies_usage_state);
-    queryCount = queryCount.eq('companies_usage_state', req.companies_usage_state);
+  if (req.usage_status) {
+    query = query.eq('usage_status', req.usage_status);
+    queryCount = queryCount.eq('usage_status', req.usage_status);
   }
 
   // ソート順序
-  const sortConditions: Array<string> = ['company_name', 'branch_name', 'address', 'companies_usage_state'];
+  const sortConditions: Array<string> = ['company_name', 'branch_name', 'address', 'usage_status'];
   // ソート用住所
   const sortConditionsAddress: Array<string> = [
     'post_code',
@@ -100,6 +103,7 @@ export const search_companyList = async (
   // 件数取得
   const { count, error: countError }: PostgrestSingleResponse<SearchResult_CompanyList[]> = await queryCount;
   if (countError) {
+    console.log('countError', countError);
     return {
       data: null,
       error: countError.message,
@@ -116,6 +120,7 @@ export const search_companyList = async (
   // 明細行取得
   const { data, error }: PostgrestSingleResponse<SearchResult_CompanyList[]> = await query;
   if (error) {
+    console.log('error', error);
     return {
       data: null,
       error: error.message,
@@ -129,10 +134,17 @@ export const search_companyList = async (
     };
   }
 
+  const resData: SearchResult_CompanyList[] = data.map((m) => {
+    return {
+      ...m,
+      usage_status: convertUsageStatusName(m.usage_status as UsageStatus),
+    };
+  });
+
   // 結果返却
   const { startRow, endRow, totalPage } = getPagenationsItems(startRange, data.length, count ?? 0);
   return {
-    data,
+    data: resData,
     error: null,
     paginate: {
       count,
@@ -144,7 +156,7 @@ export const search_companyList = async (
   };
 };
 
-/* 会社詳細
+/* 会社詳細  TODO: 没です！レビュー後、移動予定
 ------------------------------------------------------------------ */
 
 /**
@@ -152,7 +164,7 @@ export const search_companyList = async (
  * IDに一致する会社情報を取得する。
  *
  * @param {ApiRequest<number>} values - 検索条件
- * @returns {Promise<ApiResponse<any>>} 検索結果
+ * @returns {Promise<ApiResponse<CompanyDetailFormValues>>} 検索結果
  */
 export const get_companyDetail = async (values: ApiRequest<number>): Promise<ApiResponse<CompanyDetailFormValues>> => {
   // 1.会社情報取得
@@ -222,7 +234,7 @@ export const get_companyDetail = async (values: ApiRequest<number>): Promise<Api
       })
     : [];
 
-  console.log(data.companies_usage_state);
+  console.log(data.usage_status);
 
   const res: CompanyDetailFormValues = {
     id: data.id?.toString(),
@@ -250,7 +262,7 @@ export const get_companyDetail = async (values: ApiRequest<number>): Promise<Api
     cancel_period_time: data.cancel_period_time ? convertTimeToDate(data.cancel_period_time) : null,
     departmentInfo: depInit,
     employmentStatusInfo: empInit,
-    companies_usage_state: data.companies_usage_state,
+    usage_status: data.usage_status,
   };
 
   console.log(res);
@@ -288,13 +300,13 @@ export const insert_companyDetail = async (
       restaurant_name: req.restaurant_name,
       location: req.location,
       mailaddress: req.mailaddress,
-      memo: 'ソースだよ',
+      memo: req.memo,
       usage_state: 0,
       optional_item_title_1: req.optional_item_title_1,
       optional_item_title_2: req.optional_item_title_2,
       optional_item_notes_1: req.optional_item_notes_1,
       optional_item_notes_2: req.optional_item_notes_2,
-      url_key: '',
+      url_key: '', // TODO: 仕様確定待ち
       offer_time_from: req.offer_time_from,
       offer_time_to: req.offer_time_to,
       order_period_day: Number(req.order_period_day),
@@ -339,10 +351,6 @@ export const insert_companyDetail = async (
   //   .select('id')
   //   .single();
   // const { error, data } = (await query) as PostgrestSingleResponse<t_companies>;
-
-  // 部署情報の新規登録
-  // TASK:手動でのロールバックは厳しいなー！！！！！米山さんと長島さんと要相談
-  // TASK:それはともあれ、SQL書いて実行できるか検証する必要はあると思いますだよ
 
   // 企業雇用形態の新規登録
 

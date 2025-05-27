@@ -9,7 +9,7 @@ import { SelectElement, TextFieldElement } from 'react-hook-form-mui';
 
 import { searchComponyList } from '@/app/_actions/actions';
 import { ApiRequest, ApiResponse, SearchResult_CompanyList } from '@/app/_lib/supabase/types';
-import { AlertType, CompaniesUsageStatus, SortType, UserUsageStatus } from '@/app/_types/enum';
+import { AlertType, SortType, UsageStatus, UserUsageStatus } from '@/app/_types/enum';
 import { CompanySearchFormValues, CompanySearchSchema, HeaderStatus } from '@/app/_types/types';
 import { CustomTable } from '@/app/_ui/_shared/costomTable/customTable';
 import { ResultsCounter } from '@/app/_ui/_shared/resultsCounter';
@@ -26,7 +26,7 @@ const resultHeader: Array<HeaderStatus> = [
   { name: '会社名', variableName: 'company_name', sort: SortType.ASC },
   { name: '支店名', variableName: 'branch_name', sort: SortType.ASC },
   { name: '住所', variableName: 'address', sort: SortType.ASC },
-  { name: '会社利用ステータス', variableName: 'companies_usage_state', sort: SortType.ASC },
+  { name: '利用ステータス', variableName: 'usage_status', sort: SortType.ASC },
 ];
 
 /**
@@ -42,6 +42,12 @@ export const CompanyComponent = (): JSX.Element => {
 
   /* useState
   ------------------------------------------------------------------ */
+  /* ソート配列 */
+  const [sortArray, setSortArray] = useState<HeaderStatus[]>(resultHeader);
+  /* 現在のソート対象項目 */
+  const [sortTarget, setSortTarget] = useState<HeaderStatus>(resultHeader[0]);
+
+  /* 検索結果 */
   const [isSearch, setIsSearch] = useState(false);
   const [condition, setCondition] = useState<ApiRequest<CompanySearchFormValues>>({
     request: {
@@ -50,7 +56,7 @@ export const CompanyComponent = (): JSX.Element => {
       prefectures: '',
       municipalities: '',
       town_area: '',
-      companies_usage_state: undefined,
+      usage_status: undefined,
     },
     sortItems: {
       nextPage: 1,
@@ -58,6 +64,7 @@ export const CompanyComponent = (): JSX.Element => {
       ascending: true,
     },
   });
+  /* 検索結果 */
   const [result, setResult] = useState<ApiResponse<SearchResult_CompanyList[]> | null>({
     data: null,
     error: null,
@@ -82,7 +89,7 @@ export const CompanyComponent = (): JSX.Element => {
       prefectures: '',
       municipalities: '',
       town_area: '',
-      companies_usage_state: undefined,
+      usage_status: undefined,
     },
   });
 
@@ -105,6 +112,8 @@ export const CompanyComponent = (): JSX.Element => {
       setResult(null);
       setIsSearch(false);
     } else {
+      setSortArray(resultHeader)
+      setSortTarget(resultHeader[0])
       setCondition(req);
       setResult(res);
       setIsSearch(true);
@@ -288,7 +297,7 @@ export const CompanyComponent = (): JSX.Element => {
                   ></SelectElement>
                 </Box>
               </ItemBase>
-              <ItemBase name={'会社利用ステータス'} isRequired={2}>
+              <ItemBase name={'利用ステータス'} isRequired={2}>
                 <Box
                   sx={{
                     display: 'flex',
@@ -300,12 +309,12 @@ export const CompanyComponent = (): JSX.Element => {
                   <SelectElement
                     control={control}
                     size="small"
-                    name="companies_usage_state"
+                    name="usage_status"
                     fullWidth
                     options={[
                       { id: '', label: '未選択' },
-                      { id: CompaniesUsageStatus.AVAILABLE, label: '利用可能' },
-                      { id: CompaniesUsageStatus.DEACTIVATION, label: '利用停止' },
+                      { id: UsageStatus.AVAILABLE, label: '利用可能' },
+                      { id: UsageStatus.DEACTIVATION, label: '利用停止' },
                     ]}
                   ></SelectElement>
                 </Box>
@@ -333,19 +342,20 @@ export const CompanyComponent = (): JSX.Element => {
             {/* ======= 検索結果 ========================================== */}
             {isSearch && result && (<>
               <Divider sx={{ my: 3 }} />
-              {result.paginate?.count && result.paginate?.count > 0 && (
-                <>
-                  <Box sx={{ display: 'flex', alignItems: 'end' }}>
-                    {/* 検索件数 */}
-                    <ResultsCounter startRow={result.paginate?.startRow} endRow={result.paginate?.endRow} count={result.paginate?.count} />
-                  </Box>
-                </>
-              )}
+              {result.paginate?.count && result.paginate?.count > 0 ? (
+                <Box sx={{ display: 'flex', alignItems: 'end' }}>
+                  <ResultsCounter startRow={result.paginate?.startRow} endRow={result.paginate?.endRow} count={result.paginate?.count} />
+                </Box>
+              ) : (<></>)}
               <CustomTable
                 paginate={result.paginate}
-                header={resultHeader}
                 sortHandler={sortHandler}
-                pageChangeHandler={pageChangeHandler}
+                pageChangeHandler={() => { }}
+                header={resultHeader}
+                sortArray={sortArray}
+                setSortArray={setSortArray}
+                sortTarget={sortTarget}
+                setSortTarget={setSortTarget}
                 renderBody={() =>
                   /* 検索結果 */
                   result.data?.map((row, index) => (
@@ -376,7 +386,7 @@ export const CompanyComponent = (): JSX.Element => {
                         {row.building_name}
                       </TableCell>
                       <TableCell width={'10%'}>
-                        {CompaniesUsageStatus.AVAILABLE === row.companies_usage_state ? '利用可能' : '利用停止'}
+                        {UsageStatus.AVAILABLE === row.usage_status ? '利用可能' : '利用停止'}
                       </TableCell>
                     </TableRow>
                   ))

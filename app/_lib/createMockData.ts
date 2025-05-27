@@ -25,7 +25,7 @@ export function MockDataCreate_UserResult() {
         branch_name: i % 2 ? '本郷事業所' : i % 3 ? 'XXXX支店' : 'OOOO支店',
       },
       user_name_kana: 'ユーザーネーム' + i,
-      usage_state: 0,
+      user_usage_status: '',
     });
   }
   return result;
@@ -69,7 +69,7 @@ export function MockDataCreate_ScheduleResult() {
       shop_name: i % 2 ? 'COCO壱' : 'XXXXXXXXXX',
       menu_name: i % 2 ? 'チキンカレー' : i % 3 ? 'マッサマンカレー' : 'ビーフカレー',
       count: i,
-      allergies: i % 2 ? ['ごま', '卵', '乳', '落花生', '大豆'] : i % 3 ? ['えび', 'かに'] : [],
+      allergen_labelling: i % 2 ? ['ごま', '卵', '乳', '落花生', '大豆'] : i % 3 ? ['えび', 'かに'] : [],
     });
   }
   return result;
@@ -85,7 +85,7 @@ export function MockDataCreate_ShopSearchResult() {
         i % 2
           ? '〒113-0033\n東京都文京区本郷３丁目４０−３ トーセービル 4階'
           : '〒060-0002\n北海道札幌市中央区北二条西三丁目 札幌北2条ビル 8階 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
-      usage_state: i % 2 ? '0' : i % 3 ? '1' : '2',
+      usage_status: i % 2 ? '0' : i % 3 ? '1' : '2',
       shop_post_code: i % 2 ? '113-0033' : '060-0002',
     });
   }
@@ -104,7 +104,7 @@ export function MockDataCreate_CompanySearchResult() {
         i % 2
           ? '東京都文京区本郷３丁目４０−３ トーセービル 4階'
           : '北海道札幌市中央区北二条西三丁目 札幌北2条ビル 8階 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
-      companies_usage_state: i % 2 ? '利用可能' : i % 3 ? '利用可能' : '利用停止',
+      usage_status: i % 2 ? '利用可能' : i % 3 ? '利用可能' : '利用停止',
       area_block_number: '',
       building_name: '',
       municipalities: '',
