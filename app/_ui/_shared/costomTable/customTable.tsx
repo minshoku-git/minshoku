@@ -13,9 +13,8 @@ import {
 import { JSX } from 'react';
 import React from 'react';
 
-import { PaginateData } from '@/app/_lib/supabase/types';
 import { SortType } from '@/app/_types/enum';
-import { HeaderStatus } from '@/app/_types/types';
+import { HeaderStatus, PaginateData } from '@/app/_types/types';
 import CustomPagination from '@/app/_ui/_shared/costomTable/costomPagination';
 
 type CustomTableProps = {

@@ -1,6 +1,5 @@
 import './globals.css';
 
-import { Dialog, Modal } from '@mui/material';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import type { Metadata } from 'next';
 import React from 'react';

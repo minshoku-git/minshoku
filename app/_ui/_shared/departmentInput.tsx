@@ -3,7 +3,7 @@ import { Box, Button, Grid2 as Grid, IconButton, Typography } from '@mui/materia
 import { JSX, Suspense } from 'react';
 import { Control, FieldArrayWithId, TextFieldElement } from 'react-hook-form-mui';
 
-import { CompanyDetailFormValues } from '@/app/_types/types';
+import { CompanyDetailFormValues } from '@/app/(private)/companyDetail/[id]/_lib/types';
 
 type Props = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
