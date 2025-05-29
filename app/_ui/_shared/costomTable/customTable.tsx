@@ -1,4 +1,15 @@
-import { Box, Divider, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TableSortLabel, Typography } from '@mui/material';
+import {
+  Box,
+  Divider,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TableSortLabel,
+  Typography,
+} from '@mui/material';
 import { JSX } from 'react';
 import React from 'react';
 
@@ -49,23 +60,23 @@ export const CustomTable = ({
   ------------------------------------------------------------------ */
 
   /**
-  * ResultHeaderコンポーネント。
-  * @param {HeaderStatus} - header
-  * @returns {void} 
-  */
+   * ResultHeaderコンポーネント。
+   * @param {HeaderStatus} - header
+   * @returns {void}
+   */
   const sortChangeHandler = React.useMemo(() => {
     return (header: HeaderStatus) => {
       const setType = SortType.ASC === header.sort ? SortType.DESC : SortType.ASC;
       const jadge = sortTarget.name === header.name;
       const res = jadge
         ? // ソートしたい対象が同じなら、逆のソート順に変更して、他の項目を昇順に変更。
-        sortArray.map((item) =>
-          item.name === header.name ? { ...item, sort: setType } : { ...item, sort: SortType.ASC }
-        )
+          sortArray.map((item) =>
+            item.name === header.name ? { ...item, sort: setType } : { ...item, sort: SortType.ASC }
+          )
         : // それ以外の場合は、選択した項目を昇順として、他の項目も昇順に変更。
-        sortArray.map((item) =>
-          item.name === header.name ? { ...item, sort: SortType.ASC } : { ...item, sort: SortType.ASC }
-        );
+          sortArray.map((item) =>
+            item.name === header.name ? { ...item, sort: SortType.ASC } : { ...item, sort: SortType.ASC }
+          );
 
       // ソートAPI実行
       sortHandler(header.variableName, jadge ? (SortType.ASC === setType ? true : false) : true);
@@ -96,7 +107,11 @@ export const CustomTable = ({
                         sortChangeHandler(item);
                       }}
                     >
-                      <TableSortLabel active={item.name === sortTarget.name} direction={item.sort} sx={{ display: 'flex' }}>
+                      <TableSortLabel
+                        active={item.name === sortTarget.name}
+                        direction={item.sort}
+                        sx={{ display: 'flex' }}
+                      >
                         <Box component="div" sx={{ display: 'inline-flex', alignItems: 'center' }}>
                           {item.name}
                         </Box>

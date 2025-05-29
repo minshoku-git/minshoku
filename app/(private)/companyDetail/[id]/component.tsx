@@ -1,34 +1,19 @@
 'use client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  Box,
-  Button,
-  Divider,
-  Paper,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { Box, Button, Divider, Paper, TextField, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2';
-import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
+import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
 import { ja } from 'date-fns/locale/ja';
 import { useParams, useRouter } from 'next/navigation';
 import { JSX, useEffect, useMemo, useState } from 'react';
 import { SubmitHandler, useFieldArray, useForm } from 'react-hook-form';
-import {
-  SelectElement,
-  TextareaAutosizeElement,
-  TextFieldElement,
-} from 'react-hook-form-mui';
+import { SelectElement, TextareaAutosizeElement, TextFieldElement } from 'react-hook-form-mui';
 import { TimePickerElement } from 'react-hook-form-mui/date-pickers';
 
-import {
-  insertComponyDetail,
-  searchComponyDetail,
-  updateComponyDetail,
-} from '@/app/_actions/actions';
+import { insertComponyDetail, searchComponyDetail, updateComponyDetail } from '@/app/_actions/actions';
 import { DepartmentData, EmploymentData } from '@/app/_lib/createMockData';
-import { getNow, getTodayZeroHour } from '@/app/_lib/getDateTime';
+import { getTodayZeroHour } from '@/app/_lib/getDateTime';
 import { checkTempId, getEditFlag } from '@/app/_lib/utill';
 import { TEMP_HYPHEN } from '@/app/_types/constants';
 import { AlertType, UsageStatus } from '@/app/_types/enum';
@@ -70,7 +55,6 @@ export const CompanyComponent = (): JSX.Element => {
   const [deleteDepArray, setDeleteDepArray] = useState<DepartmentData[]>([]);
   const [deleteEmpArray, setDeleteEmpArray] = useState<EmploymentData[]>([]);
 
-
   /* useForm
   ------------------------------------------------------------------ */
   const {
@@ -106,10 +90,7 @@ export const CompanyComponent = (): JSX.Element => {
       openProcessing();
       const data = (await searchComponyDetail({ request: Number(id) })).data;
       if (!data?.id) {
-        openSnackbar(
-          AlertType.ERROR,
-          '会社情報の取得に失敗しました。再度お試しください。'
-        );
+        openSnackbar(AlertType.ERROR, '会社情報の取得に失敗しました。再度お試しください。');
         router.push('/company');
         return;
       }
@@ -188,19 +169,14 @@ export const CompanyComponent = (): JSX.Element => {
   /* functions
   ------------------------------------------------------------------ */
   /* 新規登録ハンドラー */
-  const insertHandler: SubmitHandler<CompanyDetailFormValues> = async (
-    data
-  ) => {
+  const insertHandler: SubmitHandler<CompanyDetailFormValues> = async (data) => {
     console.log('登録データ:', data);
     openProcessing();
     const res = await insertComponyDetail({
       request: data,
     });
     if (res.error) {
-      openSnackbar(
-        AlertType.ERROR,
-        '会社情報の新規登録に失敗しました。再度お試しください。' + res.error
-      );
+      openSnackbar(AlertType.ERROR, '会社情報の新規登録に失敗しました。再度お試しください。' + res.error);
     } else {
       openSnackbar(AlertType.SUCCESS, '会社情報の登録が完了しました。');
       router.push(`/companyDetail/${res.data}`);
@@ -209,9 +185,7 @@ export const CompanyComponent = (): JSX.Element => {
   };
 
   /* 更新ハンドラー */
-  const updateHandler: SubmitHandler<CompanyDetailFormValues> = async (
-    data
-  ) => {
+  const updateHandler: SubmitHandler<CompanyDetailFormValues> = async (data) => {
     openProcessing();
     const res = await updateComponyDetail({
       request: {
@@ -222,13 +196,10 @@ export const CompanyComponent = (): JSX.Element => {
     });
 
     if (res.error) {
-      openSnackbar(
-        AlertType.ERROR,
-        '会社情報の更新に失敗しました。再度お試しください。' + res.error
-      );
+      openSnackbar(AlertType.ERROR, '会社情報の更新に失敗しました。再度お試しください。' + res.error);
     } else {
       await getInit();
-      window.scrollTo(0, 0)
+      window.scrollTo(0, 0);
       openSnackbar(AlertType.SUCCESS, '会社情報の更新が完了しました。');
     }
     closeProcessing();
@@ -326,14 +297,8 @@ export const CompanyComponent = (): JSX.Element => {
     <>
       <Paper sx={{ display: 'flex', flexDirection: 'column' }}>
         {/* タイトル */}
-        <Grid container alignItems='center'>
-          <Typography
-            component='h2'
-            variant='h6'
-            color='primary'
-            gutterBottom
-            sx={{ px: 3, py: 2, mb: 0 }}
-          >
+        <Grid container alignItems="center">
+          <Typography component="h2" variant="h6" color="primary" gutterBottom sx={{ px: 3, py: 2, mb: 0 }}>
             {pageName}
           </Typography>
           <Box sx={{ flexGrow: 1 }} />
@@ -342,29 +307,22 @@ export const CompanyComponent = (): JSX.Element => {
         {editMode && (
           <Box sx={{ m: 3, mb: 0, display: 'flex' }}>
             <Box sx={{ flexGrow: 1 }} />
-            <Button variant='contained' onClick={clickboardHandler}>
+            <Button variant="contained" onClick={clickboardHandler}>
               URLと案内文をコピーする
             </Button>
           </Box>
         )}
         <Box sx={{ m: 3 }}>
           {dataLoaded && (
-            <form
-              onSubmit={handleSubmit(editMode ? updateHandler : insertHandler)}
-            >
-              <Grid
-                container
-                rowSpacing={2}
-                columnSpacing={{ xs: 1, sm: 2, md: 3 }}
-                direction='column'
-              >
+            <form onSubmit={handleSubmit(editMode ? updateHandler : insertHandler)}>
+              <Grid container rowSpacing={2} columnSpacing={{ xs: 1, sm: 2, md: 3 }} direction="column">
                 {editMode && (
                   <>
                     <ItemBase name={'ユーザー登録URL'} isRequired={2}>
                       <TextField
-                        size='small'
+                        size="small"
                         color={'primary'}
-                        name='userUrl'
+                        name="userUrl"
                         fullWidth
                         disabled
                         sx={{ backgroundColor: 'lightgray' }}
@@ -375,9 +333,9 @@ export const CompanyComponent = (): JSX.Element => {
                     <ItemBase name={'会社ID'} isRequired={2}>
                       <TextFieldElement
                         control={control}
-                        size='small'
+                        size="small"
                         color={'primary'}
-                        name='id'
+                        name="id"
                         fullWidth
                         disabled
                         sx={{ backgroundColor: 'lightgray' }}
@@ -387,20 +345,14 @@ export const CompanyComponent = (): JSX.Element => {
                   </>
                 )}
                 <ItemBase name={'会社名'} isRequired={0}>
-                  <TextFieldElement
-                    control={control}
-                    size='small'
-                    color={'primary'}
-                    name='company_name'
-                    fullWidth
-                  />
+                  <TextFieldElement control={control} size="small" color={'primary'} name="company_name" fullWidth />
                 </ItemBase>
                 <ItemBase name={'支店名'} isRequired={0}>
                   <TextFieldElement
                     control={control}
-                    size='small'
+                    size="small"
                     color={'primary'}
-                    name='branch_name'
+                    name="branch_name"
                     fullWidth
                     slotProps={{ htmlInput: { maxLength: 256 } }}
                   />
@@ -408,9 +360,9 @@ export const CompanyComponent = (): JSX.Element => {
                 <ItemBase name={'食堂名'} isRequired={0}>
                   <TextFieldElement
                     control={control}
-                    size='small'
+                    size="small"
                     color={'primary'}
-                    name='restaurant_name'
+                    name="restaurant_name"
                     slotProps={{ htmlInput: { maxLength: 7 } }}
                     fullWidth
                   />
@@ -427,9 +379,9 @@ export const CompanyComponent = (): JSX.Element => {
                   >
                     <TextFieldElement
                       control={control}
-                      size='small'
+                      size="small"
                       color={'primary'}
-                      name='post_code'
+                      name="post_code"
                       fullWidth
                       slotProps={{ htmlInput: { maxLength: 7 } }}
                     />
@@ -447,17 +399,17 @@ export const CompanyComponent = (): JSX.Element => {
                   >
                     <SelectElement
                       control={control}
-                      size='small'
-                      name='prefectures'
-                      label='都道府県'
+                      size="small"
+                      name="prefectures"
+                      label="都道府県"
                       fullWidth
                       options={stateData}
                     ></SelectElement>
                     <SelectElement
                       control={control}
-                      size='small'
-                      name='municipalities'
-                      label='市区'
+                      size="small"
+                      name="municipalities"
+                      label="市区"
                       fullWidth
                       options={[
                         { id: '', label: '未選択', value: '未選択' },
@@ -468,9 +420,9 @@ export const CompanyComponent = (): JSX.Element => {
                     ></SelectElement>
                     <SelectElement
                       control={control}
-                      size='small'
-                      name='town_area'
-                      label='町村'
+                      size="small"
+                      name="town_area"
+                      label="町村"
                       fullWidth
                       options={[
                         { id: '', label: '未選択' },
@@ -484,9 +436,9 @@ export const CompanyComponent = (): JSX.Element => {
                 <ItemBase name={'番地'} isRequired={0}>
                   <TextFieldElement
                     control={control}
-                    size='small'
+                    size="small"
                     color={'primary'}
-                    name='area_block_number'
+                    name="area_block_number"
                     fullWidth
                     slotProps={{ htmlInput: { maxLength: 128 } }}
                   />
@@ -494,20 +446,20 @@ export const CompanyComponent = (): JSX.Element => {
                 <ItemBase name={'建物名'} isRequired={0}>
                   <TextFieldElement
                     control={control}
-                    size='small'
+                    size="small"
                     color={'primary'}
-                    name='building_name'
+                    name="building_name"
                     fullWidth
-                    placeholder='建物名・階数など'
+                    placeholder="建物名・階数など"
                     slotProps={{ htmlInput: { maxLength: 128 } }}
                   />
                 </ItemBase>
                 <ItemBase name={'提供場所'} isRequired={0}>
                   <TextFieldElement
                     control={control}
-                    size='small'
+                    size="small"
                     color={'primary'}
-                    name='location'
+                    name="location"
                     fullWidth
                     slotProps={{ htmlInput: { maxLength: 128 } }}
                   />
@@ -515,10 +467,10 @@ export const CompanyComponent = (): JSX.Element => {
                 <ItemBase name={'メールアドレス'} isRequired={0}>
                   <TextFieldElement
                     control={control}
-                    size='small'
+                    size="small"
                     color={'primary'}
-                    type='email'
-                    name='mailaddress'
+                    type="email"
+                    name="mailaddress"
                     fullWidth
                     slotProps={{ htmlInput: { maxLength: 256 } }}
                   />
@@ -526,11 +478,11 @@ export const CompanyComponent = (): JSX.Element => {
                 <ItemBase name={'連絡先・メモ'} isRequired={1}>
                   <TextareaAutosizeElement
                     control={control}
-                    size='small'
+                    size="small"
                     color={'primary'}
-                    name='memo'
+                    name="memo"
                     minRows={3}
-                    resizeStyle='vertical'
+                    resizeStyle="vertical"
                     fullWidth
                   />
                 </ItemBase>
@@ -556,19 +508,19 @@ export const CompanyComponent = (): JSX.Element => {
                   <Box>
                     <TextFieldElement
                       control={control}
-                      size='small'
+                      size="small"
                       color={'primary'}
-                      name='optional_item_title_1'
-                      label='項目名'
+                      name="optional_item_title_1"
+                      label="項目名"
                       sx={{ width: '640px', mb: 1 }}
                       slotProps={{ htmlInput: { maxLength: 128 } }}
                     />
                     <TextFieldElement
                       control={control}
-                      size='small'
+                      size="small"
                       color={'primary'}
-                      name='optional_item_notes_1'
-                      label='注釈'
+                      name="optional_item_notes_1"
+                      label="注釈"
                       sx={{ width: '640px' }}
                       slotProps={{ htmlInput: { maxLength: 128 } }}
                     />
@@ -578,19 +530,19 @@ export const CompanyComponent = (): JSX.Element => {
                   <Box>
                     <TextFieldElement
                       control={control}
-                      size='small'
+                      size="small"
                       color={'primary'}
-                      name='optional_item_title_2'
-                      label='項目名'
+                      name="optional_item_title_2"
+                      label="項目名"
                       sx={{ width: '640px', mb: 1 }}
                       slotProps={{ htmlInput: { maxLength: 128 } }}
                     />
                     <TextFieldElement
                       control={control}
-                      size='small'
+                      size="small"
                       color={'primary'}
-                      name='optional_item_notes_2'
-                      label='注釈'
+                      name="optional_item_notes_2"
+                      label="注釈"
                       sx={{ width: '640px' }}
                       slotProps={{ htmlInput: { maxLength: 128 } }}
                     />
@@ -605,10 +557,7 @@ export const CompanyComponent = (): JSX.Element => {
                       width: '640px',
                     }}
                   >
-                    <LocalizationProvider
-                      dateAdapter={AdapterDateFns}
-                      adapterLocale={ja}
-                    >
+                    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ja}>
                       <TimePickerElement
                         control={control}
                         name={'offer_time_from'}
@@ -652,8 +601,8 @@ export const CompanyComponent = (): JSX.Element => {
                   >
                     <SelectElement
                       control={control}
-                      size='small'
-                      name='order_period_day'
+                      size="small"
+                      name="order_period_day"
                       fullWidth
                       options={selectOptions.day}
                       sx={{ width: '80px' }}
@@ -665,14 +614,9 @@ export const CompanyComponent = (): JSX.Element => {
                         alignItems: 'center',
                       }}
                     >
-                      <Typography sx={{ whiteSpace: 'nowrap' }}>
-                        {'日前'}
-                      </Typography>
+                      <Typography sx={{ whiteSpace: 'nowrap' }}>{'日前'}</Typography>
                     </Box>
-                    <LocalizationProvider
-                      dateAdapter={AdapterDateFns}
-                      adapterLocale={ja}
-                    >
+                    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ja}>
                       <TimePickerElement
                         control={control}
                         name={'order_period_time'}
@@ -683,7 +627,8 @@ export const CompanyComponent = (): JSX.Element => {
                           textField: { size: 'small' },
                           inputAdornment: {},
                         }}
-                      /></LocalizationProvider>
+                      />
+                    </LocalizationProvider>
                   </Box>
                 </ItemBase>
                 <ItemBase name={'キャンセル期限'} isRequired={0}>
@@ -698,8 +643,8 @@ export const CompanyComponent = (): JSX.Element => {
                   >
                     <SelectElement
                       control={control}
-                      size='small'
-                      name='cancel_period_day'
+                      size="small"
+                      name="cancel_period_day"
                       fullWidth
                       options={selectOptions.day}
                       sx={{ width: '80px' }}
@@ -711,14 +656,9 @@ export const CompanyComponent = (): JSX.Element => {
                         alignItems: 'center',
                       }}
                     >
-                      <Typography sx={{ whiteSpace: 'nowrap' }}>
-                        {'日前'}
-                      </Typography>
+                      <Typography sx={{ whiteSpace: 'nowrap' }}>{'日前'}</Typography>
                     </Box>
-                    <LocalizationProvider
-                      dateAdapter={AdapterDateFns}
-                      adapterLocale={ja}
-                    >
+                    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ja}>
                       <TimePickerElement
                         control={control}
                         name={'cancel_period_time'}
@@ -736,8 +676,8 @@ export const CompanyComponent = (): JSX.Element => {
                 <ItemBase name={'利用ステータス'} isRequired={0}>
                   <SelectElement
                     control={control}
-                    size='small'
-                    name='usage_status'
+                    size="small"
+                    name="usage_status"
                     fullWidth
                     options={[
                       { id: UsageStatus.AVAILABLE, label: '利用可能' },
@@ -751,7 +691,7 @@ export const CompanyComponent = (): JSX.Element => {
               </Grid>
               {/* 登録・更新ボタン */}
               <Grid sx={{ mt: 2 }} size={{ xs: 12 }}>
-                <Button fullWidth variant='contained' type='submit'>
+                <Button fullWidth variant="contained" type="submit">
                   {editMode ? '更新' : '登録'}
                 </Button>
               </Grid>
@@ -778,32 +718,33 @@ const TimePickerStyle = {
 
 /** formValues初期値 */
 const getInitData = (data: CompanyDetailFormValues | null) => {
-
   const depInit: DepartmentData[] =
-    (data && data.departmentInfo.length > 0)
+    data && data.departmentInfo.length > 0
       ? data?.departmentInfo
-      : [{
-        id: TEMP_HYPHEN + 0,
-        name: '設定なし',
-        disabled: false,
-        delete_flag: false
-      }];
+      : [
+          {
+            id: TEMP_HYPHEN + 0,
+            name: '設定なし',
+            disabled: false,
+            delete_flag: false,
+          },
+        ];
 
   const empInit: EmploymentData[] =
-    (data && data.employmentStatusInfo.length > 0)
+    data && data.employmentStatusInfo.length > 0
       ? data.employmentStatusInfo
       : [
-        {
-          id: TEMP_HYPHEN + 0,
-          employment_status_name: '社員',
-          credit_flag: false,
-          paypay_flag: false,
-          deduction_flag: false,
-          set_meal_burden: '0',
-          disabled: false,
-          delete_flag: false,
-        },
-      ];
+          {
+            id: TEMP_HYPHEN + 0,
+            employment_status_name: '社員',
+            credit_flag: false,
+            paypay_flag: false,
+            deduction_flag: false,
+            set_meal_burden: '0',
+            disabled: false,
+            delete_flag: false,
+          },
+        ];
 
   const initData: CompanyDetailFormValues = {
     id: data?.id ? data?.id.toString() : '-',
@@ -823,21 +764,16 @@ const getInitData = (data: CompanyDetailFormValues | null) => {
     location: data?.location ?? '',
     offer_time_from: data?.offer_time_from ?? getTodayZeroHour(),
     offer_time_to: data?.offer_time_to ?? getTodayZeroHour(),
-    cancel_period_day: data?.cancel_period_day
-      ? data?.cancel_period_day.toString()
-      : '',
+    cancel_period_day: data?.cancel_period_day ? data?.cancel_period_day.toString() : '',
     cancel_period_time: data?.cancel_period_time ?? getTodayZeroHour(),
-    order_period_day: data?.order_period_day
-      ? data?.order_period_day.toString()
-      : '',
+    order_period_day: data?.order_period_day ? data?.order_period_day.toString() : '',
     order_period_time: data?.order_period_time ?? getTodayZeroHour(),
     optional_item_title_1: data?.optional_item_title_1 ?? '',
     optional_item_title_2: data?.optional_item_title_2 ?? '',
     optional_item_notes_1: data?.optional_item_notes_1 ?? '',
     optional_item_notes_2: data?.optional_item_notes_2 ?? '',
-    usage_status:
-      data?.usage_status ?? UsageStatus.AVAILABLE,
+    usage_status: data?.usage_status ?? UsageStatus.AVAILABLE,
   };
 
-  return initData
-}
+  return initData;
+};

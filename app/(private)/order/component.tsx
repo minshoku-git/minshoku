@@ -55,7 +55,7 @@ export const OrderComponent = (): JSX.Element => {
   // ステータス変更確認ダイアログ
   const [openDialog, setOpenDialog] = useState<boolean>(false);
   const [dialogActionHandler, setDialogActionHandler] = useState<() => void>(() => {
-    return () => { };
+    return () => {};
   });
 
   /* useState
@@ -203,8 +203,8 @@ export const OrderComponent = (): JSX.Element => {
       setResult(null);
       setIsSearch(false);
     } else {
-      setSortArray(resultHeader)
-      setSortTarget(resultHeader[0])
+      setSortArray(resultHeader);
+      setSortTarget(resultHeader[0]);
       setCondition(req);
       setResult(res);
       setIsSearch(true);
@@ -496,9 +496,15 @@ export const OrderComponent = (): JSX.Element => {
                 <Divider sx={{ my: 3 }} />
                 {result.paginate?.count && result.paginate?.count > 0 ? (
                   <Box sx={{ display: 'flex', alignItems: 'end' }}>
-                    <ResultsCounter startRow={result.paginate?.startRow} endRow={result.paginate?.endRow} count={result.paginate?.count} />
+                    <ResultsCounter
+                      startRow={result.paginate?.startRow}
+                      endRow={result.paginate?.endRow}
+                      count={result.paginate?.count}
+                    />
                   </Box>
-                ) : (<></>)}
+                ) : (
+                  <></>
+                )}
                 {/* 検索結果 */}
                 <CustomTable
                   paginate={result.paginate}

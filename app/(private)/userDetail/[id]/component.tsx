@@ -53,13 +53,12 @@ export const UserDetailComponent = (): JSX.Element => {
   const [showNini, setShowNini] = useState<boolean>(true);
   const [dataLoaded, setDataLoaded] = useState(false);
 
-
   // ステータス変更確認ダイアログ
   const [openDialog, setOpenDialog] = useState<boolean>(false);
   const [dialogMessage, setDialogMessage] = useState<string>('');
   const [userData, setUserData] = useState<DetailResult_UserData | undefined>();
   const [dialogActionHandler, setDialogActionHandler] = useState<() => void>(() => {
-    return () => { };
+    return () => {};
   });
 
   /* useForm
@@ -89,20 +88,17 @@ export const UserDetailComponent = (): JSX.Element => {
   /** 初期表示データ取得 */
   const getInit = async () => {
     try {
-      openProcessing()
+      openProcessing();
       const data = (await searchUserDetail({ request: Number(id) })).data;
       if (!data?.id) {
-        openSnackbar(
-          AlertType.ERROR,
-          '店舗情報の取得に失敗しました。再度お試しください。'
-        );
+        openSnackbar(AlertType.ERROR, '店舗情報の取得に失敗しました。再度お試しください。');
         router.push('/user');
         return;
       }
-      setUserData(data)
+      setUserData(data);
       reset({
-        'usage_status': data?.usage_status,
-        'memo': data?.master_memo
+        usage_status: data?.usage_status,
+        memo: data?.master_memo,
       });
     } catch (error) {
       console.error('取得失敗:', error);
@@ -111,7 +107,6 @@ export const UserDetailComponent = (): JSX.Element => {
       closeProcessing();
     }
   };
-
 
   /* functions
   ------------------------------------------------------------------ */

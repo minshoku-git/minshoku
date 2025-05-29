@@ -110,8 +110,8 @@ export const ShopComponent = (): JSX.Element => {
       setResult(null);
       setIsSearch(false);
     } else {
-      setSortArray(resultHeader)
-      setSortTarget(resultHeader[0])
+      setSortArray(resultHeader);
+      setSortTarget(resultHeader[0]);
       setCondition(req);
       setResult(res);
       setIsSearch(true);
@@ -323,9 +323,12 @@ export const ShopComponent = (): JSX.Element => {
                     <ResultsCounter
                       startRow={result.paginate?.startRow}
                       endRow={result.paginate?.endRow}
-                      count={result.paginate?.count} />
+                      count={result.paginate?.count}
+                    />
                   </Box>
-                ) : (<></>)}
+                ) : (
+                  <></>
+                )}
                 <CustomTable
                   paginate={result.paginate}
                   sortHandler={sortHandler}
@@ -360,14 +363,13 @@ export const ShopComponent = (): JSX.Element => {
                           <br />
                           {row.address}
                         </TableCell>
-                        <TableCell width={'10%'}>
-                          {row.usage_status}
-                        </TableCell>
+                        <TableCell width={'10%'}>{row.usage_status}</TableCell>
                       </TableRow>
                     ))
                   }
                 />
-              </>)}
+              </>
+            )}
           </form>
         </Box>
       </Paper>

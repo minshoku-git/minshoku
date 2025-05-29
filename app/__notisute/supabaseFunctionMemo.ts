@@ -1,10 +1,4 @@
-import { PostgrestSingleResponse } from '@supabase/supabase-js';
-
-import { DepartmentData, EmploymentData } from '../_lib/createMockData';
-import { getTodayZeroHour } from '../_lib/getDateTime';
 import { supabase } from '../_lib/supabase/supabase';
-import { t_companies, t_companies_department, t_companies_employment_status } from '../_lib/supabase/tableTypes';
-import { convertTimeToDate } from '../_lib/utill';
 import { ApiRequest, ApiResponse } from '../_types/types';
 import { CompanyDetailFormValues } from '../(private)/companyDetail/[id]/_lib/types';
 

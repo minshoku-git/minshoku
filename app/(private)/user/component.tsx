@@ -116,14 +116,14 @@ export const UserComponent = ({ todos }: Props): JSX.Element => {
       setResult(null);
       setIsSearch(false);
     } else {
-      setSortArray(resultHeader)
-      setSortTarget(resultHeader[0])
+      setSortArray(resultHeader);
+      setSortTarget(resultHeader[0]);
       setCondition(req);
       setResult(res);
       setIsSearch(true);
     }
-    console.log('これ見れてます？')
-    console.log(resultHeader)
+    console.log('これ見れてます？');
+    console.log(resultHeader);
     closeProcessing();
   };
 
@@ -278,13 +278,19 @@ export const UserComponent = ({ todos }: Props): JSX.Element => {
                 <Divider sx={{ my: 3 }} />
                 {result.paginate?.count && result.paginate?.count > 0 ? (
                   <Box sx={{ display: 'flex', alignItems: 'end' }}>
-                    <ResultsCounter startRow={result.paginate?.startRow} endRow={result.paginate?.endRow} count={result.paginate?.count} />
+                    <ResultsCounter
+                      startRow={result.paginate?.startRow}
+                      endRow={result.paginate?.endRow}
+                      count={result.paginate?.count}
+                    />
                   </Box>
-                ) : (<></>)}
+                ) : (
+                  <></>
+                )}
                 <CustomTable
                   paginate={result.paginate}
                   sortHandler={sortHandler}
-                  pageChangeHandler={() => { }}
+                  pageChangeHandler={() => {}}
                   header={resultHeader}
                   sortArray={sortArray}
                   setSortArray={setSortArray}
@@ -306,14 +312,13 @@ export const UserComponent = ({ todos }: Props): JSX.Element => {
                         </TableCell>
                         <TableCell sx={{ whiteSpace: 'pre' }}>{row.t_companies.company_name}</TableCell>
                         <TableCell sx={{ whiteSpace: 'pre' }}>{row.t_companies.branch_name}</TableCell>
-                        <TableCell sx={{ whiteSpace: 'pre' }}>
-                          {row.user_usage_status}
-                        </TableCell>
+                        <TableCell sx={{ whiteSpace: 'pre' }}>{row.user_usage_status}</TableCell>
                       </TableRow>
                     ))
                   }
                 />
-              </>)}
+              </>
+            )}
           </form>
         </Box>
       </Paper>

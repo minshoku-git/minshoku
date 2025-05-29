@@ -178,7 +178,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               />
               <Box sx={{ flexGrow: 1 }} />
               <Link href="/login">
-                <Button className="underline" color="inherit" onClick={async () => { }}>
+                <Button className="underline" color="inherit" onClick={async () => {}}>
                   ログアウト
                 </Button>
               </Link>

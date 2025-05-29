@@ -8,7 +8,7 @@ import { ChangeEvent, JSX, useEffect, useMemo, useRef, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { SelectElement, TextareaAutosizeElement, TextFieldElement } from 'react-hook-form-mui';
 
-import { searchShopDetail, insertShopDetail, updateShopDetail } from '@/app/_actions/actions';
+import { insertShopDetail, searchShopDetail, updateShopDetail } from '@/app/_actions/actions';
 import { getAttachmentSizeOver, getMbSize } from '@/app/_lib/getFile';
 import { getEditFlag } from '@/app/_lib/utill';
 import { IMAGE_TYPES } from '@/app/_types/constants';
@@ -75,13 +75,10 @@ export const ShopComponent = (): JSX.Element => {
   /** 初期表示データ取得 */
   const getInit = async () => {
     try {
-      openProcessing()
+      openProcessing();
       const data = (await searchShopDetail({ request: Number(id) })).data;
       if (!data?.id) {
-        openSnackbar(
-          AlertType.ERROR,
-          '店舗情報の取得に失敗しました。再度お試しください。'
-        );
+        openSnackbar(AlertType.ERROR, '店舗情報の取得に失敗しました。再度お試しください。');
         router.push('/shop');
         return;
       }
@@ -124,7 +121,7 @@ export const ShopComponent = (): JSX.Element => {
       openSnackbar(AlertType.ERROR, '会社情報の更新に失敗しました。再度お試しください。' + res.error);
     } else {
       await getInit();
-      window.scrollTo(0, 0)
+      window.scrollTo(0, 0);
       openSnackbar(AlertType.SUCCESS, '会社情報の更新が完了しました。');
     }
   };
@@ -154,8 +151,8 @@ export const ShopComponent = (): JSX.Element => {
       openSnackbar(
         AlertType.WARNING,
         '添付可能なファイルサイズを超過しています。\n添付可能なファイルサイズ：20MB\n添付されたファイルサイズ：' +
-        filesize +
-        'MB'
+          filesize +
+          'MB'
       );
       return;
     }
@@ -414,7 +411,8 @@ export const ShopComponent = (): JSX.Element => {
                   {editMode ? '更新' : '登録'}
                 </Button>
               </Grid>
-            </form>)}
+            </form>
+          )}
         </Box>
       </Paper>
     </>

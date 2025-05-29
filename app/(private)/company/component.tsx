@@ -112,8 +112,8 @@ export const CompanyComponent = (): JSX.Element => {
       setResult(null);
       setIsSearch(false);
     } else {
-      setSortArray(resultHeader)
-      setSortTarget(resultHeader[0])
+      setSortArray(resultHeader);
+      setSortTarget(resultHeader[0]);
       setCondition(req);
       setResult(res);
       setIsSearch(true);
@@ -330,59 +330,67 @@ export const CompanyComponent = (): JSX.Element => {
               </Button>
             </Grid>
             {/* ======= 検索結果 ========================================== */}
-            {isSearch && result && (<>
-              <Divider sx={{ my: 3 }} />
-              {result.paginate?.count && result.paginate?.count > 0 ? (
-                <Box sx={{ display: 'flex', alignItems: 'end' }}>
-                  <ResultsCounter startRow={result.paginate?.startRow} endRow={result.paginate?.endRow} count={result.paginate?.count} />
-                </Box>
-              ) : (<></>)}
-              <CustomTable
-                paginate={result.paginate}
-                sortHandler={sortHandler}
-                pageChangeHandler={() => { }}
-                header={resultHeader}
-                sortArray={sortArray}
-                setSortArray={setSortArray}
-                sortTarget={sortTarget}
-                setSortTarget={setSortTarget}
-                renderBody={() =>
-                  /* 検索結果 */
-                  result.data?.map((row, index) => (
-                    <TableRow
-                      key={index}
-                      hover
-                      sx={{ '&:hover': { cursor: 'pointer' } }}
-                      onClick={() => {
-                        linkHandler(row.id.toString());
-                      }}
-                    >
-                      <TableCell width={'20%'}>{row.company_name}</TableCell>
-                      <TableCell width={'20%'}>{row.branch_name}</TableCell>
-                      <TableCell
-                        sx={{
-                          whiteSpace: 'pre-wrap',
-                          wordBreak: 'break-all',
-                          overflowWrap: 'break-word',
+            {isSearch && result && (
+              <>
+                <Divider sx={{ my: 3 }} />
+                {result.paginate?.count && result.paginate?.count > 0 ? (
+                  <Box sx={{ display: 'flex', alignItems: 'end' }}>
+                    <ResultsCounter
+                      startRow={result.paginate?.startRow}
+                      endRow={result.paginate?.endRow}
+                      count={result.paginate?.count}
+                    />
+                  </Box>
+                ) : (
+                  <></>
+                )}
+                <CustomTable
+                  paginate={result.paginate}
+                  sortHandler={sortHandler}
+                  pageChangeHandler={() => {}}
+                  header={resultHeader}
+                  sortArray={sortArray}
+                  setSortArray={setSortArray}
+                  sortTarget={sortTarget}
+                  setSortTarget={setSortTarget}
+                  renderBody={() =>
+                    /* 検索結果 */
+                    result.data?.map((row, index) => (
+                      <TableRow
+                        key={index}
+                        hover
+                        sx={{ '&:hover': { cursor: 'pointer' } }}
+                        onClick={() => {
+                          linkHandler(row.id.toString());
                         }}
-                        width={'50%'}
                       >
-                        〒{row.post_code}
-                        <br />
-                        {row.prefectures}
-                        {row.municipalities}
-                        {row.town_area}
-                        {row.area_block_number}
-                        {row.building_name}
-                      </TableCell>
-                      <TableCell width={'10%'}>
-                        {UsageStatus.AVAILABLE === row.usage_status ? '利用可能' : '利用停止'}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                }
-              />
-            </>)}
+                        <TableCell width={'20%'}>{row.company_name}</TableCell>
+                        <TableCell width={'20%'}>{row.branch_name}</TableCell>
+                        <TableCell
+                          sx={{
+                            whiteSpace: 'pre-wrap',
+                            wordBreak: 'break-all',
+                            overflowWrap: 'break-word',
+                          }}
+                          width={'50%'}
+                        >
+                          〒{row.post_code}
+                          <br />
+                          {row.prefectures}
+                          {row.municipalities}
+                          {row.town_area}
+                          {row.area_block_number}
+                          {row.building_name}
+                        </TableCell>
+                        <TableCell width={'10%'}>
+                          {UsageStatus.AVAILABLE === row.usage_status ? '利用可能' : '利用停止'}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  }
+                />
+              </>
+            )}
           </form>
         </Box>
       </Paper>

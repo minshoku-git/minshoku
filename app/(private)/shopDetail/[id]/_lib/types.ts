@@ -1,15 +1,15 @@
 import { z } from 'zod';
 
-import { UsageStatus } from '@/app/_types/enum';
+import { formatString } from '@/app/_lib/utill';
 import {
-  formatString,
   MSG_EMAIL,
   MSG_MAX,
   MSG_POSTALCODE,
   MSG_REQUIRED,
   REG_POSTALCODE,
   REG_ZENKAKU_KANA,
-} from '@/app/_types/types';
+} from '@/app/_types/constants';
+import { UsageStatus } from '@/app/_types/enum';
 
 /**
  * 店舗詳細 検索条件 Schema

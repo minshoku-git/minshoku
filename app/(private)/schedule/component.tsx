@@ -329,16 +329,22 @@ export const ScheduleComponent = (): JSX.Element => {
                 <>
                   <Box sx={{ display: 'flex', alignItems: 'end' }}>
                     {/* 検索件数 */}
-                    <ResultsCounter startRow={result.paginate?.startRow} endRow={result.paginate?.endRow} count={result.paginate?.count} />
+                    <ResultsCounter
+                      startRow={result.paginate?.startRow}
+                      endRow={result.paginate?.endRow}
+                      count={result.paginate?.count}
+                    />
                     {/* 合計食数 */}
                     <Typography sx={{ fontSize: '14px', ml: 2 }}>合計食数 : 1000</Typography>
                   </Box>
                 </>
-              ) : (<></>)}
+              ) : (
+                <></>
+              )}
               <CustomTable
                 paginate={result.paginate}
-                sortHandler={() => { }}
-                pageChangeHandler={() => { }}
+                sortHandler={() => {}}
+                pageChangeHandler={() => {}}
                 header={resultHeader}
                 sortArray={sortArray}
                 setSortArray={setSortArray}
