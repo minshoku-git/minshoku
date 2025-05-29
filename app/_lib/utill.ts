@@ -118,3 +118,21 @@ export const getPostgreSqlItems = (
 export const checkTempId = (id: string): boolean => {
   return id.indexOf(TEMP_HYPHEN) === 0 ? true : false;
 };
+
+/**
+ * オブジェクト配列内の特定プロパティの重複チェック
+ * @param {T[]} arr
+ * @param {keyof T} key
+ * @returns {boolean} - True:重複あり false:重複なし
+ */
+export const hasDuplicate = <T>(arr: T[], key: keyof T): boolean => {
+  const seen = new Set();
+  return arr.some((item) => {
+    const value = item[key];
+    if (seen.has(value)) {
+      return true;
+    }
+    seen.add(value);
+    return false;
+  });
+};

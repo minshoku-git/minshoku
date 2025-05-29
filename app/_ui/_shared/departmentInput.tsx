@@ -1,6 +1,6 @@
 import { Add, Delete } from '@mui/icons-material';
 import { Box, Button, Grid2 as Grid, IconButton, Typography } from '@mui/material';
-import { JSX, Suspense } from 'react';
+import { JSX } from 'react';
 import { Control, FieldArrayWithId, TextFieldElement } from 'react-hook-form-mui';
 
 import { CompanyDetailFormValues } from '@/app/(private)/companyDetail/[id]/_lib/types';
