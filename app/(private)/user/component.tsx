@@ -310,7 +310,7 @@ export const UserComponent = ({ todos }: Props): JSX.Element => {
                 <CustomTable
                   paginate={result.paginate}
                   sortHandler={sortHandler}
-                  pageChangeHandler={() => { }}
+                  pageChangeHandler={() => {}}
                   header={resultHeader}
                   sortArray={sortArray}
                   setSortArray={setSortArray}
