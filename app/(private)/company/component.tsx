@@ -8,9 +8,8 @@ import { useForm } from 'react-hook-form';
 import { SelectElement, TextFieldElement } from 'react-hook-form-mui';
 
 import { searchComponyList } from '@/app/_actions/actions';
-import { ApiRequest, ApiResponse, SearchResult_CompanyList } from '@/app/_lib/supabase/types';
-import { AlertType, SortType, UsageStatus, UserUsageStatus } from '@/app/_types/enum';
-import { CompanySearchFormValues, CompanySearchSchema, HeaderStatus } from '@/app/_types/types';
+import { AlertType, SortType, UsageStatus } from '@/app/_types/enum';
+import { ApiRequest, ApiResponse, HeaderStatus } from '@/app/_types/types';
 import { CustomTable } from '@/app/_ui/_shared/costomTable/customTable';
 import { ResultsCounter } from '@/app/_ui/_shared/resultsCounter';
 import { useProcessing } from '@/app/_ui/processing/processingContext';
@@ -18,6 +17,7 @@ import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
 
 import { state as stateMockData } from '../../../public/state.json';
 import ItemBase from '../../_ui/_shared/itemBase';
+import { CompanyListSearchResult, CompanySearchFormValues, CompanySearchSchema } from './_lib/types';
 
 /* ページ名 */
 const pageName = '会社一覧';
@@ -65,7 +65,7 @@ export const CompanyComponent = (): JSX.Element => {
     },
   });
   /* 検索結果 */
-  const [result, setResult] = useState<ApiResponse<SearchResult_CompanyList[]> | null>({
+  const [result, setResult] = useState<ApiResponse<CompanyListSearchResult[]> | null>({
     data: null,
     error: null,
     paginate: {
@@ -185,16 +185,6 @@ export const CompanyComponent = (): JSX.Element => {
 
   /* mockData ※のちすて
   ------------------------------------------------------------------ */
-  // const resultMock: ApiResponse<SearchResult_Company[]> = {
-  //   count: 600,
-  //   currentPage: 1,
-  //   startRow: 1,
-  //   endRow: 30,
-  //   data: MockDataCreate_CompanySearchResult(),
-  //   error: null,
-  //   totalPage: 20,
-  // };
-  // 都道府県(モックから取得)
   const stateData = [
     { id: '', label: '未選択' },
     ...stateMockData.map((d: string, index: number) => {

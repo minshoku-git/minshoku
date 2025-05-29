@@ -8,9 +8,8 @@ import { SubmitHandler, useForm } from 'react-hook-form';
 import { SelectElement, TextFieldElement } from 'react-hook-form-mui';
 
 import { searchShopList } from '@/app/_actions/actions';
-import { ApiRequest, ApiResponse, SearchResult_ShopList } from '@/app/_lib/supabase/types';
-import { AlertType, SortType, UsageStatus, UserUsageStatus } from '@/app/_types/enum';
-import { HeaderStatus, ShopSearchFormValues, ShopSearchSchema } from '@/app/_types/types';
+import { AlertType, SortType, UsageStatus } from '@/app/_types/enum';
+import { ApiRequest, ApiResponse, HeaderStatus } from '@/app/_types/types';
 import { CustomTable } from '@/app/_ui/_shared/costomTable/customTable';
 import { ResultsCounter } from '@/app/_ui/_shared/resultsCounter';
 import { useProcessing } from '@/app/_ui/processing/processingContext';
@@ -18,6 +17,7 @@ import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
 
 import { state as stateMockData } from '../../../public/state.json';
 import ItemBase from '../../_ui/_shared/itemBase';
+import { ShopListSearchResult, ShopSearchFormValues, ShopSearchSchema } from './_lib/types';
 
 /** ページ名 */
 const pageName = '店舗一覧';
@@ -61,7 +61,7 @@ export const ShopComponent = (): JSX.Element => {
       ascending: true,
     },
   });
-  const [result, setResult] = useState<ApiResponse<SearchResult_ShopList[]> | null>({
+  const [result, setResult] = useState<ApiResponse<ShopListSearchResult[]> | null>({
     data: null,
     error: null,
     paginate: {

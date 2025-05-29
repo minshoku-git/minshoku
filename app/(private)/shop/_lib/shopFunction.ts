@@ -1,13 +1,14 @@
 import { PostgrestSingleResponse } from '@supabase/supabase-js';
 
+import { getNow } from '@/app/_lib/getDateTime';
+import { supabase } from '@/app/_lib/supabase/supabase';
+import { t_companies, t_shops } from '@/app/_lib/supabase/tableTypes';
+import { getPagenationsItems, getPostCodeAddHyphen, getRange } from '@/app/_lib/utill';
 import { convertUsageStatusName, UsageStatus } from '@/app/_types/enum';
-import { ShopDetailFormValues, ShopSearchFormValues } from '@/app/_types/types';
+import { ApiRequest, ApiResponse } from '@/app/_types/types';
 
-import { getToday } from '../../getDateTime';
-import { getPagenationsItems, getPostCodeAddHyphen, getRange } from '../../utill';
-import { supabase } from '../supabase';
-import { t_companies, t_shops } from '../tableTypes';
-import { ApiRequest, ApiResponse, SearchResult_ShopList } from '../types';
+import { ShopDetailFormValues } from '../../shopDetail/[id]/_lib/types';
+import { ShopListSearchResult, ShopSearchFormValues } from './types';
 
 /* 店舗一覧
 ------------------------------------------------------------------ */
@@ -17,11 +18,11 @@ import { ApiRequest, ApiResponse, SearchResult_ShopList } from '../types';
  * 検索条件に一致する会社情報を取得する。
  *
  * @param {ApiRequest<ShopSearchFormValues>} values - 検索条件
- * @returns {Promise<ApiResponse<SearchResult_ShopList[]>>} 検索結果
+ * @returns {Promise<ApiResponse<ShopListSearchResult[]>>} 検索結果
  */
-export const search_shopList = async (
+export const _searchShopList = async (
   values: ApiRequest<ShopSearchFormValues>
-): Promise<ApiResponse<SearchResult_ShopList[]>> => {
+): Promise<ApiResponse<ShopListSearchResult[]>> => {
   const { startRange, endRange } = getRange(values.sortItems?.nextPage ?? 0);
   const req = values.request;
 
@@ -124,7 +125,7 @@ export const search_shopList = async (
     };
   }
 
-  const res: SearchResult_ShopList[] = data.map((m) => {
+  const res: ShopListSearchResult[] = data.map((m) => {
     return {
       ...m,
       id: m.id!.toString(),
@@ -158,13 +159,13 @@ export const search_shopList = async (
 ------------------------------------------------------------------ */
 
 /**
- * get_shopDetail
+ * _searchShopDetail
  * IDに一致する店舗情報を取得する。
  *
  * @param {ApiRequest<number>} values - 検索条件
  * @returns {Promise<ApiResponse<t_shops>>} 検索結果
  */
-export const get_shopDetail = async (values: ApiRequest<number>): Promise<ApiResponse<t_shops>> => {
+export const _searchShopDetail = async (values: ApiRequest<number>): Promise<ApiResponse<t_shops>> => {
   const query = supabase.from('t_shops').select('*').eq('id', values.request).single();
   const { data, error } = (await query) as PostgrestSingleResponse<t_shops>;
 
@@ -181,7 +182,7 @@ export const get_shopDetail = async (values: ApiRequest<number>): Promise<ApiRes
  * @param {ApiRequest<ShopDetailFormValues>} values - 入力情報
  * @returns {Promise<ApiResponse<number>>} 新規登録した店舗情報ID
  */
-export const insert_shopDetail = async (values: ApiRequest<ShopDetailFormValues>): Promise<ApiResponse<number>> => {
+export const _insertShopDetail = async (values: ApiRequest<ShopDetailFormValues>): Promise<ApiResponse<number>> => {
   // TODO:ログをどこまで出したらいいんだろう
   const req = values.request;
 
@@ -225,10 +226,10 @@ export const insert_shopDetail = async (values: ApiRequest<ShopDetailFormValues>
  * @param {ApiRequest<ShopDetailFormValues>} values - 入力情報
  * @returns {Promise<ApiResponse<number>>} 更新した店舗情報ID
  */
-export const update_shopDetail = async (values: ApiRequest<ShopDetailFormValues>): Promise<ApiResponse<number>> => {
+export const _updateShopDetail = async (values: ApiRequest<ShopDetailFormValues>): Promise<ApiResponse<number>> => {
   const req = values.request;
 
-  const timestamp = getToday();
+  const timestamp = getNow();
   console.log(timestamp);
 
   const query = supabase

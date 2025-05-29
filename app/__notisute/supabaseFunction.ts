@@ -1,6 +1,6 @@
 import { PostgrestSingleResponse } from '@supabase/supabase-js';
 
-import { supabase } from './supabase';
+import { supabase } from '../_lib/supabase/supabase';
 
 /* テスト用に作成した関数 ※のちすて
 ------------------------------------------------------------------ */

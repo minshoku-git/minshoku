@@ -9,7 +9,7 @@ import {
   Typography,
 } from '@mui/material';
 import Grid from '@mui/material/Grid2';
-import { LocalizationProvider } from '@mui/x-date-pickers';
+import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
 import { ja } from 'date-fns/locale/ja';
 import { useParams, useRouter } from 'next/navigation';
@@ -23,19 +23,15 @@ import {
 import { TimePickerElement } from 'react-hook-form-mui/date-pickers';
 
 import {
-  getComponyDetail,
   insertComponyDetail,
+  searchComponyDetail,
   updateComponyDetail,
 } from '@/app/_actions/actions';
 import { DepartmentData, EmploymentData } from '@/app/_lib/createMockData';
-import { getTodayZeroHour } from '@/app/_lib/getDateTime';
+import { getNow, getTodayZeroHour } from '@/app/_lib/getDateTime';
 import { checkTempId, getEditFlag } from '@/app/_lib/utill';
+import { TEMP_HYPHEN } from '@/app/_types/constants';
 import { AlertType, UsageStatus } from '@/app/_types/enum';
-import {
-  CompanyDetailFormValues,
-  CompanyDetailSchema,
-} from '@/app/_types/types';
-import { TEMP_HYPHEN } from '@/app/_types/values';
 import { DepartmentInput } from '@/app/_ui/_shared/departmentInput';
 import { EmploymentInput } from '@/app/_ui/_shared/employmentInput';
 import ItemBase from '@/app/_ui/_shared/itemBase';
@@ -44,6 +40,7 @@ import { useProcessing } from '@/app/_ui/processing/processingContext';
 import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
 
 import { state as stateMockData } from '../../../../public/state.json';
+import { CompanyDetailFormValues, CompanyDetailSchema } from './_lib/types';
 
 /** ページ名 */
 const pageName = '会社詳細';
@@ -61,7 +58,6 @@ export const CompanyComponent = (): JSX.Element => {
   const router = useRouter();
   const params = useParams();
   const id = (params.id as string) ?? '-';
-  const tempHypen = TEMP_HYPHEN()
 
   /* useState
   ------------------------------------------------------------------ */
@@ -108,7 +104,7 @@ export const CompanyComponent = (): JSX.Element => {
   const getInit = async () => {
     try {
       openProcessing();
-      const data = (await getComponyDetail({ request: Number(id) })).data;
+      const data = (await searchComponyDetail({ request: Number(id) })).data;
       if (!data?.id) {
         openSnackbar(
           AlertType.ERROR,
@@ -136,7 +132,7 @@ export const CompanyComponent = (): JSX.Element => {
 
   const addField_dep = () => {
     append_dep({
-      id: tempHypen + tempIdCounterDep,
+      id: TEMP_HYPHEN + tempIdCounterDep,
       name: '',
       disabled: false,
       delete_flag: false,
@@ -166,7 +162,7 @@ export const CompanyComponent = (): JSX.Element => {
 
   const addField_emp = () => {
     append_emp({
-      id: tempHypen + tempIdCounterEmp,
+      id: TEMP_HYPHEN + tempIdCounterEmp,
       employment_status_name: '',
       credit_flag: false,
       paypay_flag: false,
@@ -737,7 +733,6 @@ export const CompanyComponent = (): JSX.Element => {
                     </LocalizationProvider>
                   </Box>
                 </ItemBase>
-
                 <ItemBase name={'利用ステータス'} isRequired={0}>
                   <SelectElement
                     control={control}
@@ -788,7 +783,7 @@ const getInitData = (data: CompanyDetailFormValues | null) => {
     (data && data.departmentInfo.length > 0)
       ? data?.departmentInfo
       : [{
-        id: TEMP_HYPHEN() + 0,
+        id: TEMP_HYPHEN + 0,
         name: '設定なし',
         disabled: false,
         delete_flag: false
@@ -799,7 +794,7 @@ const getInitData = (data: CompanyDetailFormValues | null) => {
       ? data.employmentStatusInfo
       : [
         {
-          id: TEMP_HYPHEN() + 0,
+          id: TEMP_HYPHEN + 0,
           employment_status_name: '社員',
           credit_flag: false,
           paypay_flag: false,

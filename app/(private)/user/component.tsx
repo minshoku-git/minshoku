@@ -8,15 +8,15 @@ import { SubmitHandler, useForm } from 'react-hook-form';
 import { SelectElement, TextFieldElement } from 'react-hook-form-mui';
 
 import { searchUserList } from '@/app/_actions/actions';
-import { ApiRequest, ApiResponse, SearchResult_UserList } from '@/app/_lib/supabase/types';
 import { AlertType, SortType, UserUsageStatus } from '@/app/_types/enum';
-import { HeaderStatus, UserSearchFormValues, UserSearchSchema } from '@/app/_types/types';
+import { ApiRequest, ApiResponse, HeaderStatus } from '@/app/_types/types';
 import { CustomTable } from '@/app/_ui/_shared/costomTable/customTable';
 import { ResultsCounter } from '@/app/_ui/_shared/resultsCounter';
 import { useProcessing } from '@/app/_ui/processing/processingContext';
 import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
 
 import ItemBase from '../../_ui/_shared/itemBase';
+import { UserListSearchResult, UserSearchFormValues, UserSearchSchema } from './_lib/types';
 
 /* のちすて */
 type Props = {
@@ -69,7 +69,7 @@ export const UserComponent = ({ todos }: Props): JSX.Element => {
     },
   });
   /* 検索結果 */
-  const [result, setResult] = useState<ApiResponse<SearchResult_UserList[]> | null>({
+  const [result, setResult] = useState<ApiResponse<UserListSearchResult[]> | null>({
     data: null,
     error: null,
     paginate: {

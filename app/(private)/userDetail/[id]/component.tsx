@@ -17,15 +17,16 @@ import { JSX, useEffect, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { SelectElement, TextareaAutosizeElement } from 'react-hook-form-mui';
 
-import { getUserDetail } from '@/app/_actions/actions';
+import { searchUserDetail } from '@/app/_actions/actions';
 import { DetailResult_UserData } from '@/app/_lib/supabase/types';
 import { AlertType, UsageStatus, UserUsageStatus } from '@/app/_types/enum';
-import { UserDetailFormValues, UserDetailSchema } from '@/app/_types/types';
 import ItemBase from '@/app/_ui/_shared/itemBase';
 import ConfirmDialog from '@/app/_ui/dirty/conformDialog';
 import { useDirty } from '@/app/_ui/dirty/dartyContext';
 import { useProcessing } from '@/app/_ui/processing/processingContext';
 import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
+
+import { UserDetailFormValues, UserDetailSchema } from './_lib/types';
 
 /** ページ名 */
 const pageName = 'ユーザー詳細';
@@ -89,7 +90,7 @@ export const UserDetailComponent = (): JSX.Element => {
   const getInit = async () => {
     try {
       openProcessing()
-      const data = (await getUserDetail({ request: Number(id) })).data;
+      const data = (await searchUserDetail({ request: Number(id) })).data;
       if (!data?.id) {
         openSnackbar(
           AlertType.ERROR,

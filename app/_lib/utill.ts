@@ -1,8 +1,22 @@
-import { HYPHEN, pageMaxCount, TEMP_HYPHEN } from '../_types/values';
+import { HYPHEN, PAGE_MAX_COUNT, TEMP_HYPHEN } from '../_types/constants';
 /**
  * getFile.ts
  * 汎用的な関数を管理します。
  */
+
+/**
+ * formatString
+ * argsの内容を割り当てた文字列を作成する。
+ *
+ * @param {string} template - メッセージのテンプレート
+ * @param {(string | number)[]} args 文字列または数値
+ * @returns {string} メッセージ
+ */
+export function formatString(template: string, ...args: (string | number)[]): string {
+  return template.replace(/{(\d+)}/g, (match, index) => {
+    return index < args.length ? String(args[index]) : match;
+  });
+}
 
 /**
  * getEditFlag
@@ -12,7 +26,7 @@ import { HYPHEN, pageMaxCount, TEMP_HYPHEN } from '../_types/values';
  * @returns {boolean} true:編集モード, false:登録モード
  */
 export const getEditFlag = (id: string): boolean => {
-  if (!id || (id && id === HYPHEN())) {
+  if (!id || (id && id === HYPHEN)) {
     return false;
   }
   return true;
@@ -26,7 +40,7 @@ export const getEditFlag = (id: string): boolean => {
  * @returns {string} XXX-XXXX
  */
 export const getPostCodeAddHyphen = (post_code: string): string => {
-  return post_code.slice(0, 3) + HYPHEN() + post_code.slice(3, 7);
+  return post_code.slice(0, 3) + HYPHEN + post_code.slice(3, 7);
 };
 
 /**
@@ -53,8 +67,8 @@ export const convertTimeToDate = (time: string): Date => {
  * @returns {{number;number;}} 取得開始件数、取得終了件数
  */
 export const getRange = (nextPage: number): { startRange: number; endRange: number } => {
-  const startRange = (nextPage - 1) * pageMaxCount();
-  const endRange = startRange + pageMaxCount() - 1;
+  const startRange = (nextPage - 1) * PAGE_MAX_COUNT;
+  const endRange = startRange + PAGE_MAX_COUNT - 1;
   return { startRange, endRange };
 };
 
@@ -73,7 +87,7 @@ export const getPagenationsItems = (
 ): { startRow: number; endRow: number; totalPage: number } => {
   const startRow = startRange + 1;
   const endRow = startRange + dataLength;
-  const totalPage = (count ?? 0) > pageMaxCount() ? Math.floor(count / pageMaxCount()) + 1 : 1;
+  const totalPage = (count ?? 0) > PAGE_MAX_COUNT ? Math.floor(count / PAGE_MAX_COUNT) + 1 : 1;
 
   return { startRow, endRow, totalPage };
 };
@@ -102,5 +116,5 @@ export const getPostgreSqlItems = (
  * @returns {boolean} TRUE:新規登録データ、FALSE:既存データ
  */
 export const checkTempId = (id: string): boolean => {
-  return id.indexOf(TEMP_HYPHEN()) === 0 ? true : false;
+  return id.indexOf(TEMP_HYPHEN) === 0 ? true : false;
 };

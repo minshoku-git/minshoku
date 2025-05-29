@@ -1,11 +1,129 @@
+import { PostgrestSingleResponse } from '@supabase/supabase-js';
 import { Client } from 'pg';
 
-import { CompanyDetailFormValues } from '@/app/_types/types';
+import { DepartmentData, EmploymentData } from '@/app/_lib/createMockData';
+import { getNow, getTimeString, getTodayZeroHour } from '@/app/_lib/getDateTime';
+import { supabase } from '@/app/_lib/supabase/supabase';
+import { t_companies, t_companies_department, t_companies_employment_status } from '@/app/_lib/supabase/tableTypes';
+import { checkTempId, convertTimeToDate, getPostgreSqlItems } from '@/app/_lib/utill';
+import { ApiRequest, ApiResponse } from '@/app/_types/types';
+import { CompanyDetailFormValues } from '@/app/(private)/companyDetail/[id]/_lib/types';
 
-import { getTimeString, getToday } from '../getDateTime';
-import { checkTempId, getPostgreSqlItems } from '../utill';
-import { t_companies, t_companies_department, t_companies_employment_status } from './tableTypes';
-import { ApiRequest, ApiResponse } from './types';
+/**
+ * get_companyDetail
+ * IDに一致する会社情報を取得する。
+ *
+ * @param {ApiRequest<number>} values - 検索条件
+ * @returns {Promise<ApiResponse<CompanyDetailFormValues>>} 検索結果
+ */
+export const _searchComponyDetail = async (
+  values: ApiRequest<number>
+): Promise<ApiResponse<CompanyDetailFormValues>> => {
+  // 1.会社get_companyDetail情報取得
+  const query = supabase.from('t_companies').select('*').eq('id', values.request).single();
+  const { data, error } = (await query) as PostgrestSingleResponse<t_companies>;
+
+  if (error) {
+    console.log(error);
+    return { data: null, error: error.message };
+  }
+
+  // 2.部署情報取得
+  const queryDep = supabase
+    .from('t_companies_department')
+    .select('*')
+    .eq('t_companies_id', values.request)
+    .eq('delete_flag', 0)
+    .order('id', { ascending: true });
+  const { data: dataDep, error: errorDep } = (await queryDep) as PostgrestSingleResponse<t_companies_department[]>;
+
+  if (errorDep) {
+    console.log(errorDep);
+    return { data: null, error: errorDep.message };
+  }
+
+  // 3.雇用種別情報取得
+  const queryEmp = supabase
+    .from('t_companies_employment_status')
+    .select('*')
+    .eq('t_companies_id', values.request)
+    .eq('delete_flag', 0)
+    .order('id', { ascending: true });
+  const { data: dataEmp, error: errorEmp } = (await queryEmp) as PostgrestSingleResponse<
+    t_companies_employment_status[]
+  >;
+
+  if (errorEmp) {
+    console.log(errorEmp);
+    return { data: null, error: errorEmp.message };
+  }
+
+  // Response set
+  const depInit: DepartmentData[] = dataDep
+    ? dataDep.map((m) => {
+        return {
+          id: m.id!.toString(),
+          name: m.department_name ?? '',
+          disabled: false,
+          delete_flag: false,
+        };
+      })
+    : [];
+
+  const empInit: EmploymentData[] | null = dataEmp
+    ? dataEmp.map((m) => {
+        return {
+          id: m.id!.toString(),
+          t_companies_id: m.t_companies_id,
+          employment_status_name: m.employment_status_name ?? '',
+          disabled: true,
+          deduction_flag: m.deduction_flag === 0 ? false : true,
+          credit_flag: m.credit_flag === 0 ? false : true,
+          paypay_flag: m.paypay_flag === 0 ? false : true,
+          set_meal_burden: m.set_meal_burden ? m.set_meal_burden.toString() : '0',
+          delete_flag: false,
+        };
+      })
+    : [];
+
+  console.log(data.usage_status);
+
+  const res: CompanyDetailFormValues = {
+    id: data.id?.toString(),
+    company_name: data.company_name ?? '',
+    branch_name: data.branch_name ?? '',
+    post_code: data.post_code ?? '',
+    prefectures: data.prefectures ?? '',
+    municipalities: data.municipalities ?? '',
+    town_area: data.town_area ?? '',
+    area_block_number: data.area_block_number ?? '',
+    building_name: data.building_name ?? '',
+    restaurant_name: data.restaurant_name ?? '',
+    location: data.location ?? '',
+    mailaddress: data.mailaddress ?? '',
+    memo: data.memo ?? '',
+    optional_item_title_1: data.optional_item_title_1 ?? '',
+    optional_item_title_2: data.optional_item_title_2 ?? '',
+    optional_item_notes_1: data.optional_item_notes_1 ?? '',
+    optional_item_notes_2: data.optional_item_notes_2 ?? '',
+    offer_time_from: data.offer_time_from ? convertTimeToDate(data.offer_time_from) : getTodayZeroHour(),
+    offer_time_to: data.offer_time_to ? convertTimeToDate(data.offer_time_to) : getTodayZeroHour(),
+    order_period_day: data.order_period_day?.toString() ?? '',
+    order_period_time: data.order_period_time ? convertTimeToDate(data.order_period_time) : getTodayZeroHour(),
+    cancel_period_day: data.cancel_period_day?.toString() ?? '',
+    cancel_period_time: data.cancel_period_time ? convertTimeToDate(data.cancel_period_time) : getTodayZeroHour(),
+    departmentInfo: depInit,
+    employmentStatusInfo: empInit,
+    usage_status: data.usage_status,
+  };
+
+  console.log(res);
+
+  return {
+    data: data ? res : null,
+    error: null,
+  };
+};
 
 /**
  * insert_companyDetail
@@ -13,7 +131,7 @@ import { ApiRequest, ApiResponse } from './types';
  * @param {ApiRequest<CompanyDetailFormValues>} values 入力内容
  * @returns {Promise<ApiResponse<number>>} 企業ID
  */
-export const insert_companyDetail_TEST = async (
+export const _insertComponyDetail = async (
   values: ApiRequest<CompanyDetailFormValues>
 ): Promise<ApiResponse<number>> => {
   const req = values.request;
@@ -143,16 +261,16 @@ export const insert_companyDetail_TEST = async (
 };
 
 /**
- * update_companyDetail_TEST
+ * update_companyDetail
  * Transaction専用・会社情報をUPDATEする。
  * @param {ApiRequest<CompanyDetailFormValues>} values - 入力内容
  * @returns {Promise<ApiResponse<number>>} 企業ID
  */
-export const update_companyDetail_TEST = async (
+export const _updateComponyDetail = async (
   values: ApiRequest<CompanyDetailFormValues>
 ): Promise<ApiResponse<number>> => {
   const req = values.request;
-  const timestamp = getToday();
+  const timestamp = getNow();
   const client = new Client({
     connectionString: process.env.SUPABASE_DB_CONNECTION_STRING,
   });

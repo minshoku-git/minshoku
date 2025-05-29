@@ -1,24 +1,27 @@
 'use server';
 
-import { getAllTodoName } from '@/app/_lib/supabase/supabaseFunction';
+import { getAllTodoName } from '@/app/__notisute/supabaseFunction';
 
-import { insert_companyDetail, update_companyDetail } from '../_lib/supabase/functions/companyDetailFunction';
-import { get_companyDetail, search_companyList } from '../_lib/supabase/functions/companyFunction';
+import { ApiRequest } from '../_types/types';
+import { _searchComponyList } from '../(private)/company/_lib/companyFunction';
+import { CompanySearchFormValues } from '../(private)/company/_lib/types';
 import {
-  get_shopDetail,
-  insert_shopDetail,
-  search_shopList,
-  update_shopDetail,
-} from '../_lib/supabase/functions/shopFunction';
-import { get_userDetail, search_userList } from '../_lib/supabase/functions/userFuction';
-import { ApiRequest } from '../_lib/supabase/types';
+  _insertComponyDetail,
+  _searchComponyDetail,
+  _updateComponyDetail,
+} from '../(private)/companyDetail/[id]/_lib/companyDetailFunction';
+import { CompanyDetailFormValues } from '../(private)/companyDetail/[id]/_lib/types';
 import {
-  CompanyDetailFormValues,
-  CompanySearchFormValues,
-  ShopDetailFormValues,
-  ShopSearchFormValues,
-  UserSearchFormValues,
-} from '../_types/types';
+  _insertShopDetail,
+  _searchShopDetail,
+  _searchShopList,
+  _updateShopDetail,
+} from '../(private)/shop/_lib/shopFunction';
+import { ShopSearchFormValues } from '../(private)/shop/_lib/types';
+import { ShopDetailFormValues } from '../(private)/shopDetail/[id]/_lib/types';
+import { UserSearchFormValues } from '../(private)/user/_lib/types';
+import { _searchUserList } from '../(private)/user/_lib/userFuction';
+import { _searchUserDetail } from '../(private)/userDetail/[id]/_lib/userDetailFuction';
 
 /* おためしでつくったやつ※のちすて
 ------------------------------------------------------------------ */
@@ -29,49 +32,51 @@ export async function getAllTodoNameAction() {
 /* 店舗検索
 ------------------------------------------------------------------ */
 export async function searchShopList(value: ApiRequest<ShopSearchFormValues>) {
-  return await search_shopList(value);
+  return await _searchShopList(value);
 }
 
 /* 店舗詳細
 ------------------------------------------------------------------ */
-export async function getShopDetail(value: ApiRequest<number>) {
-  return await get_shopDetail(value);
+export async function searchShopDetail(value: ApiRequest<number>) {
+  return await _searchShopDetail(value);
 }
 
 export async function insertShopDetail(value: ApiRequest<ShopDetailFormValues>) {
-  return await insert_shopDetail(value);
+  return await _insertShopDetail(value);
 }
 
 export async function updateShopDetail(value: ApiRequest<ShopDetailFormValues>) {
-  return await update_shopDetail(value);
+  return await _updateShopDetail(value);
 }
 
 /* 会社検索
 ------------------------------------------------------------------ */
 export async function searchComponyList(value: ApiRequest<CompanySearchFormValues>) {
-  return await search_companyList(value);
+  return await _searchComponyList(value);
 }
 
 /* 会社詳細
 ------------------------------------------------------------------ */
-export async function getComponyDetail(value: ApiRequest<number>) {
-  return await get_companyDetail(value);
+export async function searchComponyDetail(value: ApiRequest<number>) {
+  return await _searchComponyDetail(value);
 }
 
 export async function insertComponyDetail(value: ApiRequest<CompanyDetailFormValues>) {
-  return await insert_companyDetail(value);
+  return await _insertComponyDetail(value);
 }
 
 export async function updateComponyDetail(value: ApiRequest<CompanyDetailFormValues>) {
-  return await update_companyDetail(value);
+  return await _updateComponyDetail(value);
 }
 
 /* ユーザー検索
 ------------------------------------------------------------------ */
 export async function searchUserList(value: ApiRequest<UserSearchFormValues>) {
-  return await search_userList(value);
+  return await _searchUserList(value);
 }
 
-export async function getUserDetail(value: ApiRequest<number>) {
-  return await get_userDetail(value);
+/* ユーザー詳細
+------------------------------------------------------------------ */
+export async function searchUserDetail(value: ApiRequest<number>) {
+  return await _searchUserDetail(value);
 }

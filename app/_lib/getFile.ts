@@ -3,14 +3,14 @@
  * Fileに関わる関数を管理します。
  */
 
-import { KB_ByteSize } from '../_types/values';
+import { KB_BYTE_SIZE } from '../_types/constants';
 
 /**
  * byte => MB 変換
  * @returns date 日付(明日)
  */
 export function getMbSize(bite: number) {
-  return Math.round((bite / (KB_ByteSize() * KB_ByteSize())) * 100.0) / 100.0;
+  return Math.round((bite / (KB_BYTE_SIZE * KB_BYTE_SIZE)) * 100.0) / 100.0;
 }
 
 /**

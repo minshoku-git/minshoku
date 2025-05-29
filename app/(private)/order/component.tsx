@@ -13,17 +13,17 @@ import { SelectElement, TextFieldElement } from 'react-hook-form-mui';
 import { DatePickerElement } from 'react-hook-form-mui/date-pickers';
 
 import { MockDataCreate_OrderResult } from '@/app/_lib/createMockData';
-import { getLastMonthEndDay, getLastMonthStartDay, getToday, getTomorrow, getYesterday } from '@/app/_lib/getDateTime';
-import { ApiRequest, ApiResponse, SearchResult_orderList } from '@/app/_lib/supabase/types';
+import { getLastMonthEndDay, getLastMonthStartDay, getNow, getTomorrow, getYesterday } from '@/app/_lib/getDateTime';
 import { AlertType, OrderStatus, PaymentTypes, SortType } from '@/app/_types/enum';
+import { ApiRequest, ApiResponse, HeaderStatus } from '@/app/_types/types';
 import { CustomTable } from '@/app/_ui/_shared/costomTable/customTable';
 import { ResultsCounter } from '@/app/_ui/_shared/resultsCounter';
 import ConfirmDialog from '@/app/_ui/dirty/conformDialog';
 import { useProcessing } from '@/app/_ui/processing/processingContext';
 import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
 
-import { HeaderStatus, OrderSearchFormValues, OrderSearchSchema } from '../../_types/types';
 import ItemBase from '../../_ui/_shared/itemBase';
+import { OrderListSearchResult, OrderSearchFormValues, OrderSearchSchema } from './_lib/types';
 import OrderInfoModal from './orderInfoModal';
 
 /* ページ名 */
@@ -84,7 +84,7 @@ export const OrderComponent = (): JSX.Element => {
     },
   });
   /* 検索結果 */
-  const [result, setResult] = useState<ApiResponse<SearchResult_orderList[]> | null>({
+  const [result, setResult] = useState<ApiResponse<OrderListSearchResult[]> | null>({
     data: null,
     error: null,
     paginate: {
@@ -105,8 +105,8 @@ export const OrderComponent = (): JSX.Element => {
     reValidateMode: 'onBlur', // 送信ボタンが押され、バリデーションに引っかかった後は、常に入力値のフォーカスが外れた際にバリデーションが走る
     resolver: zodResolver(OrderSearchSchema),
     defaultValues: {
-      deliveryFrom: getToday(),
-      deliveryTo: getToday(),
+      deliveryFrom: getNow(),
+      deliveryTo: getNow(),
       userName: '',
       companyName: '',
       branchName: '',
@@ -124,8 +124,8 @@ export const OrderComponent = (): JSX.Element => {
 
   /** 日付設定（本日）ハンドラ */
   const onTodayClick = () => {
-    setValue('deliveryFrom', getToday());
-    setValue('deliveryTo', getToday());
+    setValue('deliveryFrom', getNow());
+    setValue('deliveryTo', getNow());
   };
 
   /** 日付設定（明日）ハンドラ */
@@ -143,8 +143,8 @@ export const OrderComponent = (): JSX.Element => {
   /** 検索条件リセットハンドラ */
   const onResetClick = () => {
     reset();
-    setValue('deliveryFrom', getToday());
-    setValue('deliveryTo', getToday());
+    setValue('deliveryFrom', getNow());
+    setValue('deliveryTo', getNow());
   };
 
   /** 検索ハンドラ */
@@ -160,7 +160,7 @@ export const OrderComponent = (): JSX.Element => {
     };
     // const res = await searchOrderList(req);
     // todo: 差し替え
-    const res: ApiResponse<SearchResult_orderList[]> = {
+    const res: ApiResponse<OrderListSearchResult[]> = {
       error: '',
       data: MockDataCreate_OrderResult(),
       paginate: { count: 30, currentPage: 1, endRow: 30, startRow: 1, totalPage: 1 },
@@ -192,7 +192,7 @@ export const OrderComponent = (): JSX.Element => {
 
     // const res = await searchOrderList(req);
     // todo: 差し替え
-    const res: ApiResponse<SearchResult_orderList[]> = {
+    const res: ApiResponse<OrderListSearchResult[]> = {
       error: '',
       data: MockDataCreate_OrderResult(),
       paginate: { count: 30, currentPage: 1, endRow: 30, startRow: 1, totalPage: 1 },
@@ -226,7 +226,7 @@ export const OrderComponent = (): JSX.Element => {
 
     // const res = await searchOrderList(req);
     // todo: 差し替え
-    const res: ApiResponse<SearchResult_orderList[]> = {
+    const res: ApiResponse<OrderListSearchResult[]> = {
       error: '',
       data: MockDataCreate_OrderResult(),
       paginate: { count: 30, currentPage: 1, endRow: 30, startRow: 1, totalPage: 1 },

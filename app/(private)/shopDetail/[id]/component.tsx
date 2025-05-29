@@ -8,19 +8,18 @@ import { ChangeEvent, JSX, useEffect, useMemo, useRef, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { SelectElement, TextareaAutosizeElement, TextFieldElement } from 'react-hook-form-mui';
 
-import { getShopDetail, insertShopDetail, updateShopDetail } from '@/app/_actions/actions';
+import { searchShopDetail, insertShopDetail, updateShopDetail } from '@/app/_actions/actions';
 import { getAttachmentSizeOver, getMbSize } from '@/app/_lib/getFile';
-import { update_shopDetail } from '@/app/_lib/supabase/functions/shopFunction';
 import { getEditFlag } from '@/app/_lib/utill';
+import { IMAGE_TYPES } from '@/app/_types/constants';
 import { AlertType, UsageStatus } from '@/app/_types/enum';
-import { ShopDetailFormValues, ShopDetailSchemaType } from '@/app/_types/types';
-import { IMAGE_TYPES } from '@/app/_types/values';
 import ItemBase from '@/app/_ui/_shared/itemBase';
 import { useDirty } from '@/app/_ui/dirty/dartyContext';
 import { useProcessing } from '@/app/_ui/processing/processingContext';
 import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
 
 import { state as stateMockData } from '../../../../public/state.json';
+import { ShopDetailFormValues, ShopDetailSchema } from './_lib/types';
 
 /** ページ名 */
 const pageName = '店舗詳細';
@@ -56,7 +55,7 @@ export const ShopComponent = (): JSX.Element => {
   } = useForm<ShopDetailFormValues>({
     mode: 'onSubmit',
     reValidateMode: 'onSubmit',
-    resolver: zodResolver(ShopDetailSchemaType),
+    resolver: zodResolver(ShopDetailSchema),
     defaultValues: defalutData,
   });
 
@@ -77,7 +76,7 @@ export const ShopComponent = (): JSX.Element => {
   const getInit = async () => {
     try {
       openProcessing()
-      const data = (await getShopDetail({ request: Number(id) })).data;
+      const data = (await searchShopDetail({ request: Number(id) })).data;
       if (!data?.id) {
         openSnackbar(
           AlertType.ERROR,
@@ -146,7 +145,7 @@ export const ShopComponent = (): JSX.Element => {
     if (!file) {
       return;
     }
-    if (!IMAGE_TYPES().includes(file.type)) {
+    if (!IMAGE_TYPES.includes(file.type)) {
       openSnackbar(AlertType.WARNING, '添付可能な拡張子のファイルではありません。\n添付可能な拡張子：png, jpg, jpeg');
       return;
     }

@@ -11,15 +11,16 @@ import { TextFieldElement } from 'react-hook-form-mui';
 import { DatePickerElement } from 'react-hook-form-mui/date-pickers';
 
 import { MockDataCreate_ScheduleResult } from '@/app/_lib/createMockData';
-import { getToday, getTomorrow, getYesterday } from '@/app/_lib/getDateTime';
-import { ApiRequest, ApiResponse, SearchResult_ScheduleList } from '@/app/_lib/supabase/types';
-import { AlertType, SortType, UserUsageStatus } from '@/app/_types/enum';
-import { HeaderStatus, ScheduleSearchFormValues, ScheduleSearchSchema } from '@/app/_types/types';
+import { getNow, getTomorrow, getYesterday } from '@/app/_lib/getDateTime';
+import { AlertType, SortType } from '@/app/_types/enum';
+import { ApiRequest, ApiResponse, HeaderStatus } from '@/app/_types/types';
 import { CustomTable } from '@/app/_ui/_shared/costomTable/customTable';
 import ItemBase from '@/app/_ui/_shared/itemBase';
 import { ResultsCounter } from '@/app/_ui/_shared/resultsCounter';
 import { useProcessing } from '@/app/_ui/processing/processingContext';
 import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
+
+import { ScheduleListSearchResult, ScheduleSearchFormValues, ScheduleSearchSchema } from './_lib/types';
 
 /** ページ名 */
 const pageName: string = 'スケジュール一覧';
@@ -57,8 +58,8 @@ export const ScheduleComponent = (): JSX.Element => {
     request: {
       company_name: '',
       shop_name: '',
-      deliveryFrom: getToday(),
-      deliveryTo: getToday(),
+      deliveryFrom: getNow(),
+      deliveryTo: getNow(),
     },
     sortItems: {
       nextPage: 1,
@@ -67,7 +68,7 @@ export const ScheduleComponent = (): JSX.Element => {
     },
   });
   /* 検索結果 */
-  const [result, setResult] = useState<ApiResponse<SearchResult_ScheduleList[]> | null>({
+  const [result, setResult] = useState<ApiResponse<ScheduleListSearchResult[]> | null>({
     data: null,
     error: null,
     paginate: {
@@ -86,8 +87,8 @@ export const ScheduleComponent = (): JSX.Element => {
     reValidateMode: 'onSubmit',
     resolver: zodResolver(ScheduleSearchSchema),
     defaultValues: {
-      deliveryFrom: getToday(),
-      deliveryTo: getToday(),
+      deliveryFrom: getNow(),
+      deliveryTo: getNow(),
       company_name: '',
       shop_name: '',
     },
@@ -97,14 +98,14 @@ export const ScheduleComponent = (): JSX.Element => {
   ------------------------------------------------------------------ */
   /** 日付設定（本日以降）ハンドラ */
   const onAfterTodayClick = () => {
-    setValue('deliveryFrom', getToday());
+    setValue('deliveryFrom', getNow());
     setValue('deliveryTo', null);
   };
 
   /** 日付設定（本日）ハンドラ */
   const onTodayClick = () => {
-    setValue('deliveryFrom', getToday());
-    setValue('deliveryTo', getToday());
+    setValue('deliveryFrom', getNow());
+    setValue('deliveryTo', getNow());
   };
 
   /** 日付設定（明日）ハンドラ */
@@ -122,8 +123,8 @@ export const ScheduleComponent = (): JSX.Element => {
   /** 検索条件リセットハンドラ */
   const onResetClick = () => {
     reset();
-    setValue('deliveryFrom', getToday());
-    setValue('deliveryTo', getToday());
+    setValue('deliveryFrom', getNow());
+    setValue('deliveryTo', getNow());
   };
 
   /** 検索ハンドラ */
@@ -139,7 +140,7 @@ export const ScheduleComponent = (): JSX.Element => {
     };
     // const res = await searchScheduleList(req);
     // todo: 差し替え
-    const res: ApiResponse<SearchResult_ScheduleList[]> = {
+    const res: ApiResponse<ScheduleListSearchResult[]> = {
       error: '',
       data: MockDataCreate_ScheduleResult(),
       paginate: { count: 30, currentPage: 1, endRow: 30, startRow: 1, totalPage: 1 },

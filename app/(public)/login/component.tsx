@@ -7,9 +7,9 @@ import { SubmitHandler, useForm } from 'react-hook-form';
 import { TextFieldElement } from 'react-hook-form-mui';
 
 import { AlertType } from '../../_types/enum';
-import { LoginFormValues, LoginSchema } from '../../_types/types';
 import RequiredMark from '../../_ui/_shared/requiredMark';
 import { useSnackBar } from '../../_ui/snackBar/snackbarContext';
+import { LoginFormValues, LoginSchema } from './_lib/types';
 
 export const LoginComponent = () => {
   /* initialize
@@ -20,11 +20,11 @@ export const LoginComponent = () => {
   /* useForm
   ------------------------------------------------------------------ */
   const { handleSubmit, control } = useForm<LoginFormValues>({
-    mode: 'onSubmit', // 初回validation時を検索ボタンが押されたタイミングに設定
-    reValidateMode: 'onBlur', // 送信ボタンが押され、バリデーションに引っかかった後は、常に入力値のフォーカスが外れた際にバリデーションが走る
+    mode: 'onSubmit',
+    reValidateMode: 'onBlur',
     resolver: zodResolver(LoginSchema),
     defaultValues: {
-      email: 'xxxxx@refact.co.jp', // 実際は空
+      email: 'xxxxx@refact.co.jp', // TODO:実際は空、モック中は値有りで
       password: '',
     },
   });

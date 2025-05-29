@@ -1,11 +1,11 @@
 import { PostgrestSingleResponse } from '@supabase/supabase-js';
 
+import { supabase } from '@/app/_lib/supabase/supabase';
+import { getPagenationsItems, getRange } from '@/app/_lib/utill';
 import { convertUserUsageStatusName, UserUsageStatus } from '@/app/_types/enum';
-import { UserSearchFormValues } from '@/app/_types/types';
+import { ApiRequest, ApiResponse } from '@/app/_types/types';
 
-import { getPagenationsItems, getRange } from '../../utill';
-import { supabase } from '../supabase';
-import { ApiRequest, ApiResponse, DetailResult_UserData, SearchResult_UserList } from '../types';
+import { UserListSearchResult, UserSearchFormValues } from './types';
 
 /* ユーザー一覧
 ------------------------------------------------------------------ */
@@ -14,11 +14,11 @@ import { ApiRequest, ApiResponse, DetailResult_UserData, SearchResult_UserList }
  * 検索条件に一致するユーザー情報を取得する。
  *
  * @param {ApiRequest<UserSearchFormValues>} values - 検索条件
- * @returns {Promise<ApiResponse<SearchResult_UserList[]>>} - 検索結果
+ * @returns {Promise<ApiResponse<UserListSearchResult[]>>} - 検索結果
  */
-export const search_userList = async (
+export const _searchUserList = async (
   values: ApiRequest<UserSearchFormValues>
-): Promise<ApiResponse<SearchResult_UserList[]>> => {
+): Promise<ApiResponse<UserListSearchResult[]>> => {
   const { startRange, endRange } = getRange(values.sortItems?.nextPage ?? 0);
   const req = values.request;
 
@@ -86,7 +86,7 @@ export const search_userList = async (
   }
 
   // 件数取得
-  const { count, error: countError } = (await queryCount) as PostgrestSingleResponse<SearchResult_UserList[]>;
+  const { count, error: countError } = (await queryCount) as PostgrestSingleResponse<UserListSearchResult[]>;
   if (countError) {
     console.log(countError.message);
     return {
@@ -103,7 +103,7 @@ export const search_userList = async (
   }
 
   // 明細行取得
-  const { data, error } = (await query) as PostgrestSingleResponse<SearchResult_UserList[]>;
+  const { data, error } = (await query) as PostgrestSingleResponse<UserListSearchResult[]>;
   if (error) {
     console.log(error.message);
     return {
@@ -137,56 +137,5 @@ export const search_userList = async (
       totalPage,
       currentPage: values.sortItems?.nextPage ?? 0,
     },
-  };
-};
-
-/* ユーザー詳細
------------------------------------------------------------------- */
-
-/**
- * get_userDetail
- * IDに一致する店舗情報を取得する。
- *
- * @param {ApiRequest<number>} values - 検索条件
- * @returns {Promise<ApiResponse<t_user>>} 検索結果
- */
-export const get_userDetail = async (values: ApiRequest<number>): Promise<ApiResponse<DetailResult_UserData>> => {
-  const query = supabase
-    .from('t_user')
-    .select(
-      `id,
-      user_name,
-      user_name_kana,
-      user_usage_status,
-      user_email,
-      master_memo,
-      t_companies_id,
-      t_companies!inner(
-        company_name,
-        branch_name,
-        optional_item_title_1,
-        optional_item_title_2
-      ),
-      t_companies_department!inner(
-        department_name
-      ),  
-      t_companies_employment_status!inner(
-        employment_status_name
-      )`
-    )
-    .eq('id', values.request)
-    .single();
-
-  const { data, error } = (await query) as PostgrestSingleResponse<DetailResult_UserData>;
-  if (error) {
-    return {
-      data: null,
-      error: error.message,
-    };
-  }
-
-  return {
-    data,
-    error: null,
   };
 };

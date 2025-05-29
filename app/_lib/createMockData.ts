@@ -1,15 +1,12 @@
-import { UserUsageStatus } from '../_types/enum';
-import {
-  SearchResult_CompanyList,
-  SearchResult_orderList,
-  SearchResult_ScheduleList,
-  SearchResult_ShopList,
-  SearchResult_UserList,
-} from './supabase/types';
+import { CompanyListSearchResult } from '../(private)/company/_lib/types';
+import { OrderListSearchResult } from '../(private)/order/_lib/types';
+import { ScheduleListSearchResult } from '../(private)/schedule/_lib/types';
+import { ShopListSearchResult } from '../(private)/shop/_lib/types';
+import { UserListSearchResult } from '../(private)/user/_lib/types';
 
 /* 検索結果のモックデータ作成 */
 export function MockDataCreate_UserResult() {
-  const result: SearchResult_UserList[] = [];
+  const result: UserListSearchResult[] = [];
   for (let i = 0; i < 30; i++) {
     result.push({
       id: 'id' + i.toString().padStart(4, '0'),
@@ -32,7 +29,7 @@ export function MockDataCreate_UserResult() {
 }
 
 export function MockDataCreate_OrderResult() {
-  const result: SearchResult_orderList[] = [];
+  const result: OrderListSearchResult[] = [];
   for (let i = 1; i <= 30; i++) {
     result.push({
       id: 'id' + i.toString().padStart(4, '0'),
@@ -54,7 +51,7 @@ export function MockDataCreate_OrderResult() {
 }
 
 export function MockDataCreate_ScheduleResult() {
-  const result: SearchResult_ScheduleList[] = [];
+  const result: ScheduleListSearchResult[] = [];
   for (let i = 1; i <= 30; i++) {
     result.push({
       id: 'id' + i.toString().padStart(4, '0'),
@@ -76,7 +73,7 @@ export function MockDataCreate_ScheduleResult() {
 }
 
 export function MockDataCreate_ShopSearchResult() {
-  const result: SearchResult_ShopList[] = [];
+  const result: ShopListSearchResult[] = [];
   for (let i = 1; i <= 30; i++) {
     result.push({
       id: 'id' + i.toString().padStart(4, '0'),
@@ -93,7 +90,7 @@ export function MockDataCreate_ShopSearchResult() {
 }
 
 export function MockDataCreate_CompanySearchResult() {
-  const result: SearchResult_CompanyList[] = [];
+  const result: CompanyListSearchResult[] = [];
   for (let i = 1; i <= 30; i++) {
     result.push({
       id: 'id' + i.toString().padStart(4, '0'),
