@@ -87,6 +87,7 @@ export const _searchComponyDetail = async (
     : [];
 
   console.log(data.usage_status);
+  const defalutDate = getTodayZeroHour();
 
   const res: CompanyDetailFormValues = {
     id: data.id?.toString(),
@@ -106,12 +107,12 @@ export const _searchComponyDetail = async (
     optional_item_title_2: data.optional_item_title_2 ?? '',
     optional_item_notes_1: data.optional_item_notes_1 ?? '',
     optional_item_notes_2: data.optional_item_notes_2 ?? '',
-    offer_time_from: data.offer_time_from ? convertTimeToDate(data.offer_time_from) : getTodayZeroHour(),
-    offer_time_to: data.offer_time_to ? convertTimeToDate(data.offer_time_to) : getTodayZeroHour(),
+    offer_time_from: data.offer_time_from ? convertTimeToDate(data.offer_time_from) : defalutDate,
+    offer_time_to: data.offer_time_to ? convertTimeToDate(data.offer_time_to) : defalutDate,
     order_period_day: data.order_period_day?.toString() ?? '',
-    order_period_time: data.order_period_time ? convertTimeToDate(data.order_period_time) : getTodayZeroHour(),
+    order_period_time: data.order_period_time ? convertTimeToDate(data.order_period_time) : defalutDate,
     cancel_period_day: data.cancel_period_day?.toString() ?? '',
-    cancel_period_time: data.cancel_period_time ? convertTimeToDate(data.cancel_period_time) : getTodayZeroHour(),
+    cancel_period_time: data.cancel_period_time ? convertTimeToDate(data.cancel_period_time) : defalutDate,
     departmentInfo: depInit,
     employmentStatusInfo: empInit,
     usage_status: data.usage_status,
