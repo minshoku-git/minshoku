@@ -1,9 +1,10 @@
 import { PostgrestSingleResponse } from '@supabase/supabase-js';
 
 import { supabase } from '@/app/_lib/supabase/supabase';
+import { UsageStatus, UserUsageStatus } from '@/app/_types/enum';
 import { ApiRequest, ApiResponse } from '@/app/_types/types';
 
-import { DetailResult_UserData } from './types';
+import { UserDataDetailResult } from './types';
 
 /* ユーザー詳細
 ------------------------------------------------------------------ */
@@ -15,7 +16,7 @@ import { DetailResult_UserData } from './types';
  * @param {ApiRequest<number>} values - 検索条件
  * @returns {Promise<ApiResponse<t_user>>} 検索結果
  */
-export const _searchUserDetail = async (values: ApiRequest<number>): Promise<ApiResponse<DetailResult_UserData>> => {
+export const _searchUserDetail = async (values: ApiRequest<number>): Promise<ApiResponse<UserDataDetailResult>> => {
   const query = supabase
     .from('t_user')
     .select(
@@ -42,7 +43,8 @@ export const _searchUserDetail = async (values: ApiRequest<number>): Promise<Api
     .eq('id', values.request)
     .single();
 
-  const { data, error } = (await query) as PostgrestSingleResponse<DetailResult_UserData>;
+  const { data, error } = (await query) as PostgrestSingleResponse<UserDataDetailResult>;
+
   if (error) {
     return {
       data: null,
@@ -51,7 +53,11 @@ export const _searchUserDetail = async (values: ApiRequest<number>): Promise<Api
   }
 
   return {
-    data,
+    data: {
+      ...data,
+      usage_status: data.usage_status as UsageStatus,
+      user_usage_status: data.user_usage_status as UserUsageStatus,
+    },
     error: null,
   };
 };

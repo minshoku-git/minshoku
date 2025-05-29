@@ -18,7 +18,6 @@ import { SubmitHandler, useForm } from 'react-hook-form';
 import { SelectElement, TextareaAutosizeElement } from 'react-hook-form-mui';
 
 import { searchUserDetail } from '@/app/_actions/actions';
-import { DetailResult_UserData } from '@/app/_lib/supabase/types';
 import { AlertType, UsageStatus, UserUsageStatus } from '@/app/_types/enum';
 import ItemBase from '@/app/_ui/_shared/itemBase';
 import ConfirmDialog from '@/app/_ui/dirty/conformDialog';
@@ -26,7 +25,7 @@ import { useDirty } from '@/app/_ui/dirty/dartyContext';
 import { useProcessing } from '@/app/_ui/processing/processingContext';
 import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
 
-import { UserDetailFormValues, UserDetailSchema } from './_lib/types';
+import { UserDataDetailResult, UserDetailFormValues, UserDetailSchema } from './_lib/types';
 
 /** ページ名 */
 const pageName = 'ユーザー詳細';
@@ -56,7 +55,7 @@ export const UserDetailComponent = (): JSX.Element => {
   // ステータス変更確認ダイアログ
   const [openDialog, setOpenDialog] = useState<boolean>(false);
   const [dialogMessage, setDialogMessage] = useState<string>('');
-  const [userData, setUserData] = useState<DetailResult_UserData | undefined>();
+  const [userData, setUserData] = useState<UserDataDetailResult | undefined>();
   const [dialogActionHandler, setDialogActionHandler] = useState<() => void>(() => {
     return () => {};
   });
@@ -97,7 +96,7 @@ export const UserDetailComponent = (): JSX.Element => {
       }
       setUserData(data);
       reset({
-        usage_status: data?.usage_status,
+        usage_status: data?.usage_status as UsageStatus,
         memo: data?.master_memo,
       });
     } catch (error) {

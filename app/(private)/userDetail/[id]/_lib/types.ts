@@ -23,7 +23,7 @@ export const UserDetailSchema = z.object({
 export type UserDetailFormValues = z.infer<typeof UserDetailSchema>;
 
 /** 取得結果 ユーザー詳細 */
-export type DetailResult_UserData = {
+export type UserDataDetailResult = {
   /** ID */
   id: string;
   /** ユーザー名 */
