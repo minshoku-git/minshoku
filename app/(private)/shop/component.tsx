@@ -7,7 +7,6 @@ import { JSX, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { SelectElement, TextFieldElement } from 'react-hook-form-mui';
 
-import { searchShopList } from '@/app/_actions/actions';
 import { AlertType, SortType, UsageStatus } from '@/app/_types/enum';
 import { ApiRequest, ApiResponse, HeaderStatus } from '@/app/_types/types';
 import { CustomTable } from '@/app/_ui/_shared/costomTable/customTable';
@@ -101,7 +100,17 @@ export const ShopComponent = (): JSX.Element => {
         ascending: true,
       },
     };
-    const res = await searchShopList(req);
+
+    const response = await fetch('/api/shop/search', {
+      method: 'POST',
+      body: JSON.stringify(req),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const res: ApiResponse<ShopListSearchResult[]> = await response.json();
+
     if (res.error) {
       openSnackbar(
         AlertType.ERROR,
@@ -130,7 +139,17 @@ export const ShopComponent = (): JSX.Element => {
         ascending: ascending,
       },
     };
-    const res = await searchShopList(req);
+
+    const response = await fetch('/api/shop/search', {
+      method: 'POST',
+      body: JSON.stringify(req),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const res: ApiResponse<ShopListSearchResult[]> = await response.json();
+
     if (res.error) {
       openSnackbar(AlertType.ERROR, '検索時にエラーが発生しました。再度発生する場合は、管理者にお問い合わせください。');
       setResult(null);
@@ -154,7 +173,17 @@ export const ShopComponent = (): JSX.Element => {
         ascending: condition.sortItems?.ascending ?? true,
       },
     };
-    const res = await searchShopList(req);
+
+    const response = await fetch('/api/shop/search', {
+      method: 'POST',
+      body: JSON.stringify(req),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const res: ApiResponse<ShopListSearchResult[]> = await response.json();
+
     if (res.error) {
       openSnackbar(AlertType.ERROR, '検索時にエラーが発生しました。再度発生する場合は、管理者にお問い合わせください。');
       setResult(null);

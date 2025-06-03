@@ -262,7 +262,7 @@ export const OrderComponent = (): JSX.Element => {
       setTimeout(() => {
         closeProcessing();
         setOrderStatus(OrderStatus.CANCEL);
-        openSnackbar(AlertType.INFO, 'ユーザー情報を承認しました。');
+        openSnackbar(AlertType.INFO, 'キャンセルが完了しました。');
       }, 3000);
     };
     // dialog setting

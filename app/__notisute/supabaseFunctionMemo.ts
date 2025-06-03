@@ -31,7 +31,7 @@ export const insert_companyDetail_BOTU = async (
       building_name: req.building_name,
       restaurant_name: req.restaurant_name,
       location: req.location,
-      mailaddress: req.mailaddress,
+      email: req.email,
       memo: req.memo,
       usage_state: 0,
       optional_item_title_1: req.optional_item_title_1,
@@ -61,7 +61,7 @@ export const insert_companyDetail_BOTU = async (
   //     area_block_number: req.area_block_number,
   //     building_name: req.building_name,
   //     restaurant_name: req.restaurant_name,
-  //     mailaddress: req.mailaddress,
+  //     email: req.email,
   //     memo: req.memo,
   //     usage_state: 0, // TODO: 企業新規登録時、何を設定したらいいのか要確認。
   //     optional_item_title_1: req.optional_item_title_1,

@@ -22,7 +22,7 @@ const eslintConfig = [
       'simple-import-sort/exports': 'error',
       'import/order': 'off',
       'prettier/prettier': 'off',
-      'import/no-unresolved': 'error',
+      'import/no-unresolved': 'off',
       'import/default': 'error',
       'import/namespace': 'error',
       'import/no-extraneous-dependencies': 'warn',

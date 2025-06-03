@@ -199,7 +199,7 @@ export const _insertShopDetail = async (values: ApiRequest<ShopDetailFormValues>
       shop_area_block_number: req.shop_area_block_number,
       shop_building_name: req.shop_building_name,
       tel_no: req.tel_no,
-      mailaddress: req.mailaddress,
+      email: req.email,
       specified_commercial_transaction_act: req.specified_commercial_transaction_act,
       shop_image: '', // TODO: 画像保存をどうするのか。
       memo: req.memo,
@@ -245,7 +245,7 @@ export const _updateShopDetail = async (values: ApiRequest<ShopDetailFormValues>
       shop_area_block_number: req.shop_area_block_number,
       shop_building_name: req.shop_building_name,
       tel_no: req.tel_no,
-      mailaddress: req.mailaddress,
+      email: req.email,
       specified_commercial_transaction_act: req.specified_commercial_transaction_act,
       shop_image: '', // TODO: 画像保存をどうするのか。
       memo: req.memo,

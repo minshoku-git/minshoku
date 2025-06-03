@@ -71,7 +71,7 @@ export type t_companies = {
   /** 提供場所 */
   location?: string;
   /** メールアドレス */
-  mailaddress?: string;
+  email?: string;
   /** メモ */
   memo?: string;
   /** 任意項目_項目名1 */
@@ -127,7 +127,7 @@ export type t_shops = {
   /** 電話番号 */
   tel_no?: string;
   /** メールアドレス */
-  mailaddress?: string;
+  email?: string;
   /** 特定商取引法に基づく表記 */
   specified_commercial_transaction_act?: string;
   /** 店舗イメージ */

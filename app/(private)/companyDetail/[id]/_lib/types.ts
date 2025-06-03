@@ -61,7 +61,7 @@ export const CompanyDetailSchema = z
       .nonempty({ message: formatString(MSG_REQUIRED, '提供場所') })
       .max(128, formatString(MSG_MAX, '提供場所', '128')),
     /** メールアドレス */
-    mailaddress: z
+    email: z
       .string()
       .nonempty({ message: formatString(MSG_REQUIRED, 'メールアドレス') })
       .email(formatString(MSG_EMAIL, 'メールアドレス'))

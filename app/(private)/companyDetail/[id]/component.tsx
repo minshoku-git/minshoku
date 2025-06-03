@@ -11,12 +11,13 @@ import { SubmitHandler, useFieldArray, useForm } from 'react-hook-form';
 import { SelectElement, TextareaAutosizeElement, TextFieldElement } from 'react-hook-form-mui';
 import { TimePickerElement } from 'react-hook-form-mui/date-pickers';
 
-import { insertComponyDetail, searchComponyDetail, updateComponyDetail } from '@/app/_actions/actions';
+import { searchComponyDetail } from '@/app/_actions/actions';
 import { DepartmentData, EmploymentData } from '@/app/_lib/createMockData';
 import { getTodayZeroHour } from '@/app/_lib/getDateTime';
 import { checkTempId, getEditFlag } from '@/app/_lib/utill';
 import { TEMP_HYPHEN } from '@/app/_types/constants';
 import { AlertType, UsageStatus } from '@/app/_types/enum';
+import { ApiRequest, ApiResponse } from '@/app/_types/types';
 import { DepartmentInput } from '@/app/_ui/_shared/departmentInput';
 import { EmploymentInput } from '@/app/_ui/_shared/employmentInput';
 import ItemBase from '@/app/_ui/_shared/itemBase';
@@ -88,13 +89,31 @@ export const CompanyComponent = (): JSX.Element => {
   const getInit = async () => {
     try {
       openProcessing();
-      const data = (await searchComponyDetail({ request: Number(id) })).data;
-      if (!data?.id) {
+      const req: ApiRequest<number> = { request: Number(id) };
+
+      const response = await fetch('/api/companyDetail/search', {
+        method: 'POST',
+        body: JSON.stringify(req),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const res: ApiResponse<CompanyDetailFormValues> = await response.json();
+
+      if (!res.data || !res.data.id) {
         openSnackbar(AlertType.ERROR, '会社情報の取得に失敗しました。再度お試しください。');
         router.push('/company');
         return;
       }
-      reset(getInitData(data));
+      const initdata: CompanyDetailFormValues = {
+        ...res.data,
+        offer_time_to: new Date(res.data.offer_time_to),
+        offer_time_from: new Date(res.data.offer_time_from),
+        order_period_time: new Date(res.data.order_period_time),
+        cancel_period_time: new Date(res.data.cancel_period_time),
+      };
+      reset(getInitData(initdata));
     } catch (error) {
       console.error('取得失敗:', error);
     } finally {
@@ -102,6 +121,8 @@ export const CompanyComponent = (): JSX.Element => {
       closeProcessing();
     }
   };
+
+  console.log(typeof getValues('cancel_period_time'));
 
   /* useFieldArray 部署情報
   ------------------------------------------------------------------ */
@@ -172,9 +193,17 @@ export const CompanyComponent = (): JSX.Element => {
   const insertHandler: SubmitHandler<CompanyDetailFormValues> = async (data) => {
     console.log('登録データ:', data);
     openProcessing();
-    const res = await insertComponyDetail({
-      request: data,
+
+    const response = await fetch('/api/companyDetail/insert', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
+
+    const res: ApiResponse<number> = await response.json();
+
     if (res.error) {
       openSnackbar(AlertType.ERROR, '会社情報の新規登録に失敗しました。再度お試しください。' + res.error);
     } else {
@@ -187,13 +216,24 @@ export const CompanyComponent = (): JSX.Element => {
   /* 更新ハンドラー */
   const updateHandler: SubmitHandler<CompanyDetailFormValues> = async (data) => {
     openProcessing();
-    const res = await updateComponyDetail({
+
+    const req: ApiRequest<CompanyDetailFormValues> = {
       request: {
         ...data,
         departmentInfo: [...data.departmentInfo, ...deleteDepArray],
         employmentStatusInfo: [...data.employmentStatusInfo, ...deleteEmpArray],
       },
+    };
+
+    const response = await fetch('/api/companyDetail/update', {
+      method: 'POST',
+      body: JSON.stringify(req),
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
+
+    const res: ApiResponse<number> = await response.json();
 
     if (res.error) {
       openSnackbar(AlertType.ERROR, '会社情報の更新に失敗しました。再度お試しください。' + res.error);
@@ -205,9 +245,8 @@ export const CompanyComponent = (): JSX.Element => {
     closeProcessing();
   };
 
-  console.log('dirtyFields', dirtyFields);
-
   /* 'URLと案内文をコピー'ハンドラー */
+  // TODO: メッセージ文連携待ち＋URL設定忘れずに
   const message =
     'クリップボードのテストメッセージです。\nクリップボードのテストメッセージです。\nクリップボードのテストメッセージです。';
   const isBrowser = typeof window !== 'undefined';
@@ -256,40 +295,6 @@ export const CompanyComponent = (): JSX.Element => {
       return { id: index.toString(), label: d };
     }),
   ];
-
-  // // 郵便番号検索のおためし
-  // const kensaku = () => {
-  //   console.log('やほー！');
-
-  //   const postcode = getValues('post_code');
-  //   if (postcode.length !== 7) {
-  //     closeSnackbar();
-  //     openSnackbar(AlertType.WARNING, '住所を取得できませんでした。番号をお確かめの上、再度お試しください。');
-  //     return;
-  //   }
-
-  //   const url = `https://postcode.teraren.com/postcodes/${postcode}.json`;
-
-  //   fetch(url)
-  //     .then((response) => response.json())
-  //     .then((json) => {
-  //       const prefecture = json.prefecture;
-  //       const city = json.city;
-  //       const suburb = json.suburb;
-  //       const address = prefecture + city + suburb;
-  //       console.log('address:' + address);
-  //       if (!address) {
-  //         setValue('otameshi', '');
-  //         openSnackbar(AlertType.WARNING, '住所を取得できませんでした。番号をお確かめの上、再度お試しください。');
-  //       }
-  //       setValue('otameshi', address);
-  //     })
-  //     .catch((error) => {
-  //       setValue('otameshi', '');
-  //       openSnackbar(AlertType.WARNING, '住所を取得できませんでした。番号をお確かめの上、再度お試しください。');
-  //       console.error(error);
-  //     });
-  // };
 
   /* JSX
   ------------------------------------------------------------------ */
@@ -470,7 +475,7 @@ export const CompanyComponent = (): JSX.Element => {
                     size="small"
                     color={'primary'}
                     type="email"
-                    name="mailaddress"
+                    name="email"
                     fullWidth
                     slotProps={{ htmlInput: { maxLength: 256 } }}
                   />
@@ -759,7 +764,7 @@ const getInitData = (data: CompanyDetailFormValues | null) => {
     area_block_number: data?.area_block_number ?? '',
     building_name: data?.building_name ?? '',
     restaurant_name: data?.restaurant_name ?? '',
-    mailaddress: data?.mailaddress ?? '',
+    email: data?.email ?? '',
     memo: data?.memo ?? '',
     location: data?.location ?? '',
     offer_time_from: data?.offer_time_from ?? getTodayZeroHour(),

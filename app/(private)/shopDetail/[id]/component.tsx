@@ -328,7 +328,7 @@ export const ShopComponent = (): JSX.Element => {
                     control={control}
                     size="small"
                     color={'primary'}
-                    name="mailaddress"
+                    name="email"
                     fullWidth
                     slotProps={{ htmlInput: { maxLength: 256 } }}
                   />
@@ -430,7 +430,7 @@ const defalutData: ShopDetailFormValues = {
   shop_town_area: '',
   shop_building_name: '',
   tel_no: '',
-  mailaddress: '',
+  email: '',
   specified_commercial_transaction_act: '',
   shop_image: undefined,
   usage_status: UsageStatus.AVAILABLE,

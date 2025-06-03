@@ -7,10 +7,11 @@ import { supabase } from '@/app/_lib/supabase/supabase';
 import { t_companies, t_companies_department, t_companies_employment_status } from '@/app/_lib/supabase/tableTypes';
 import { checkTempId, convertTimeToDate, getPostgreSqlItems } from '@/app/_lib/utill';
 import { ApiRequest, ApiResponse } from '@/app/_types/types';
-import { CompanyDetailFormValues } from '@/app/(private)/companyDetail/[id]/_lib/types';
+
+import { CompanyDetailFormValues } from './types';
 
 /**
- * get_companyDetail
+ * _searchComponyDetail
  * IDに一致する会社情報を取得する。
  *
  * @param {ApiRequest<number>} values - 検索条件
@@ -101,7 +102,7 @@ export const _searchComponyDetail = async (
     building_name: data.building_name ?? '',
     restaurant_name: data.restaurant_name ?? '',
     location: data.location ?? '',
-    mailaddress: data.mailaddress ?? '',
+    email: data.email ?? '',
     memo: data.memo ?? '',
     optional_item_title_1: data.optional_item_title_1 ?? '',
     optional_item_title_2: data.optional_item_title_2 ?? '',
@@ -164,7 +165,7 @@ export const _insertComponyDetail = async (
       building_name: req.building_name,
       restaurant_name: req.restaurant_name,
       location: req.location,
-      mailaddress: req.mailaddress,
+      email: req.email,
       memo: req.memo,
       optional_item_title_1: req.optional_item_title_1,
       optional_item_title_2: req.optional_item_title_2,
@@ -300,7 +301,7 @@ export const _updateComponyDetail = async (
       building_name: req.building_name,
       restaurant_name: req.restaurant_name,
       location: req.location,
-      mailaddress: req.mailaddress,
+      email: req.email,
       memo: req.memo,
       optional_item_title_1: req.optional_item_title_1,
       optional_item_title_2: req.optional_item_title_2,

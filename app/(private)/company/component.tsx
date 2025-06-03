@@ -106,7 +106,17 @@ export const CompanyComponent = (): JSX.Element => {
         ascending: true,
       },
     };
-    const res = await searchComponyList(req);
+
+    const response = await fetch('/api/company/search', {
+      method: 'POST',
+      body: JSON.stringify(req),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const res: ApiResponse<CompanyListSearchResult[]> = await response.json();
+
     if (res.error) {
       openSnackbar(AlertType.ERROR, '検索時にエラーが発生しました。再度発生する場合は、管理者にお問い合わせください。');
       setResult(null);
@@ -132,7 +142,17 @@ export const CompanyComponent = (): JSX.Element => {
         ascending: ascending,
       },
     };
-    const res = await searchComponyList(req);
+
+    const response = await fetch('/api/company/search', {
+      method: 'POST',
+      body: JSON.stringify(req),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const res: ApiResponse<CompanyListSearchResult[]> = await response.json();
+
     if (res.error) {
       openSnackbar(AlertType.ERROR, '検索時にエラーが発生しました。再度発生する場合は、管理者にお問い合わせください。');
       setResult(null);
@@ -156,7 +176,17 @@ export const CompanyComponent = (): JSX.Element => {
         ascending: condition.sortItems?.ascending ?? true,
       },
     };
-    const res = await searchComponyList(req);
+
+    const response = await fetch('/api/company/search', {
+      method: 'POST',
+      body: JSON.stringify(req),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const res: ApiResponse<CompanyListSearchResult[]> = await response.json();
+
     if (res.error) {
       openSnackbar(AlertType.ERROR, '検索時にエラーが発生しました。再度発生する場合は、管理者にお問い合わせください。');
       setResult(null);
@@ -347,7 +377,7 @@ export const CompanyComponent = (): JSX.Element => {
                 <CustomTable
                   paginate={result.paginate}
                   sortHandler={sortHandler}
-                  pageChangeHandler={() => {}}
+                  pageChangeHandler={pageChangeHandler}
                   header={resultHeader}
                   sortArray={sortArray}
                   setSortArray={setSortArray}
