@@ -1,5 +1,6 @@
 'use client';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Search } from '@mui/icons-material';
 import { Box, Button, Divider, Paper, TextField, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import { LocalizationProvider } from '@mui/x-date-pickers';
@@ -11,8 +12,8 @@ import { SubmitHandler, useFieldArray, useForm } from 'react-hook-form';
 import { SelectElement, TextareaAutosizeElement, TextFieldElement } from 'react-hook-form-mui';
 import { TimePickerElement } from 'react-hook-form-mui/date-pickers';
 
-import { searchComponyDetail } from '@/app/_actions/actions';
 import { DepartmentData, EmploymentData } from '@/app/_lib/createMockData';
+import { getAddress } from '@/app/_lib/getAddress';
 import { getTodayZeroHour } from '@/app/_lib/getDateTime';
 import { checkTempId, getEditFlag } from '@/app/_lib/utill';
 import { TEMP_HYPHEN } from '@/app/_types/constants';
@@ -55,6 +56,8 @@ export const CompanyComponent = (): JSX.Element => {
 
   const [deleteDepArray, setDeleteDepArray] = useState<DepartmentData[]>([]);
   const [deleteEmpArray, setDeleteEmpArray] = useState<EmploymentData[]>([]);
+
+  const [addressLoading, setAddressLoading] = useState<boolean>(false);
 
   /* useForm
   ------------------------------------------------------------------ */
@@ -256,6 +259,25 @@ export const CompanyComponent = (): JSX.Element => {
     await navigator.clipboard.writeText(message);
   };
 
+  // 住所取得
+  const getAddressHandler = async () => {
+    setAddressLoading(true);
+    const { prefecture, suburb, city, errorMessage } = await getAddress(getValues('post_code'));
+
+    if (errorMessage) {
+      setValue('prefectures', '');
+      setValue('municipalities', '');
+      setValue('town_area', '');
+      openSnackbar(AlertType.WARNING, errorMessage);
+    } else {
+      setValue('prefectures', prefecture);
+      setValue('municipalities', city);
+      setValue('town_area', suburb);
+    }
+    setAddressLoading(false);
+    return;
+  };
+
   /* dirty
   ------------------------------------------------------------------ */
   useEffect(() => {
@@ -377,7 +399,7 @@ export const CompanyComponent = (): JSX.Element => {
                     sx={{
                       display: 'flex',
                       flexDirection: 'row',
-                      alignItems: 'flex-start',
+                      alignItems: 'center',
                       width: '640px',
                     }}
                     gap={2}
@@ -385,14 +407,57 @@ export const CompanyComponent = (): JSX.Element => {
                     <TextFieldElement
                       control={control}
                       size="small"
-                      color={'primary'}
+                      color="primary"
                       name="post_code"
-                      fullWidth
+                      disabled={addressLoading}
+                      sx={{ width: '150px' }}
                       slotProps={{ htmlInput: { maxLength: 7 } }}
                     />
+                    <Button
+                      startIcon={<Search />}
+                      color="primary"
+                      variant="outlined"
+                      loading={addressLoading}
+                      onClick={() => getAddressHandler()}
+                    >
+                      {'住所検索'}
+                    </Button>
                   </Box>
                 </ItemBase>
-                <ItemBase name={'住所'} isRequired={0}>
+                <ItemBase name={'都道府県'} isRequired={0}>
+                  <TextFieldElement
+                    control={control}
+                    size="small"
+                    color="primary"
+                    name="prefectures"
+                    disabled={addressLoading}
+                    fullWidth
+                    slotProps={{ htmlInput: { maxLength: 128 } }}
+                  />
+                </ItemBase>
+                <ItemBase name={'市区'} isRequired={0}>
+                  <TextFieldElement
+                    control={control}
+                    size="small"
+                    color="primary"
+                    name="municipalities"
+                    disabled={addressLoading}
+                    fullWidth
+                    slotProps={{ htmlInput: { maxLength: 128 } }}
+                  />
+                </ItemBase>
+                <ItemBase name={'町村'} isRequired={0}>
+                  <TextFieldElement
+                    control={control}
+                    size="small"
+                    color="primary"
+                    name="town_area"
+                    disabled={addressLoading}
+                    fullWidth
+                    slotProps={{ htmlInput: { maxLength: 128 } }}
+                  />
+                </ItemBase>
+                {/* <ItemBase name={'住所'} isRequired={0}>
                   <Box
                     sx={{
                       display: 'flex',
@@ -437,7 +502,7 @@ export const CompanyComponent = (): JSX.Element => {
                       ]}
                     ></SelectElement>
                   </Box>
-                </ItemBase>
+                </ItemBase> */}
                 <ItemBase name={'番地'} isRequired={0}>
                   <TextFieldElement
                     control={control}
@@ -452,7 +517,7 @@ export const CompanyComponent = (): JSX.Element => {
                   <TextFieldElement
                     control={control}
                     size="small"
-                    color={'primary'}
+                    color="primary"
                     name="building_name"
                     fullWidth
                     placeholder="建物名・階数など"
@@ -463,7 +528,7 @@ export const CompanyComponent = (): JSX.Element => {
                   <TextFieldElement
                     control={control}
                     size="small"
-                    color={'primary'}
+                    color="primary"
                     name="location"
                     fullWidth
                     slotProps={{ htmlInput: { maxLength: 128 } }}
@@ -484,7 +549,7 @@ export const CompanyComponent = (): JSX.Element => {
                   <TextareaAutosizeElement
                     control={control}
                     size="small"
-                    color={'primary'}
+                    color="primary"
                     name="memo"
                     minRows={3}
                     resizeStyle="vertical"
@@ -514,7 +579,7 @@ export const CompanyComponent = (): JSX.Element => {
                     <TextFieldElement
                       control={control}
                       size="small"
-                      color={'primary'}
+                      color="primary"
                       name="optional_item_title_1"
                       label="項目名"
                       sx={{ width: '640px', mb: 1 }}
@@ -523,7 +588,7 @@ export const CompanyComponent = (): JSX.Element => {
                     <TextFieldElement
                       control={control}
                       size="small"
-                      color={'primary'}
+                      color="primary"
                       name="optional_item_notes_1"
                       label="注釈"
                       sx={{ width: '640px' }}
@@ -536,7 +601,7 @@ export const CompanyComponent = (): JSX.Element => {
                     <TextFieldElement
                       control={control}
                       size="small"
-                      color={'primary'}
+                      color="primary"
                       name="optional_item_title_2"
                       label="項目名"
                       sx={{ width: '640px', mb: 1 }}
@@ -545,7 +610,7 @@ export const CompanyComponent = (): JSX.Element => {
                     <TextFieldElement
                       control={control}
                       size="small"
-                      color={'primary'}
+                      color="primary"
                       name="optional_item_notes_2"
                       label="注釈"
                       sx={{ width: '640px' }}

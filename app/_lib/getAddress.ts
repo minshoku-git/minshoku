@@ -37,16 +37,16 @@ export type JsonResponse = {
  * @param {string} postcode - 郵便番号
  * @returns {AddressResponse} 住所(都道府県・市区・町村)
  */
-export const getAddress = (postcode: string): AddressResponse => {
+export const getAddress = async (postcode: string): Promise<AddressResponse> => {
   console.log('やほー！');
-
-  let res: AddressResponse = { errorMessage: '', city: '', prefecture: '', suburb: '' };
 
   // 入力文字数確認
   if (postcode.length !== 7) {
     return {
-      ...res,
-      errorMessage: '郵便番号を入力後、再度お試しください。',
+      city: '',
+      prefecture: '',
+      suburb: '',
+      errorMessage: '郵便番号7桁を入力後、再度お試しください。',
     };
   }
 
@@ -59,17 +59,22 @@ export const getAddress = (postcode: string): AddressResponse => {
   const url = `https://zipcloud.ibsnet.co.jp/api/search?zipcode=${postcode}`;
 
   // 住所取得
-  fetch(url)
+  const res: AddressResponse = await fetch(url)
     .then((response) => response.json())
     .then((json: JsonResponse) => {
       if (!json.results) {
-        res = { ...res, errorMessage: '住所を取得できませんでした。番号をお確かめの上、再度お試しください。' };
         console.log(json.message);
-        return;
+        return {
+          errorMessage: '住所を取得できませんでした。番号をお確かめの上、再度お試しください。',
+          prefecture: '',
+          city: '',
+          suburb: '',
+        };
       }
       if (json.results.length === 1) {
-        res = {
-          ...res,
+        console.log(json.results[0]);
+        return {
+          errorMessage: '',
           prefecture: json.results[0].address1,
           city: json.results[0].address2,
           suburb: json.results[0].address3,
@@ -77,23 +82,34 @@ export const getAddress = (postcode: string): AddressResponse => {
       } else {
         // 重複結果を返却する
         if (hasDuplicate(json.results, 'address1') || hasDuplicate(json.results, 'address2')) {
-          res = { ...res, prefecture: json.results[0].address1 };
+          return {
+            errorMessage: '',
+            prefecture: json.results[0].address1,
+            city: '',
+            suburb: '',
+          };
         } else if (hasDuplicate(json.results, 'address3')) {
-          res = { ...res, prefecture: json.results[0].address1, city: json.results[0].address2 };
+          return {
+            errorMessage: '',
+            prefecture: json.results[0].address1,
+            city: json.results[0].address2,
+            suburb: '',
+          };
         } else {
-          res = {
-            ...res,
+          return {
+            errorMessage: '',
             prefecture: json.results[0].address1,
             city: json.results[0].address2,
             suburb: json.results[0].address3,
           };
         }
       }
-      return;
     })
     .catch((error) => {
       console.error(error);
-      res = { ...res, errorMessage: '住所を取得できませんでした。番号をお確かめの上、再度お試しください。' };
+      return { ...res, errorMessage: '住所を取得できませんでした。番号をお確かめの上、再度お試しください。' };
     });
+
+  console.log('返却値:', res);
   return res;
 };
