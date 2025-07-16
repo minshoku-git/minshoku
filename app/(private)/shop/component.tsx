@@ -67,17 +67,7 @@ export const ShopComponent = (): JSX.Element => {
   const [isSearch, setIsSearch] = useState(false);
   const [condition, setCondition] = useState<ApiRequest<ShopSearchFormValues> | null>(null);
 
-  const [result, setResult] = useState<ApiResponse<ShopListSearchResult[]> | null>({
-    data: null,
-    error: null,
-    paginate: {
-      count: 0,
-      currentPage: 0,
-      startRow: 0,
-      endRow: 0,
-      totalPage: 0,
-    },
-  });
+  const [result, setResult] = useState<ApiResponse<ShopListSearchResult[]> | null>(null);
 
   /* useForm
   ------------------------------------------------------------------ */
