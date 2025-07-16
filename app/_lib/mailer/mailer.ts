@@ -38,11 +38,11 @@ export const send = async (req: ApiRequest<string>): Promise<ApiResponse<string>
       // `,
     })
     .then(() => {
-      return { data: null, error: null };
+      return {};
     })
     .catch((error) => {
       console.error((error as Error).message);
-      return { data: null, error: (error as Error).message };
+      return { error: (error as Error).message };
     });
 };
 
