@@ -30,7 +30,7 @@ export type ShopListSearchResult = {
   /** 店舗名 */
   shop_name?: string;
   /** 郵便番号 */
-  shop_post_code?: string;
+  shop_postal_code?: string;
   /** 住所 */
   address?: string;
   /** 利用ステータス */

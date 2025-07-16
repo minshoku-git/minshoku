@@ -18,41 +18,37 @@ export enum SortType {
   DESC = 'desc',
 }
 
-/** ユーザー利用ステータス */
-export enum UserUsageStatus {
-  /** 0:制限なし */
-  NOLIMIT = '0',
-  /** 1:申請中 */
-  PENDING = '1',
-  /** 2:利用停止 */
-  DEACTIVATION = '2',
-  /** 3:否認 */
-  DISAPPROVAL = '3',
-  /** 4:削除 */
-  DELETE = '4',
-  /** 5:登録中 */
-  REGISTERED = '5',
+/** ユーザー登録ステータス */
+export enum UserRegistrationStatus {
+  /** 0:承認待ち */
+  WAITING_APPROVAL = '0',
+  /** 1:否認 */
+  DISAPPROVAL = '1',
+  /** 2:メール認証待ち */
+  WAITING_EMAIL_VERIFICATION = '2',
+  /** 3:支払方法登録待ち */
+  WAITING_PAYMENT_SETUP = '3',
+  /** 4:登録済み */
+  REGISTERED = '4',
 }
 
 /**
- * ユーザー利用ステータスの論理名を取得します。
- * @param {UserUsageStatus} value - 締め切り番号
+ * ユーザー登録ステータスの論理名を取得します。
+ * @param {UserRegistrationStatus} value - 締め切り番号
  * @returns {string} - 論理名
  */
-export const convertUserUsageStatusName = (value: UserUsageStatus): string => {
+export const convertUserRegistrationStatusName = (value: UserRegistrationStatus): string => {
   switch (value) {
-    case UserUsageStatus.NOLIMIT:
-      return '制限なし';
-    case UserUsageStatus.PENDING:
-      return '申請中';
-    case UserUsageStatus.DEACTIVATION:
-      return '利用停止';
-    case UserUsageStatus.DISAPPROVAL:
+    case UserRegistrationStatus.WAITING_APPROVAL:
+      return '承認待ち';
+    case UserRegistrationStatus.DISAPPROVAL:
       return '否認';
-    case UserUsageStatus.DELETE:
-      return '削除';
-    case UserUsageStatus.REGISTERED:
-      return '登録中';
+    case UserRegistrationStatus.WAITING_EMAIL_VERIFICATION:
+      return 'メール認証待ち';
+    case UserRegistrationStatus.WAITING_PAYMENT_SETUP:
+      return '支払方法登録待ち';
+    case UserRegistrationStatus.REGISTERED:
+      return '登録済み';
   }
 };
 
@@ -79,7 +75,7 @@ export const convertUsageStatusName = (value: UsageStatus): string => {
 };
 
 /** 支払い種別 */
-export enum PaymentTypes {
+export enum PaymentType {
   /** 0:会社清算 */
   SALAEY_DEDUCTIONS = '0',
   /** 1:クレジットカード */
@@ -90,8 +86,28 @@ export enum PaymentTypes {
 
 /** オーダーステータス */
 export enum OrderStatus {
-  /** 0:制限なし */
-  CANCEL = '0',
-  /** 1:有効 */
-  VALID = '1',
+  /** 0:有効 */
+  VALID = 0,
+  /** 1:キャンセル */
+  CANCEL = 1,
+}
+
+/** ユーザー承認種別 */
+export enum UserApprovalType {
+  /** 0:承認 */
+  APPROVAL = '0',
+  /** 1:否認 */
+  DISAPPROVAL = '1',
+  /** 2:処理済み */
+  PROCESSED = '2',
+}
+
+/** 検索アクション種別 */
+export enum SearchType {
+  /** 0:検索 */
+  SEARCH = '0',
+  /** 1:ソート */
+  SORT = '1',
+  /** 2:ページネーション */
+  PAGENATION = '2',
 }

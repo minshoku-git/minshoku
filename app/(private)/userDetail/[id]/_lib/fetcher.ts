@@ -1,0 +1,50 @@
+import { fetcher } from '@/app/_lib/fetcher';
+import { ApiRequest, ApiResponse } from '@/app/_types/types';
+
+import { UserDetailFormValues } from './types';
+
+/**
+ * searchUserDetail
+ * @param {ApiRequest<number>} req
+ * @returns {Promise<any>}
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const searchUserDetail = (req: ApiRequest<number>): Promise<any> => {
+  return fetcher<ApiResponse<number>>('/api/userDetail/search', {
+    method: 'POST',
+    body: JSON.stringify(req),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+};
+
+/**
+ * updateUserDetail
+ * @param {ApiRequest<number>} req
+ * @returns {Promise<ApiResponse<number>>}
+ */
+export const updateUserDetail = (req: UserDetailFormValues): Promise<ApiResponse<number>> => {
+  return fetcher<ApiResponse<number>>('/api/userDetail/update', {
+    method: 'POST',
+    body: JSON.stringify(req),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+};
+
+/**
+ * updateUserUsageStatus
+ * @param {ApiRequest<number>} req
+ * @returns {Promise<ApiResponse<number>>}
+ */
+export const updateUserUsageStatus = (req: UserDetailFormValues): Promise<ApiResponse<number>> => {
+  return fetcher<ApiResponse<number>>('/api/userDetail/updateUserUsageStatus', {
+    method: 'POST',
+    body: JSON.stringify(req),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+};

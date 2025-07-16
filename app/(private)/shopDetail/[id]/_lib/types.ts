@@ -29,7 +29,7 @@ export const ShopDetailSchema = z.object({
     .regex(new RegExp(REG_ZENKAKU_KANA), '全角カナで入力してください。')
     .max(256, formatString(MSG_MAX, '店舗名(カナ)', '256')),
   /** 郵便番号 */
-  shop_post_code: z
+  shop_postal_code: z
     .string()
     .nonempty({ message: formatString(MSG_REQUIRED, '郵便番号') })
     .regex(new RegExp(REG_POSTALCODE), formatString(MSG_POSTALCODE, '郵便番号')),
@@ -62,21 +62,6 @@ export const ShopDetailSchema = z.object({
     .max(256, formatString(MSG_MAX, '電話番号', '11')),
   /** 表記 */
   specified_commercial_transaction_act: z.string().optional(),
-  /** image */
-  shop_image: z.string().optional(),
-  // shop_image: z
-  //   // z.inferでSchemaを定義したときに型がつくようにするため
-  //   .instanceof(File)
-  //   // 必須にしたい場合
-  //   .refine((file) => !file, { message: '必須です。' })
-  //   // ファイルサイズを制限したい場合
-  //   .refine((file) => sizeInMB(file.size) <= MAX_IMAGE_SIZE, {
-  //     message: 'ファイルサイズは最大5MBです。',
-  //   })
-  //   // 画像形式を制限したい場合
-  //   .refine((file) => IMAGE_TYPES.includes(file.type), {
-  //     message: '.jpgもしくは.pngのみ可能です。',
-  //   }),
   /** ステータス */
   usage_status: z.nativeEnum(UsageStatus),
   /** メモ */
@@ -90,3 +75,25 @@ export const ShopDetailSchema = z.object({
  * 店舗詳細 検索条件 FormValues
  */
 export type ShopDetailFormValues = z.infer<typeof ShopDetailSchema>;
+
+/**
+ * 店舗詳細 RequestData
+ */
+export type shopDeteilRequestData = {
+  /** 店舗イメージ_ファイル名 */
+  shop_image_file_name?: string;
+  /** 店舗イメージ_ファイルデータ */
+  shop_image_file_data?: File;
+  /** 店舗イメージ_ファイルサイズ(byte) */
+  shop_image_file_bytesize: number;
+} & ShopDetailFormValues;
+
+/**
+ * 店舗詳細 ResponseData
+ */
+export type shopDeteilResponseData = {
+  /** 店舗イメージ_ファイル名 */
+  shop_image_file_name: string;
+  /** 店舗イメージ_URL */
+  shop_image_url: string;
+} & ShopDetailFormValues;

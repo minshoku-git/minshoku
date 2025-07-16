@@ -1,26 +1,31 @@
 'use client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CloudUpload, Delete } from '@mui/icons-material';
+import { ArrowBack, CloudUpload, Delete } from '@mui/icons-material';
 import { Box, Button, Divider, IconButton, Paper, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
 import { ChangeEvent, JSX, useEffect, useMemo, useRef, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { SelectElement, TextareaAutosizeElement, TextFieldElement } from 'react-hook-form-mui';
 
-import { insertShopDetail, searchShopDetail, updateShopDetail } from '@/app/_actions/actions';
 import { getAttachmentSizeOver, getMbSize } from '@/app/_lib/getFile';
+import { t_shops } from '@/app/_lib/supabase/tableTypes';
 import { getEditFlag } from '@/app/_lib/utill';
 import { IMAGE_TYPES } from '@/app/_types/constants';
 import { AlertType, UsageStatus } from '@/app/_types/enum';
+import { QUERY_KEYS } from '@/app/_types/queryKeys';
+import { SESSION_STORAGE_KEYS } from '@/app/_types/sessionStorageKeys';
+import { ApiRequest, ApiResponse } from '@/app/_types/types';
 import ItemBase from '@/app/_ui/_shared/itemBase';
 import { useDirty } from '@/app/_ui/dirty/dartyContext';
 import { useProcessing } from '@/app/_ui/processing/processingContext';
 import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
 
 import { state as stateMockData } from '../../../../public/state.json';
-import { ShopDetailFormValues, ShopDetailSchema } from './_lib/types';
-
+import { insertShopDetail, searchShopDetail, updateShopDetail } from './_lib/fetcher';
+import { _insertShopDetail, _searchShopDetail, _updateShopDetail } from './_lib/shopDetailFunction';
+import { ShopDetailFormValues, ShopDetailSchema, shopDeteilResponseData } from './_lib/types';
 /** ページ名 */
 const pageName = '店舗詳細';
 
@@ -34,16 +39,15 @@ export const ShopComponent = (): JSX.Element => {
   const { openSnackbar, closeSnackbar } = useSnackBar();
   const { setDirty } = useDirty();
   const { openProcessing, closeProcessing } = useProcessing();
+  const queryClient = useQueryClient();
   const router = useRouter();
-  const params = useParams();
-  const id = (params.id as string) ?? '-';
+  const id = (useParams().id as string) ?? '-';
+  const editMode = useMemo(() => getEditFlag(id), [id]);
 
   /* useState
   ------------------------------------------------------------------ */
-  const editMode = useMemo(() => getEditFlag(id), [id]);
   const [file, setFile] = useState<File>();
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const [dataLoaded, setDataLoaded] = useState(false);
 
   /* useForm
   ------------------------------------------------------------------ */
@@ -59,84 +63,139 @@ export const ShopComponent = (): JSX.Element => {
     defaultValues: defalutData,
   });
 
+  /* useQuery
+  ------------------------------------------------------------------ */
+  const searchShopDetailFetch = async () => {
+    const req: ApiRequest<number> = { request: Number(id) };
+    return searchShopDetail(req);
+  };
+
+  const {
+    data: result,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery<ApiResponse<t_shops>>({
+    queryKey: [QUERY_KEYS.SHOP_DETAIL_INIT],
+    queryFn: searchShopDetailFetch,
+    enabled: editMode,
+  });
+
   /* useEffect
   ------------------------------------------------------------------ */
   useEffect(() => {
     if (!editMode) {
-      reset();
-      setDataLoaded(true);
       return;
-    } else {
-      getInit();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  /** 初期表示データ取得 */
-  const getInit = async () => {
-    try {
-      openProcessing();
-      const data = (await searchShopDetail({ request: Number(id) })).data;
-      if (!data?.id) {
-        openSnackbar(AlertType.ERROR, '店舗情報の取得に失敗しました。再度お試しください。');
-        router.push('/shop');
-        return;
-      }
-      const initData: Partial<ShopDetailFormValues> = {
+    if (isError || result?.error) {
+      console.log(result?.error);
+      openSnackbar(AlertType.WARNING, '店舗情報の取得に失敗しました。再度お試しください。');
+      router.push('/shop');
+      return;
+    }
+    if (result?.data) {
+      console.log(result);
+      const data = result.data;
+      const initData: Partial<shopDeteilResponseData> = {
         ...data,
         id: id,
-        shop_image: undefined,
         usage_status: data?.usage_status,
       };
+      if (data.shop_image_file_name) {
+        setFile(new File([], data.shop_image_file_name));
+      }
       reset(initData);
-    } catch (error) {
-      console.error('取得失敗:', error);
-    } finally {
-      setDataLoaded(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result]);
+
+  useEffect(() => {
+    if (isLoading) {
+      openProcessing();
+    } else {
       closeProcessing();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading]);
+
+  /* functions - Insert
+  ------------------------------------------------------------------ */
+  const insertHandler: SubmitHandler<ShopDetailFormValues> = async (data) => {
+    insertMutate.mutate(data);
   };
 
-  /* functions
-  ------------------------------------------------------------------ */
-  /* 新規登録ハンドラー */
-  const insertHandler: SubmitHandler<ShopDetailFormValues> = async (data) => {
-    console.log('登録データ:', data);
-    openProcessing();
-    const res = await insertShopDetail({ request: data });
-    if (res.error) {
-      openSnackbar(AlertType.ERROR, '店舗情報の新規登録に失敗しました。再度お試しください。' + res.error);
-    } else {
+  const insertMutate = useMutation({
+    mutationFn: async (data: ShopDetailFormValues) => {
+      openProcessing();
+
+      const formData = new FormData();
+      formData.append('formValues', JSON.stringify(data));
+
+      formData.append('shop_image_file_name', file?.name ?? '');
+      if (file) {
+        formData.append('shop_image_file_bytesize', file.size.toString());
+        formData.append('shop_image_file_data', file);
+      }
+
+      return insertShopDetail(formData) as unknown as ApiResponse<number>;
+    },
+    onSuccess: (res) => {
       openSnackbar(AlertType.SUCCESS, '店舗情報の登録が完了しました。');
       router.push(`/shopDetail/${res.data}`);
-    }
-    closeProcessing();
+    },
+    onError: (e) => {
+      console.log(e.message);
+      openSnackbar(AlertType.ERROR, '店舗情報の新規登録に失敗しました。再度お試しください。');
+    },
+    onSettled: () => {
+      closeProcessing();
+    },
+  });
+
+  /* functions - Update
+  ------------------------------------------------------------------ */
+  const updateHandler: SubmitHandler<ShopDetailFormValues> = async (data) => {
+    updateMutate.mutate(data);
   };
 
-  /* 更新ハンドラー */
-  const updateHandler: SubmitHandler<ShopDetailFormValues> = async (data) => {
-    console.log('更新データ:', data);
-    const res = await updateShopDetail({ request: data });
-    if (res.error) {
-      openSnackbar(AlertType.ERROR, '会社情報の更新に失敗しました。再度お試しください。' + res.error);
-    } else {
-      await getInit();
-      window.scrollTo(0, 0);
-      openSnackbar(AlertType.SUCCESS, '会社情報の更新が完了しました。');
-    }
-  };
+  const updateMutate = useMutation({
+    mutationFn: async (data: ShopDetailFormValues) => {
+      openProcessing();
+
+      const formData = new FormData();
+      formData.append('formValues', JSON.stringify(data));
+
+      formData.append('shop_image_file_name', file?.name ?? '');
+      if (file) {
+        formData.append('shop_image_file_bytesize', file.size.toString());
+        formData.append('shop_image_file_data', file);
+      }
+
+      return updateShopDetail(formData);
+    },
+    onSuccess: (_res: ApiResponse<number>) => {
+      refetch();
+      openSnackbar(AlertType.SUCCESS, '店舗情報の更新が完了しました。');
+    },
+    onError: (e) => {
+      console.error(e.message);
+      openSnackbar(AlertType.ERROR, '店舗情報の更新に失敗しました。再度お試しください。');
+    },
+    onSettled: () => {
+      closeProcessing();
+    },
+  });
 
   /* functions - 添付ファイル
   ------------------------------------------------------------------ */
-
-  /* ファイル追加発火 */
+  /** ファイル追加発火 */
   const fileUpload = () => {
     console.log('flieUpload click!');
     inputRef.current?.click();
     console.log('あなたのタイプは、' + inputRef.current?.type);
   };
 
-  /* ファイル追加 */
+  /** ファイル追加 */
   const onFileInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) {
@@ -160,10 +219,16 @@ export const ShopComponent = (): JSX.Element => {
     setFile(file);
   };
 
-  /* ファイル削除 */
+  /** ファイル削除 */
   const fileDelete = () => {
     console.log('fileDelete click!');
     setFile(undefined);
+  };
+
+  /** 検索画面に戻る */
+  const pageBack = async () => {
+    sessionStorage.setItem(SESSION_STORAGE_KEYS.PREVIOUS_PATH, '/shopDetail');
+    router.push('/shop');
   };
 
   /* dirty
@@ -174,6 +239,8 @@ export const ShopComponent = (): JSX.Element => {
 
   useEffect(() => {
     return () => {
+      // 画面離脱時にクエリを無効化・再フェッチ予約する。
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SHOP_DETAIL_INIT] });
       setDirty(false); // CleanUp
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -202,217 +269,223 @@ export const ShopComponent = (): JSX.Element => {
           <Typography component="h2" variant="h6" color="primary" gutterBottom sx={{ px: 3, py: 2, mb: 0 }}>
             {pageName}
           </Typography>
+          {editMode && (
+            <>
+              <Box sx={{ flexGrow: 1 }} />
+              <Button sx={{ mr: 3 }} variant="outlined" startIcon={<ArrowBack />} onClick={() => pageBack()}>
+                戻る
+              </Button>
+            </>
+          )}
         </Grid>
         <Divider />
         <Box sx={{ m: 3 }}>
-          {dataLoaded && (
-            <form onSubmit={handleSubmit(editMode ? updateHandler : insertHandler)}>
-              <Grid container rowSpacing={2} columnSpacing={{ xs: 1, sm: 2, md: 3 }} direction="column">
-                {editMode && (
-                  <ItemBase name={'店舗ID'} isRequired={2}>
-                    <TextFieldElement
-                      control={control}
-                      size="small"
-                      color={'primary'}
-                      name="id"
-                      fullWidth
-                      disabled
-                      sx={{ backgroundColor: 'lightgray' }}
-                      slotProps={{ htmlInput: { maxLength: 64 } }}
-                    />
-                  </ItemBase>
-                )}
-                <ItemBase name={'店舗名'} isRequired={0}>
-                  <TextFieldElement control={control} size="small" color={'primary'} name="shop_name" fullWidth />
-                </ItemBase>
-                <ItemBase name={'店舗名(カナ)'} isRequired={0}>
+          <form onSubmit={handleSubmit(editMode ? updateHandler : insertHandler)}>
+            <Grid container rowSpacing={2} columnSpacing={{ xs: 1, sm: 2, md: 3 }} direction="column">
+              {editMode && (
+                <ItemBase name={'店舗ID'} isRequired={2}>
                   <TextFieldElement
                     control={control}
                     size="small"
                     color={'primary'}
-                    name="shop_name_kana"
+                    name="id"
                     fullWidth
-                    slotProps={{ htmlInput: { maxLength: 256 } }}
+                    disabled
+                    sx={{ backgroundColor: 'lightgray' }}
+                    slotProps={{ htmlInput: { maxLength: 64 } }}
                   />
                 </ItemBase>
-                <ItemBase name={'郵便番号'} isRequired={0}>
-                  <TextFieldElement
-                    control={control}
-                    size="small"
-                    color={'primary'}
-                    name="shop_post_code"
-                    placeholder="半角数字7桁"
-                    slotProps={{ htmlInput: { maxLength: 7 } }}
-                    fullWidth
-                  />
-                </ItemBase>
-                <ItemBase name={'住所'} isRequired={0}>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      flexDirection: 'row',
-                      alignItems: 'flex-start',
-                      width: '640px',
-                    }}
-                    gap={2}
-                  >
-                    <SelectElement
-                      control={control}
-                      size="small"
-                      name="shop_prefectures"
-                      label="都道府県"
-                      fullWidth
-                      options={stateData}
-                    ></SelectElement>
-                    <SelectElement
-                      control={control}
-                      size="small"
-                      name="shop_municipalities"
-                      label="市区"
-                      fullWidth
-                      options={[
-                        { id: '', label: '未選択' },
-                        { id: '10', label: '市区1' },
-                        { id: '20', label: '市区2' },
-                        { id: '30', label: '市区3' },
-                      ]}
-                    ></SelectElement>
-                    <SelectElement
-                      control={control}
-                      size="small"
-                      name="shop_town_area"
-                      label="町村"
-                      fullWidth
-                      options={[
-                        { id: '', label: '未選択' },
-                        { id: '10', label: '町村1' },
-                        { id: '20', label: '町村2' },
-                        { id: '30', label: '町村3' },
-                      ]}
-                    ></SelectElement>
-                  </Box>
-                </ItemBase>
-                <ItemBase name={'番地'} isRequired={0}>
-                  <TextFieldElement
-                    control={control}
-                    size="small"
-                    color={'primary'}
-                    name="shop_area_block_number"
-                    fullWidth
-                    slotProps={{ htmlInput: { maxLength: 128 } }}
-                  />
-                </ItemBase>
-                <ItemBase name={'建物名'} isRequired={0}>
-                  <TextFieldElement
-                    control={control}
-                    size="small"
-                    color={'primary'}
-                    name="shop_building_name"
-                    fullWidth
-                    placeholder="建物名・階数など"
-                    slotProps={{ htmlInput: { maxLength: 128 } }}
-                  />
-                </ItemBase>
-                <ItemBase name={'電話番号'} isRequired={0}>
-                  <TextFieldElement
-                    control={control}
-                    size="small"
-                    color={'primary'}
-                    name="tel_no"
-                    slotProps={{ htmlInput: { maxLength: 11 } }}
-                    fullWidth
-                  />
-                </ItemBase>
-                <ItemBase name={'メールアドレス'} isRequired={0}>
-                  <TextFieldElement
-                    control={control}
-                    size="small"
-                    color={'primary'}
-                    name="email"
-                    fullWidth
-                    slotProps={{ htmlInput: { maxLength: 256 } }}
-                  />
-                </ItemBase>
-                <ItemBase name={'特定商取引法に基づく表記'} isRequired={1}>
-                  <TextareaAutosizeElement
-                    control={control}
-                    size="small"
-                    color={'primary'}
-                    name="specified_commercial_transaction_act"
-                    minRows={3}
-                    resizeStyle="vertical"
-                    fullWidth
-                  />
-                </ItemBase>
-                <ItemBase name={'店舗イメージ'} isRequired={1}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    {!file ? (
-                      <Button
-                        component="label"
-                        variant="contained"
-                        tabIndex={-1}
-                        startIcon={<CloudUpload />}
-                        onClick={fileUpload}
-                      >
-                        ファイルを選択してください
-                        <input
-                          type="file"
-                          onChange={onFileInputChange}
-                          style={{
-                            clip: 'rect(0 0 0 0)',
-                            clipPath: 'inset(50%)',
-                            height: 1,
-                            overflow: 'hidden',
-                            position: 'absolute',
-                            bottom: 0,
-                            left: 0,
-                            whiteSpace: 'nowrap',
-                            width: 1,
-                          }}
-                        />
-                      </Button>
-                    ) : (
-                      <>
-                        <Typography>{file?.name}</Typography>
-                        <IconButton onClick={fileDelete}>
-                          <Delete />
-                        </IconButton>
-                      </>
-                    )}
-                  </Box>
-                </ItemBase>
-                <ItemBase name={'利用ステータス'} isRequired={0}>
+              )}
+              <ItemBase name={'店舗名'} isRequired={0}>
+                <TextFieldElement control={control} size="small" color={'primary'} name="shop_name" fullWidth />
+              </ItemBase>
+              <ItemBase name={'店舗名(カナ)'} isRequired={0}>
+                <TextFieldElement
+                  control={control}
+                  size="small"
+                  color={'primary'}
+                  name="shop_name_kana"
+                  fullWidth
+                  slotProps={{ htmlInput: { maxLength: 256 } }}
+                />
+              </ItemBase>
+              <ItemBase name={'郵便番号'} isRequired={0}>
+                <TextFieldElement
+                  control={control}
+                  size="small"
+                  color={'primary'}
+                  name="shop_postal_code"
+                  placeholder="半角数字7桁"
+                  slotProps={{ htmlInput: { maxLength: 7 } }}
+                  fullWidth
+                />
+              </ItemBase>
+              <ItemBase name={'住所'} isRequired={0}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'flex-start',
+                    width: '640px',
+                  }}
+                  gap={2}
+                >
                   <SelectElement
                     control={control}
                     size="small"
-                    name="usage_status"
+                    name="shop_prefectures"
+                    label="都道府県"
                     fullWidth
-                    options={[
-                      { id: UsageStatus.AVAILABLE, label: '利用可能' },
-                      { id: UsageStatus.DEACTIVATION, label: '利用停止' },
-                    ]}
+                    options={stateData}
                   ></SelectElement>
-                </ItemBase>
-                <ItemBase name={'メモ'} isRequired={1}>
-                  <TextareaAutosizeElement
+                  <SelectElement
                     control={control}
                     size="small"
-                    color={'primary'}
-                    name="memo"
-                    minRows={3}
-                    resizeStyle="vertical"
+                    name="shop_municipalities"
+                    label="市区"
                     fullWidth
-                    slotProps={{ htmlInput: { maxLength: 500 } }}
-                  />
-                </ItemBase>
-              </Grid>
-              <Grid sx={{ mt: 2 }} size={{ xs: 12 }}>
-                <Button fullWidth variant="contained" type="submit">
-                  {editMode ? '更新' : '登録'}
-                </Button>
-              </Grid>
-            </form>
-          )}
+                    options={[
+                      { id: '', label: '未選択' },
+                      { id: '10', label: '市区1' },
+                      { id: '20', label: '市区2' },
+                      { id: '30', label: '市区3' },
+                    ]}
+                  ></SelectElement>
+                  <SelectElement
+                    control={control}
+                    size="small"
+                    name="shop_town_area"
+                    label="町村"
+                    fullWidth
+                    options={[
+                      { id: '', label: '未選択' },
+                      { id: '10', label: '町村1' },
+                      { id: '20', label: '町村2' },
+                      { id: '30', label: '町村3' },
+                    ]}
+                  ></SelectElement>
+                </Box>
+              </ItemBase>
+              <ItemBase name={'番地'} isRequired={0}>
+                <TextFieldElement
+                  control={control}
+                  size="small"
+                  color={'primary'}
+                  name="shop_area_block_number"
+                  fullWidth
+                  slotProps={{ htmlInput: { maxLength: 128 } }}
+                />
+              </ItemBase>
+              <ItemBase name={'建物名'} isRequired={0}>
+                <TextFieldElement
+                  control={control}
+                  size="small"
+                  color={'primary'}
+                  name="shop_building_name"
+                  fullWidth
+                  placeholder="建物名・階数など"
+                  slotProps={{ htmlInput: { maxLength: 128 } }}
+                />
+              </ItemBase>
+              <ItemBase name={'電話番号'} isRequired={0}>
+                <TextFieldElement
+                  control={control}
+                  size="small"
+                  color={'primary'}
+                  name="tel_no"
+                  slotProps={{ htmlInput: { maxLength: 11 } }}
+                  fullWidth
+                />
+              </ItemBase>
+              <ItemBase name={'メールアドレス'} isRequired={0}>
+                <TextFieldElement
+                  control={control}
+                  size="small"
+                  color={'primary'}
+                  name="email"
+                  fullWidth
+                  slotProps={{ htmlInput: { maxLength: 256 } }}
+                />
+              </ItemBase>
+              <ItemBase name={'特定商取引法に基づく表記'} isRequired={1}>
+                <TextareaAutosizeElement
+                  control={control}
+                  size="small"
+                  color={'primary'}
+                  name="specified_commercial_transaction_act"
+                  minRows={3}
+                  resizeStyle="vertical"
+                  fullWidth
+                />
+              </ItemBase>
+              <ItemBase name={'店舗イメージ'} isRequired={1}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  {!file ? (
+                    <Button
+                      component="label"
+                      variant="contained"
+                      tabIndex={-1}
+                      startIcon={<CloudUpload />}
+                      onClick={fileUpload}
+                    >
+                      ファイルを選択してください
+                      <input
+                        type="file"
+                        onChange={onFileInputChange}
+                        style={{
+                          clip: 'rect(0 0 0 0)',
+                          clipPath: 'inset(50%)',
+                          height: 1,
+                          overflow: 'hidden',
+                          position: 'absolute',
+                          bottom: 0,
+                          left: 0,
+                          whiteSpace: 'nowrap',
+                          width: 1,
+                        }}
+                      />
+                    </Button>
+                  ) : (
+                    <>
+                      <Typography>{file?.name}</Typography>
+                      <IconButton onClick={fileDelete}>
+                        <Delete />
+                      </IconButton>
+                    </>
+                  )}
+                </Box>
+              </ItemBase>
+              <ItemBase name={'利用ステータス'} isRequired={0}>
+                <SelectElement
+                  control={control}
+                  size="small"
+                  name="usage_status"
+                  fullWidth
+                  options={[
+                    { id: UsageStatus.AVAILABLE, label: '利用可能' },
+                    { id: UsageStatus.DEACTIVATION, label: '利用停止' },
+                  ]}
+                ></SelectElement>
+              </ItemBase>
+              <ItemBase name={'メモ'} isRequired={1}>
+                <TextareaAutosizeElement
+                  control={control}
+                  size="small"
+                  color={'primary'}
+                  name="memo"
+                  minRows={3}
+                  resizeStyle="vertical"
+                  fullWidth
+                  slotProps={{ htmlInput: { maxLength: 500 } }}
+                />
+              </ItemBase>
+            </Grid>
+            <Grid sx={{ mt: 2 }} size={{ xs: 12 }}>
+              <Button fullWidth variant="contained" type="submit">
+                {editMode ? '更新' : '登録'}
+              </Button>
+            </Grid>
+          </form>
         </Box>
       </Paper>
     </>
@@ -424,7 +497,7 @@ const defalutData: ShopDetailFormValues = {
   id: '-',
   shop_name: '',
   shop_name_kana: '',
-  shop_post_code: '',
+  shop_postal_code: '',
   shop_prefectures: '',
   shop_municipalities: '',
   shop_town_area: '',
@@ -432,7 +505,6 @@ const defalutData: ShopDetailFormValues = {
   tel_no: '',
   email: '',
   specified_commercial_transaction_act: '',
-  shop_image: undefined,
   usage_status: UsageStatus.AVAILABLE,
   memo: '',
   shop_area_block_number: '',

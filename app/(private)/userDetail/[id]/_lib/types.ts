@@ -2,12 +2,16 @@ import { z } from 'zod';
 
 import { formatString } from '@/app/_lib/utill';
 import { MSG_MAX } from '@/app/_types/constants';
-import { UsageStatus, UserUsageStatus } from '@/app/_types/enum';
+import { UsageStatus, UserRegistrationStatus } from '@/app/_types/enum';
 
 /**
  * ユーザー詳細 検索条件 Schema
  */
 export const UserDetailSchema = z.object({
+  /** ユーザーID */
+  id: z.string().optional(),
+  /** ユーザー利用ステータス */
+  user_usage_status: z.nativeEnum(UserRegistrationStatus).optional(),
   /** ステータス */
   usage_status: z.nativeEnum(UsageStatus),
   /** メモ */
@@ -36,8 +40,8 @@ export type UserDataDetailResult = {
   optional_item_answer_2?: string;
   /** メールアドレス */
   user_email?: string;
-  /** ユーザー利用ステータス */
-  user_usage_status: string | UserUsageStatus;
+  /** ユーザー登録ステータス */
+  user_registration_status: string | UserRegistrationStatus;
   /** 利用ステータス */
   usage_status: string | UsageStatus;
   /** メモ（マスタ） */
@@ -48,6 +52,14 @@ export type UserDataDetailResult = {
     company_name: string;
     /** 支店名 */
     branch_name: string;
+    /** 任意項目_項目名1 */
+    optional_item_title_1?: string;
+    /** 任意項目_注釈1 */
+    optional_item_notes_1?: string;
+    /** 任意項目_項目名2 */
+    optional_item_title_2?: string;
+    /** 任意項目_注釈2 */
+    optional_item_notes_2?: string;
   };
   /** 部署情報 */
   t_companies_department: {

@@ -1,34 +1,33 @@
 'use client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  Box,
-  Button,
-  ButtonGroup,
-  Divider,
-  FormControlLabel,
-  Paper,
-  Switch,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { ArrowBack } from '@mui/icons-material';
+import { Box, Button, Divider, Paper, TextField, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
 import { JSX, useEffect, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { SelectElement, TextareaAutosizeElement } from 'react-hook-form-mui';
 
-import { searchUserDetail } from '@/app/_actions/actions';
-import { AlertType, UsageStatus, UserUsageStatus } from '@/app/_types/enum';
+import { AlertType, convertUserRegistrationStatusName, UsageStatus, UserRegistrationStatus } from '@/app/_types/enum';
+import { QUERY_KEYS } from '@/app/_types/queryKeys';
+import { SESSION_STORAGE_KEYS } from '@/app/_types/sessionStorageKeys';
+import { ApiRequest, ApiResponse } from '@/app/_types/types';
 import ItemBase from '@/app/_ui/_shared/itemBase';
 import ConfirmDialog from '@/app/_ui/dirty/conformDialog';
 import { useDirty } from '@/app/_ui/dirty/dartyContext';
 import { useProcessing } from '@/app/_ui/processing/processingContext';
 import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
 
+import { searchUserDetail, updateUserDetail } from './_lib/fetcher';
 import { UserDataDetailResult, UserDetailFormValues, UserDetailSchema } from './_lib/types';
 
 /** ページ名 */
 const pageName = 'ユーザー詳細';
+
+type props = {
+  data: UserDataDetailResult | null;
+};
 
 /**
  * ユーザー詳細Component
@@ -37,9 +36,9 @@ const pageName = 'ユーザー詳細';
 export const UserDetailComponent = (): JSX.Element => {
   /* initialize
   ------------------------------------------------------------------ */
-  const params = useParams();
   const router = useRouter();
-  const id = (params.id as string) ?? '-';
+  const id = (useParams().id as string) ?? '-';
+
   const { openSnackbar } = useSnackBar();
   const { openProcessing, closeProcessing } = useProcessing();
 
@@ -48,7 +47,9 @@ export const UserDetailComponent = (): JSX.Element => {
   /* useState
   ------------------------------------------------------------------ */
   // TODO:ユーザー情報のユーザーステータスに差し替えする。
-  const [userUsageStatus, setUserUsageStatus] = useState<UserUsageStatus>(UserUsageStatus.PENDING);
+  const [userRegistrationStatus, setUserRegistrationStatus] = useState<UserRegistrationStatus>(
+    UserRegistrationStatus.WAITING_APPROVAL
+  );
   const [showNini, setShowNini] = useState<boolean>(true);
   const [dataLoaded, setDataLoaded] = useState(false);
 
@@ -77,109 +78,136 @@ export const UserDetailComponent = (): JSX.Element => {
     },
   });
 
-  /* useEffect
------------------------------------------------------------------- */
-  useEffect(() => {
-    getInit();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  /* useQuery
+  ------------------------------------------------------------------ */
+  const searchUserDetailFetch = async () => {
+    const req: ApiRequest<number> = { request: Number(id) };
+    return searchUserDetail(req);
+  };
 
-  /** 初期表示データ取得 */
-  const getInit = async () => {
-    try {
-      openProcessing();
-      const data = (await searchUserDetail({ request: Number(id) })).data;
-      if (!data?.id) {
-        openSnackbar(AlertType.ERROR, '店舗情報の取得に失敗しました。再度お試しください。');
-        router.push('/user');
-        return;
-      }
-      setUserData(data);
-      reset({
-        usage_status: data?.usage_status as UsageStatus,
+  const {
+    data: result,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery<ApiResponse<UserDataDetailResult>>({
+    queryKey: [QUERY_KEYS.USER_DETAIL_INIT],
+    queryFn: searchUserDetailFetch,
+    enabled: true,
+  });
+
+  /* useEffect
+  ------------------------------------------------------------------ */
+  useEffect(() => {
+    if (isError || result?.error) {
+      console.log(result?.error);
+      openSnackbar(AlertType.WARNING, 'ユーザー情報の取得に失敗しました。再度お試しください。');
+      router.push('/user');
+      return;
+    }
+    if (result?.data) {
+      console.log(result);
+      const data = result.data;
+      const initData: Partial<UserDetailFormValues> = {
         memo: data?.master_memo,
-      });
-    } catch (error) {
-      console.error('取得失敗:', error);
-    } finally {
+        usage_status: data?.usage_status as UsageStatus,
+      };
+      reset(initData);
+      setUserRegistrationStatus(data.user_registration_status as UserRegistrationStatus);
+      setUserData(result.data);
       setDataLoaded(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result]);
+
+  useEffect(() => {
+    if (isLoading) {
+      openProcessing();
+    } else {
       closeProcessing();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading]);
+
+  /* functions - Update
+  ------------------------------------------------------------------ */
+  const updateHandler: SubmitHandler<UserDetailFormValues> = async (data) => {
+    updateMutate.mutate(data);
   };
+
+  const updateMutate = useMutation({
+    mutationFn: async (data: UserDetailFormValues) => {
+      openProcessing();
+      return updateUserDetail(data) as unknown as ApiResponse<number>;
+    },
+    onSuccess: (_res: ApiResponse<number>) => {
+      refetch();
+      openSnackbar(AlertType.INFO, 'ユーザー情報を更新しました。');
+    },
+    onError: (e) => {
+      console.error(e.message);
+      openSnackbar(AlertType.ERROR, 'ユーザー情報の更新に失敗しました。再度お試しください。');
+    },
+    onSettled: () => {
+      closeProcessing();
+    },
+  });
+
+  /* functions - UpdateStatus
+------------------------------------------------------------------ */
+  const updateStatusHandler: SubmitHandler<UserDetailFormValues> = async (data) => {
+    updateStatusMutate.mutate(data);
+  };
+
+  const updateStatusMutate = useMutation({
+    mutationFn: async (data: UserDetailFormValues) => {
+      openProcessing();
+      return updateUserDetail(data) as unknown as ApiResponse<number>;
+    },
+    onSuccess: (_res: ApiResponse<number>) => {
+      refetch();
+      openSnackbar(AlertType.INFO, 'ユーザー情報を更新しました。');
+    },
+    onError: (e) => {
+      console.error(e.message);
+      openSnackbar(AlertType.ERROR, 'ユーザー情報の更新に失敗しました。再度お試しください。');
+    },
+    onSettled: () => {
+      closeProcessing();
+    },
+  });
 
   /* functions
   ------------------------------------------------------------------ */
-  /** 更新 */
-  const submitHandler: SubmitHandler<UserDetailFormValues> = (data) => {
-    openSnackbar(AlertType.INFO, 'ユーザー情報を更新しました。');
-  };
 
   /** 否認 */
   const disapprovalHandler = () => {
-    const handler = () => {
-      openProcessing();
-      // TODO:否認APIの呼出し
-      setTimeout(() => {
-        closeProcessing();
-        setUserUsageStatus(UserUsageStatus.DISAPPROVAL);
-        openSnackbar(AlertType.INFO, 'ユーザー情報を否認しました。');
-      }, 3000);
-    };
     // dialog setting
     setDialogMessage(`ユーザー情報を"否認"します。\nよろしいですか？`);
-    setDialogActionHandler(() => handler);
+    setDialogActionHandler(() => updateStatusHandler);
     setOpenDialog(true);
   };
 
   /** 承認 */
   const approvalHandler = () => {
-    const handler = () => {
-      openProcessing();
-      // TODO:承認APIの呼出し
-      setTimeout(() => {
-        closeProcessing();
-        setUserUsageStatus(UserUsageStatus.NOLIMIT);
-        openSnackbar(AlertType.INFO, 'ユーザー情報を承認しました。');
-      }, 3000);
-    };
     // dialog setting
     setDialogMessage(`ユーザー情報を"承認"します。\n変更後、引き戻しはできませんがよろしいですか？`);
-    setDialogActionHandler(() => handler);
-    setOpenDialog(true);
-  };
-
-  /** 削除 */
-  const deletelHandler = () => {
-    const handler = () => {
-      openProcessing();
-      // TODO:削除APIの呼出し
-      setTimeout(() => {
-        closeProcessing();
-        setUserUsageStatus(UserUsageStatus.DELETE);
-        openSnackbar(AlertType.INFO, 'ユーザー情報を削除しました。');
-      }, 3000);
-    };
-    // dialog setting
-    setDialogMessage(`ユーザー情報を"削除"します。\n変更後、引き戻しはできませんがよろしいですか？`);
-    setDialogActionHandler(() => handler);
+    setDialogActionHandler(() => updateStatusHandler);
     setOpenDialog(true);
   };
 
   /** 引き戻し */
   const pullBackHandler = () => {
-    const handler = () => {
-      openProcessing();
-      // TODO:引き戻しAPIの呼出し
-      setTimeout(() => {
-        closeProcessing();
-        setUserUsageStatus(UserUsageStatus.PENDING);
-        openSnackbar(AlertType.INFO, 'ユーザー情報を引き戻しました。');
-      }, 3000);
-    };
     // dialog setting
-    setDialogMessage(`ユーザー情報のステータスを"否認"から"申請中"に引き戻します。\nよろしいですか？`);
-    setDialogActionHandler(() => handler);
+    setDialogMessage(`ユーザー情報のステータスを"否認"から"承認待ち"に引き戻します。\nよろしいですか？`);
+    setDialogActionHandler(() => updateStatusHandler);
     setOpenDialog(true);
+  };
+
+  /** 検索画面に戻る */
+  const pageBack = async () => {
+    sessionStorage.setItem(SESSION_STORAGE_KEYS.PREVIOUS_PATH, '/userDetail');
+    router.push('/user');
   };
 
   /* dirty
@@ -194,25 +222,6 @@ export const UserDetailComponent = (): JSX.Element => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  /* mockData ※のちすて
-  ------------------------------------------------------------------ */
-  // 制限なしステータス
-  const modeChangeHandler_NOLIMIT = () => {
-    setUserUsageStatus(UserUsageStatus.NOLIMIT);
-  };
-  // 申請中ステータス
-  const modeChangeHandler_PENDING = () => {
-    setUserUsageStatus(UserUsageStatus.PENDING);
-  };
-  // 否認ステータス
-  const modeChangeHandler_DISAPPROVAL = () => {
-    setUserUsageStatus(UserUsageStatus.DISAPPROVAL);
-  };
-  // 削除ステータス
-  const modeChangeHandler_DELETE = () => {
-    setUserUsageStatus(UserUsageStatus.DELETE);
-  };
 
   /* JSX
   ------------------------------------------------------------------ */
@@ -238,34 +247,14 @@ export const UserDetailComponent = (): JSX.Element => {
             {pageName}
           </Typography>
           <Box sx={{ flexGrow: 1 }} />
-          {/* モック用部品 */}
-          <Typography>{'モック用 '}</Typography>
-          <FormControlLabel
-            value="end"
-            control={
-              <Switch
-                color="primary"
-                onChange={(e) => {
-                  setShowNini(!showNini);
-                }}
-                checked={showNini}
-              />
-            }
-            label="任意項目表示"
-            labelPlacement="end"
-          />
-          <ButtonGroup sx={{ mr: 3 }}>
-            <Button onClick={() => modeChangeHandler_NOLIMIT()}>制限なしステータス</Button>
-            <Button onClick={() => modeChangeHandler_PENDING()}>申請中ステータス</Button>
-            <Button onClick={() => modeChangeHandler_DISAPPROVAL()}>否認ステータス</Button>
-            <Button onClick={() => modeChangeHandler_DELETE()}>削除ステータス</Button>
-          </ButtonGroup>
-          {/* モック用部品 */}
+          <Button sx={{ mr: 3 }} variant="outlined" startIcon={<ArrowBack />} onClick={() => pageBack()}>
+            戻る
+          </Button>
         </Grid>
         <Divider />
         <Box sx={{ m: 3 }}>
           {dataLoaded && (
-            <form onSubmit={handleSubmit(submitHandler)}>
+            <form onSubmit={handleSubmit(updateHandler)}>
               <Grid container rowSpacing={2} columnSpacing={{ xs: 1, sm: 2, md: 3 }} direction="column">
                 <ItemBase name={'ユーザーID'} isRequired={2}>
                   <TextField
@@ -355,31 +344,33 @@ export const UserDetailComponent = (): JSX.Element => {
                     value={userData?.t_companies_employment_status?.employment_status_name}
                   />
                 </ItemBase>
-                {showNini && (
-                  <>
-                    <ItemBase name={'任意項目1'} isRequired={2}>
-                      <TextField
-                        size="small"
-                        color={'primary'}
-                        name="shopName"
-                        fullWidth
-                        sx={{ backgroundColor: 'lightgray' }}
-                        disabled
-                        value={'任意項目1'}
-                      />
-                    </ItemBase>
-                    <ItemBase name={'任意項目2'} isRequired={2}>
-                      <TextField
-                        size="small"
-                        color={'primary'}
-                        name="shopName"
-                        fullWidth
-                        sx={{ backgroundColor: 'lightgray' }}
-                        disabled
-                        value={'任意項目2'}
-                      />
-                    </ItemBase>
-                  </>
+                {userData?.t_companies.optional_item_title_1 && (
+                  <ItemBase name={userData.t_companies.optional_item_title_1} isRequired={2}>
+                    <TextField
+                      size="small"
+                      color={'primary'}
+                      name="shopName"
+                      fullWidth
+                      sx={{ backgroundColor: 'lightgray' }}
+                      disabled
+                      placeholder={userData?.t_companies.optional_item_notes_1}
+                      value={userData?.optional_item_answer_1}
+                    />
+                  </ItemBase>
+                )}
+                {userData?.t_companies.optional_item_title_2 && (
+                  <ItemBase name={userData.t_companies.optional_item_title_2} isRequired={2}>
+                    <TextField
+                      size="small"
+                      color={'primary'}
+                      name="shopName"
+                      fullWidth
+                      sx={{ backgroundColor: 'lightgray' }}
+                      disabled
+                      placeholder={userData.t_companies.optional_item_notes_2}
+                      value={userData?.optional_item_answer_2}
+                    />
+                  </ItemBase>
                 )}
                 <ItemBase name={'ステータス'} isRequired={2}>
                   <TextField
@@ -389,22 +380,10 @@ export const UserDetailComponent = (): JSX.Element => {
                     fullWidth
                     sx={{ backgroundColor: 'lightgray' }}
                     disabled
-                    value={
-                      UserUsageStatus.NOLIMIT === userUsageStatus
-                        ? '制限なし'
-                        : UserUsageStatus.PENDING === userUsageStatus
-                          ? '申請中'
-                          : UserUsageStatus.DEACTIVATION === userUsageStatus
-                            ? '利用停止'
-                            : UserUsageStatus.DISAPPROVAL === userUsageStatus
-                              ? '否認'
-                              : UserUsageStatus.DELETE === userUsageStatus
-                                ? '削除'
-                                : '登録中'
-                    }
+                    value={convertUserRegistrationStatusName(userRegistrationStatus)}
                   />
                 </ItemBase>
-                {userUsageStatus === UserUsageStatus.NOLIMIT && (
+                {userRegistrationStatus === UserRegistrationStatus.REGISTERED && (
                   <>
                     <ItemBase name={'利用ステータス'} isRequired={0}>
                       <SelectElement
@@ -434,14 +413,14 @@ export const UserDetailComponent = (): JSX.Element => {
                 )}
               </Grid>
               <Grid size={{ xs: 12 }} sx={{ display: 'flex', mt: 2, gap: 2 }}>
-                {/* 制限なしの場合 */}
-                {userUsageStatus === UserUsageStatus.NOLIMIT && (
+                {/* 登録済みの場合 */}
+                {userRegistrationStatus === UserRegistrationStatus.REGISTERED && (
                   <Button fullWidth variant="contained" type={'submit'}>
                     更新
                   </Button>
                 )}
                 {/* 否認の場合 */}
-                {userUsageStatus === UserUsageStatus.DISAPPROVAL && (
+                {userRegistrationStatus === UserRegistrationStatus.DISAPPROVAL && (
                   <>
                     <Button
                       fullWidth
@@ -452,20 +431,10 @@ export const UserDetailComponent = (): JSX.Element => {
                     >
                       引き戻し
                     </Button>
-                    <Button
-                      fullWidth
-                      variant="contained"
-                      color="error"
-                      onClick={() => {
-                        deletelHandler();
-                      }}
-                    >
-                      削除
-                    </Button>
                   </>
                 )}
-                {/* 申請中の場合 */}
-                {userUsageStatus === UserUsageStatus.PENDING && (
+                {/* 承認待ちの場合 */}
+                {userRegistrationStatus === UserRegistrationStatus.WAITING_APPROVAL && (
                   <>
                     <Button
                       fullWidth

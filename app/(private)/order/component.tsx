@@ -4,26 +4,30 @@ import { Box, Button, Divider, Paper, TableCell, TableRow, Typography } from '@m
 import Grid from '@mui/material/Grid2';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { ja } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
-import { JSX, useState } from 'react';
+import { JSX, useEffect, useState } from 'react';
 import React from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { SelectElement, TextFieldElement } from 'react-hook-form-mui';
 import { DatePickerElement } from 'react-hook-form-mui/date-pickers';
 
-import { MockDataCreate_OrderResult } from '@/app/_lib/createMockData';
 import { getLastMonthEndDay, getLastMonthStartDay, getNow, getTomorrow, getYesterday } from '@/app/_lib/getDateTime';
-import { AlertType, OrderStatus, PaymentTypes, SortType } from '@/app/_types/enum';
+import { AlertType, OrderStatus, PaymentType, SearchType, SortType } from '@/app/_types/enum';
+import { QUERY_KEYS } from '@/app/_types/queryKeys';
+import { SESSION_STORAGE_KEYS } from '@/app/_types/sessionStorageKeys';
 import { ApiRequest, ApiResponse, HeaderStatus } from '@/app/_types/types';
 import { CustomTable } from '@/app/_ui/_shared/costomTable/customTable';
+import { DownloadCsvButton } from '@/app/_ui/_shared/downloadCsv/downloadCsvButton';
 import { ResultsCounter } from '@/app/_ui/_shared/resultsCounter';
 import ConfirmDialog from '@/app/_ui/dirty/conformDialog';
 import { useProcessing } from '@/app/_ui/processing/processingContext';
 import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
 
 import ItemBase from '../../_ui/_shared/itemBase';
-import { OrderListSearchResult, OrderSearchFormValues, OrderSearchSchema } from './_lib/types';
+import { orderCancel, searchOrderDetail, searchOrderList } from './_lib/fetcher';
+import { orderDeteilResponseData, OrderListSearchResult, OrderSearchFormValues, OrderSearchSchema } from './_lib/types';
 import OrderInfoModal from './orderInfoModal';
 
 /* ページ名 */
@@ -34,9 +38,24 @@ const resultHeader: Array<HeaderStatus> = [
   { name: 'ユーザー名', variableName: 'user_name', sort: SortType.ASC },
   { name: '会社名 / 支店名', variableName: 'company_name', sort: SortType.ASC },
   { name: '食数', variableName: 'count', sort: SortType.ASC },
-  { name: '決済方法', variableName: 'payment_state', sort: SortType.ASC },
-  { name: '注文ステータス', variableName: 'order_state', sort: SortType.ASC },
+  { name: '決済方法', variableName: 'payment_type', sort: SortType.ASC },
+  { name: '注文ステータス', variableName: 'order_status', sort: SortType.ASC },
 ];
+
+const initConditionValues: ApiRequest<OrderSearchFormValues> = {
+  request: {
+    deliveryFrom: null,
+    deliveryTo: null,
+    user_name: '',
+    company_name: '',
+    order_status: '0',
+  },
+  sortItems: {
+    nextPage: 1,
+    sortColumn: 'delivery_day',
+    ascending: true,
+  },
+};
 
 /**
  * オーダー一覧Component
@@ -48,15 +67,7 @@ export const OrderComponent = (): JSX.Element => {
   const router = useRouter();
   const { openSnackbar } = useSnackBar();
   const { openProcessing, closeProcessing } = useProcessing();
-
-  // TODO:オーダー情報のオーダーステータスに差し替えする。
-  const [orderStatus, setOrderStatus] = useState<OrderStatus>(OrderStatus.VALID);
-
-  // ステータス変更確認ダイアログ
-  const [openDialog, setOpenDialog] = useState<boolean>(false);
-  const [dialogActionHandler, setDialogActionHandler] = useState<() => void>(() => {
-    return () => {};
-  });
+  const [searchType, setSearchType] = useState<SearchType>(SearchType.SEARCH);
 
   /* useState
   ------------------------------------------------------------------ */
@@ -67,36 +78,20 @@ export const OrderComponent = (): JSX.Element => {
 
   // 検索状態
   const [isSearch, setIsSearch] = useState(false);
-  /* 検索条件 */
-  const [condition, setCondition] = useState<ApiRequest<OrderSearchFormValues>>({
-    request: {
-      deliveryFrom: null,
-      deliveryTo: null,
-      branchName: '',
-      companyName: '',
-      status: '0',
-      userName: '',
-    },
-    sortItems: {
-      nextPage: 1,
-      sortColumn: 'company_name',
-      ascending: true,
-    },
-  });
-  /* 検索結果 */
-  const [result, setResult] = useState<ApiResponse<OrderListSearchResult[]> | null>({
-    data: null,
-    error: null,
-    paginate: {
-      count: 0,
-      currentPage: 0,
-      startRow: 0,
-      endRow: 0,
-      totalPage: 0,
-    },
-  });
-  // モーダル
+  /* 検索条件/検索結果 */
+  const [condition, setCondition] = useState<ApiRequest<OrderSearchFormValues> | null>(null);
+  const [result, setResult] = useState<ApiResponse<OrderListSearchResult[]> | null>(null);
+  /* 明細情報検索条件 */
+  const [conditionDetail, setConditionDetail] = useState<ApiRequest<number> | null>(null);
+
+  // 明細画面モーダル
   const [open, setOpen] = React.useState(false);
+
+  // ステータス変更確認ダイアログ
+  const [openDialog, setOpenDialog] = useState<boolean>(false);
+  const [dialogActionHandler, setDialogActionHandler] = useState<() => void>(() => {
+    return () => {};
+  });
 
   /* useForm
   ------------------------------------------------------------------ */
@@ -107,14 +102,189 @@ export const OrderComponent = (): JSX.Element => {
     defaultValues: {
       deliveryFrom: getNow(),
       deliveryTo: getNow(),
-      userName: '',
-      companyName: '',
-      branchName: '',
-      status: '',
+      user_name: '',
+      company_name: '',
+      order_status: '',
     },
   });
 
-  /* handler
+  /* useQuery
+   ------------------------------------------------------------------ */
+  const { data, isFetching, refetch } = useQuery<ApiResponse<OrderListSearchResult[]>>({
+    queryKey: [QUERY_KEYS.ORDER_SEARCH_RESULT, condition],
+    queryFn: () => searchOrderList(condition),
+    enabled: false,
+  });
+
+  const {
+    data: dataDetail,
+    isFetching: isFetchingDetail,
+    refetch: refetchDetail,
+  } = useQuery<ApiResponse<orderDeteilResponseData>>({
+    queryKey: [QUERY_KEYS.ORDER_DETAIL_INIT, condition],
+    queryFn: () => searchOrderDetail(conditionDetail),
+    enabled: false,
+  });
+
+  /* useEffect
+  ------------------------------------------------------------------ */
+  useEffect(() => {
+    const searchCondition = sessionStorage.getItem(SESSION_STORAGE_KEYS.ORDER_SEARCH_CONDITION);
+    const previousPath = sessionStorage.getItem(SESSION_STORAGE_KEYS.PREVIOUS_PATH);
+    console.log(SESSION_STORAGE_KEYS.ORDER_SEARCH_CONDITION, searchCondition);
+    if (searchCondition && previousPath === '/orderDetail') {
+      const req: ApiRequest<OrderSearchFormValues> = JSON.parse(searchCondition);
+      setCondition(req);
+      setValue('deliveryFrom', req.request.deliveryFrom);
+      setValue('deliveryTo', req.request.deliveryTo);
+      setValue('user_name', req.request.user_name);
+      setValue('company_name', req.request.company_name);
+      setValue('order_status', req.request.order_status);
+    }
+    sessionStorage.clear();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    // condition変化時に検索を実行
+    if (condition !== null) {
+      refetch();
+    }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [condition]);
+
+  useEffect(() => {
+    // condition変化時に検索を実行
+    if (conditionDetail !== null) {
+      refetchDetail();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conditionDetail]);
+
+  useEffect(() => {
+    if (isFetching) {
+      openProcessing();
+    } else {
+      closeProcessing();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFetching]);
+
+  useEffect(() => {
+    if (!data) {
+      return;
+    }
+    if (data?.error) {
+      openSnackbar(AlertType.ERROR, '検索時にエラーが発生しました。再度発生する場合は、管理者にお問い合わせください。');
+      setResult(null);
+      setIsSearch(false);
+      return;
+    }
+    if (searchType === SearchType.SEARCH) {
+      setSortArray(resultHeader);
+      setSortTarget(resultHeader[0]);
+    }
+    if (searchType === SearchType.SORT) {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth',
+      });
+    }
+    setIsSearch(true);
+    setResult(data ?? null);
+    closeProcessing();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
+
+  /* functions
+  ------------------------------------------------------------------ */
+  /** 検索 */
+  const searchHandler: SubmitHandler<OrderSearchFormValues> = async (data) => {
+    const req: ApiRequest<OrderSearchFormValues> = {
+      request: data,
+      sortItems: {
+        nextPage: 1,
+        sortColumn: 'delivery_day',
+        ascending: true,
+      },
+    };
+    setSearchType(SearchType.SEARCH);
+    setCondition(req);
+  };
+
+  /** ソート */
+  const sortHandler = async (sortColumn: string, ascending: boolean) => {
+    openProcessing();
+    const req: ApiRequest<OrderSearchFormValues> = {
+      request: condition?.request ?? initConditionValues.request,
+      sortItems: {
+        nextPage: 1,
+        sortColumn: sortColumn,
+        ascending: ascending,
+      },
+    };
+    setSearchType(SearchType.SORT);
+    setCondition(req);
+  };
+
+  /** ページネーション */
+  const pageChangeHandler = async (_event: React.ChangeEvent<unknown>, nextPage: number) => {
+    openProcessing();
+    const req: ApiRequest<OrderSearchFormValues> = {
+      request: condition?.request ?? initConditionValues.request,
+      sortItems: {
+        nextPage: nextPage ?? 0,
+        sortColumn: condition?.sortItems?.sortColumn ?? 'delivery_day',
+        ascending: condition?.sortItems?.ascending ?? true,
+      },
+    };
+    setSearchType(SearchType.PAGENATION);
+    setCondition(req);
+  };
+
+  /** モーダル制御 */
+  const openModal = (id: number) => {
+    setConditionDetail({ request: id });
+    setOpen(true);
+  };
+
+  /* functions - orderCancel
+   ------------------------------------------------------------------ */
+  /** キャンセルハンドラ */
+  const orderCancelHandler = (id: number) => {
+    // dialog setting
+    setDialogActionHandler(() => {
+      return () => orderCancelMutate.mutate(id);
+    });
+    setOpenDialog(true);
+  };
+
+  const orderCancelMutate = useMutation({
+    mutationFn: async (id: number) => {
+      openProcessing();
+      const req: ApiRequest<number> = { request: id };
+      return orderCancel(req);
+    },
+    onSuccess: async (_res: ApiResponse<number>) => {
+      if (_res.error) {
+        openSnackbar(AlertType.ERROR, _res.error);
+        return;
+      }
+      await refetch();
+      await refetchDetail();
+      openSnackbar(AlertType.INFO, 'キャンセルが完了しました。');
+    },
+    onError: (e) => {
+      console.error(e.message);
+      openSnackbar(AlertType.ERROR, e.message);
+    },
+    onSettled: () => {
+      closeProcessing();
+    },
+  });
+
+  /* functions - daily
   ------------------------------------------------------------------ */
   /** 日付設定（先月）ハンドラ */
   const onLastMonthClick = () => {
@@ -147,169 +317,10 @@ export const OrderComponent = (): JSX.Element => {
     setValue('deliveryTo', getNow());
   };
 
-  /** 検索ハンドラ */
-  const searchHandler: SubmitHandler<OrderSearchFormValues> = (data) => {
-    openProcessing();
-    const req: ApiRequest<OrderSearchFormValues> = {
-      request: data,
-      sortItems: {
-        nextPage: 1,
-        sortColumn: 'delivery_day',
-        ascending: true,
-      },
-    };
-    // const res = await searchOrderList(req);
-    // todo: 差し替え
-    const res: ApiResponse<OrderListSearchResult[]> = {
-      error: '',
-      data: MockDataCreate_OrderResult(),
-      paginate: { count: 30, currentPage: 1, endRow: 30, startRow: 1, totalPage: 1 },
-    };
-
-    if (res.error) {
-      openSnackbar(AlertType.ERROR, '検索時にエラーが発生しました。再度発生する場合は、管理者にお問い合わせください。');
-      setResult(null);
-      setIsSearch(false);
-    } else {
-      setCondition(req);
-      setResult(res);
-      setIsSearch(true);
-    }
-    closeProcessing();
-  };
-
-  /* 並び替えハンドラ */
-  const sortHandler = async (sortColumn: string, ascending: boolean) => {
-    openProcessing();
-    const req: ApiRequest<OrderSearchFormValues> = {
-      request: condition.request,
-      sortItems: {
-        nextPage: 1,
-        sortColumn: sortColumn,
-        ascending: ascending,
-      },
-    };
-
-    // const res = await searchOrderList(req);
-    // todo: 差し替え
-    const res: ApiResponse<OrderListSearchResult[]> = {
-      error: '',
-      data: MockDataCreate_OrderResult(),
-      paginate: { count: 30, currentPage: 1, endRow: 30, startRow: 1, totalPage: 1 },
-    };
-
-    if (res.error) {
-      openSnackbar(AlertType.ERROR, '検索時にエラーが発生しました。再度発生する場合は、管理者にお問い合わせください。');
-      setResult(null);
-      setIsSearch(false);
-    } else {
-      setSortArray(resultHeader);
-      setSortTarget(resultHeader[0]);
-      setCondition(req);
-      setResult(res);
-      setIsSearch(true);
-    }
-    closeProcessing();
-  };
-
-  /* ページ送りハンドラ */
-  const pageChangeHandler = async (_event: React.ChangeEvent<unknown>, nextPage: number) => {
-    openProcessing();
-    const req: ApiRequest<OrderSearchFormValues> = {
-      request: condition.request,
-      sortItems: {
-        nextPage: nextPage ?? 0,
-        sortColumn: condition.sortItems?.sortColumn ?? 'delivery_day',
-        ascending: condition.sortItems?.ascending ?? true,
-      },
-    };
-
-    // const res = await searchOrderList(req);
-    // todo: 差し替え
-    const res: ApiResponse<OrderListSearchResult[]> = {
-      error: '',
-      data: MockDataCreate_OrderResult(),
-      paginate: { count: 30, currentPage: 1, endRow: 30, startRow: 1, totalPage: 1 },
-    };
-
-    if (res.error) {
-      openSnackbar(AlertType.ERROR, '検索時にエラーが発生しました。再度発生する場合は、管理者にお問い合わせください。');
-      setResult(null);
-      setIsSearch(false);
-    } else {
-      window.scrollTo({
-        top: 0,
-        behavior: 'smooth',
-      });
-      setResult(res);
-      setIsSearch(true);
-    }
-    closeProcessing();
-  };
-
-  /** モーダル制御 */
-  // TODO 値渡す
-  const openModal = () => {
-    console.log('click');
-    setOpen(true);
-  };
-
-  /** キャンセルハンドラ */
-  const cancelHandler = () => {
-    const handler = () => {
-      openProcessing();
-      // TODO:キャンセルAPIの呼出し
-      setTimeout(() => {
-        closeProcessing();
-        setOrderStatus(OrderStatus.CANCEL);
-        openSnackbar(AlertType.INFO, 'キャンセルが完了しました。');
-      }, 3000);
-    };
-    // dialog setting
-    setDialogActionHandler(() => handler);
-    setOpenDialog(true);
-  };
-
-  /* csvPrinter 
-  ------------------------------------------------------------------ */
-  const headers = [
-    { label: 'First Name', key: 'firstname' },
-    { label: 'Last Name', key: 'lastname' },
-    { label: 'Email', key: 'email' },
-  ];
-
-  const data = [
-    { firstname: 'Ahmed', lastname: 'Tomi', email: 'ah@smthing.co.com' },
-    { firstname: 'Raed', lastname: 'Labes', email: 'rl@smthing.co.com' },
-    { firstname: 'Yezzi', lastname: 'Min l3b', email: 'ymin@cocococo.com' },
-  ];
-
-  const csvPrintHandler = () => {
-    // 謎errorが出る件は岩瀬さんに質問する
-    // suppressHydrationWarning
-    document.getElementById('csvLinkButton')?.click();
-  };
-
   /* JSX
   ------------------------------------------------------------------ */
   return (
     <>
-      {/* テスト用ボタン※のちすて */}
-      {/* <CSVLink
-        id="csvLinkButton"
-        filename="テストCSV"
-        data={data}
-        headers={headers}
-        enclosingCharacter=","
-        uFEFF={false}
-        hidden
-        suppressHydrationWarning
-      >
-        Download me
-      </CSVLink>
-      <TestComponent />
-      <Button onClick={csvPrintHandler}>テスト</Button> */}
-
       {/* ステータス変更確認ダイアログ */}
       <ConfirmDialog
         open={openDialog}
@@ -434,7 +445,7 @@ export const OrderComponent = (): JSX.Element => {
                     width: '640px',
                   }}
                 >
-                  <TextFieldElement control={control} size="small" color={'primary'} name="userName" fullWidth />
+                  <TextFieldElement control={control} size="small" color={'primary'} name="user_name" fullWidth />
                 </Box>
               </ItemBase>
               <ItemBase name={'会社名 / 支店名'} isRequired={2}>
@@ -446,7 +457,7 @@ export const OrderComponent = (): JSX.Element => {
                     width: '640px',
                   }}
                 >
-                  <TextFieldElement control={control} size="small" color={'primary'} name="companyName" fullWidth />
+                  <TextFieldElement control={control} size="small" color={'primary'} name="company_name" fullWidth />
                 </Box>
               </ItemBase>
               <ItemBase name={'注文ステータス'} isRequired={2}>
@@ -461,7 +472,7 @@ export const OrderComponent = (): JSX.Element => {
                   <SelectElement
                     control={control}
                     size="small"
-                    name="status"
+                    name="order_status"
                     fullWidth
                     options={[
                       { id: '', label: '未選択' },
@@ -495,12 +506,14 @@ export const OrderComponent = (): JSX.Element => {
               <>
                 <Divider sx={{ my: 3 }} />
                 {result.paginate?.count && result.paginate?.count > 0 ? (
-                  <Box sx={{ display: 'flex', alignItems: 'end' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <ResultsCounter
                       startRow={result.paginate?.startRow}
                       endRow={result.paginate?.endRow}
                       count={result.paginate?.count}
                     />
+                    <Box sx={{ flexGrow: 1 }} />
+                    <DownloadCsvButton fileName={'タイトル'} fetchAPI={''} openSnackbar={openSnackbar} />
                   </Box>
                 ) : (
                   <></>
@@ -518,7 +531,12 @@ export const OrderComponent = (): JSX.Element => {
                   renderBody={() =>
                     /* 検索結果 */
                     result.data?.map((row, index) => (
-                      <TableRow key={index} hover sx={{ '&:hover': { cursor: 'pointer' } }} onClick={openModal}>
+                      <TableRow
+                        key={index}
+                        hover
+                        sx={{ '&:hover': { cursor: 'pointer' } }}
+                        onClick={() => openModal(Number(row.id))}
+                      >
                         <TableCell>{row.delivery_day}</TableCell>
                         <TableCell sx={{ whiteSpace: 'pre' }} key={index}>
                           {row.user_name_kana}
@@ -530,13 +548,13 @@ export const OrderComponent = (): JSX.Element => {
                         </TableCell>
                         <TableCell align={'right'}>{row.count}</TableCell>
                         <TableCell>
-                          {PaymentTypes.SALAEY_DEDUCTIONS === row.payment_state
+                          {PaymentType.SALAEY_DEDUCTIONS === row.payment_state
                             ? '会社清算'
-                            : PaymentTypes.CREDITCARD === row.payment_state
+                            : PaymentType.CREDITCARD === row.payment_state
                               ? 'クレジットカード'
                               : 'PayPay'}
                         </TableCell>
-                        <TableCell>{OrderStatus.CANCEL === row.order_state ? 'キャンセル' : '有効'}</TableCell>
+                        <TableCell>{OrderStatus.VALID === row.order_status ? '有効' : 'キャンセル'}</TableCell>
                       </TableRow>
                     ))
                   }
@@ -545,8 +563,9 @@ export const OrderComponent = (): JSX.Element => {
                   open={open}
                   setOpen={setOpen}
                   searchedDate={new Date()}
-                  orderStatus={orderStatus}
-                  cancelHandler={cancelHandler}
+                  cancelHandler={() => orderCancelHandler(Number(dataDetail?.data?.id) ?? 0)}
+                  data={dataDetail}
+                  isFetching={isFetchingDetail}
                 />
               </>
             )}

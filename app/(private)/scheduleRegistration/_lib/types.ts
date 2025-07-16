@@ -1,11 +1,4 @@
-/**
- * スケジュール登録 検索条件 Schema
- */
+import { t_menu_schedule } from '@/app/_lib/supabase/tableTypes';
 
-// TODO:取込方法確定後に実装
-
-/**
- * スケジュール登録 FormValues
- */
-
-// TODO:取込方法確定後に実装
+/** スケジュールテーブル */
+export type scheduleCsvValues = Omit<t_menu_schedule, 'created_at' | 'updated_at'>;

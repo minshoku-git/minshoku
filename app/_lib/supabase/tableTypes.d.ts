@@ -1,4 +1,4 @@
-import { UsageStatus, UserUsageStatus } from '@/app/_types/enum';
+import { UsageStatus, UserRegistrationStatus } from '@/app/_types/enum';
 
 /** ユーザーテーブル */
 export type t_user = {
@@ -18,10 +18,10 @@ export type t_user = {
   optional_item_answer_1?: string;
   /** 任意項目_回答2 */
   optional_item_answer_2?: string;
-  /** 登録ステータス */
-  register_state?: number;
+  /** ユーザー登録ステータス */
+  user_registration_status?: number;
   /** 利用ステータス */
-  user_usage_status?: UserUsageStatus;
+  usage_status?: number;
   /** メールアドレス */
   user_email?: string;
   /** パスワードフラグ */
@@ -57,7 +57,7 @@ export type t_companies = {
   /** 食堂名 */
   restaurant_name?: string;
   /** 郵便番号 */
-  post_code?: string;
+  postal_code?: string;
   /** 都道府県 */
   prefectures?: string;
   /** 市区 */
@@ -97,7 +97,7 @@ export type t_companies = {
   /** キャンセル期限_時間 */
   cancel_period_time?: string;
   /** 利用ステータス */
-  usage_status: UsageStatus;
+  usage_status: number;
   /** 登録日時 */
   created_at?: Date;
   /** 更新日時 */
@@ -113,7 +113,7 @@ export type t_shops = {
   /** 店舗名かな */
   shop_name_kana?: string;
   /** 郵便番号 */
-  shop_post_code?: string;
+  shop_postal_code?: string;
   /** 都道府県 */
   shop_prefectures?: string;
   /** 市区 */
@@ -130,8 +130,10 @@ export type t_shops = {
   email?: string;
   /** 特定商取引法に基づく表記 */
   specified_commercial_transaction_act?: string;
-  /** 店舗イメージ */
-  shop_image?: string;
+  /** 店舗イメージ_ファイル名 */
+  shop_image_file_name?: string;
+  /** 店舗イメージ_ファイルサイズ(byte) */
+  shop_image_file_bytesize?: number;
   /** 店舗利用制限ステータス */
   usage_status?: UsageStatus;
   /** gmoショップコード */
@@ -156,7 +158,7 @@ export type t_order = {
   t_companies_id?: number;
   /** ユーザーID */
   t_user_id?: number;
-  /** 定番スケジュールID */
+  /** スケジュールID */
   t_menu_schedule_id?: number;
   /** 注文日時 */
   order_datetime?: Date;
@@ -172,10 +174,10 @@ export type t_order = {
   companies_burden_amount?: number;
   /** 個人負担額 */
   user_burden_amount?: number;
-  /** 支払いステータス */
-  payment_state?: number;
+  /** 支払い種別 */
+  payment_type?: number;
   /** オーダーステータス */
-  order_state?: number;
+  order_status?: number;
   /** クレジット取引ID */
   credit_access_id?: string;
   /** クレジット取引パスワード */
@@ -190,34 +192,6 @@ export type t_order = {
   created_at?: Date;
   /** 更新日時 */
   updated_at?: Date;
-};
-
-/** スケジュールテーブル */
-export type t_menu_schedule_classic = {
-  /** ID（メニュースケジュールID） */
-  id?: number;
-  /** 店舗ID */
-  t_shops_id?: number;
-  /** 企業ID */
-  t_companies_id?: number;
-  /** 納品日 */
-  delivery_day?: DATE;
-  /** メニュー名 */
-  nenu_name?: string;
-  /** アレルギー表記 */
-  allergies?: Array<string>;
-  /** 在庫数 */
-  stock_count?: number;
-  /** 注文数 */
-  order_count?: number;
-  /** 単価 */
-  unit_price?: number;
-  /** キャンセルフラグ */
-  cancel_flag?: 0;
-  /** 登録日時 */
-  created_at?: DATE;
-  /** 更新日時 */
-  updated_at?: DATE;
 };
 
 /** 企業部署情報テーブル */
@@ -274,8 +248,20 @@ export type t_companies_domain = {
   updated_at?: date;
 };
 
+/** 企業部署情報テーブル */
+export type t_administrator = {
+  /** ID（メニュースケジュールID） */
+  id?: string;
+  /** 名前 */
+  name?: string;
+  /** メールアドレス */
+  email?: string;
+  /** 利用ステータス */
+  usage_state?: number;
+};
+
 /** スケジュールテーブル */
-export type t_menu_schedule_classic = {
+export type t_menu_schedule = {
   /** ID（スケジュールID） */
   id?: number;
   /** 店舗ID */
@@ -283,7 +269,7 @@ export type t_menu_schedule_classic = {
   /** 会社ID */
   t_companies_id?: number;
   /** 納品日 */
-  delivery_day?: date;
+  delivery_day?: Date;
   /** メニュー名 */
   menu_name?: string;
   /** アレルギー表記 */

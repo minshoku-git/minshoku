@@ -1,11 +1,12 @@
 import { PostgrestSingleResponse } from '@supabase/supabase-js';
-import { Client } from 'pg';
 
 import { DepartmentData, EmploymentData } from '@/app/_lib/createMockData';
 import { getNow, getTimeString, getTodayZeroHour } from '@/app/_lib/getDateTime';
-import { supabase } from '@/app/_lib/supabase/supabase';
+import { createClient, createPgClient } from '@/app/_lib/supabase/server';
 import { t_companies, t_companies_department, t_companies_employment_status } from '@/app/_lib/supabase/tableTypes';
 import { checkTempId, convertTimeToDate, getPostgreSqlItems } from '@/app/_lib/utill';
+import { ERROR_MESSAGE } from '@/app/_types/constants';
+import { UsageStatus } from '@/app/_types/enum';
 import { ApiRequest, ApiResponse } from '@/app/_types/types';
 
 import { CompanyDetailFormValues } from './types';
@@ -17,114 +18,118 @@ import { CompanyDetailFormValues } from './types';
  * @param {ApiRequest<number>} values - 検索条件
  * @returns {Promise<ApiResponse<CompanyDetailFormValues>>} 検索結果
  */
-export const _searchComponyDetail = async (
+export const _searchCompanyDetail = async (
   values: ApiRequest<number>
 ): Promise<ApiResponse<CompanyDetailFormValues>> => {
-  // 1.会社get_companyDetail情報取得
-  const query = supabase.from('t_companies').select('*').eq('id', values.request).single();
-  const { data, error } = (await query) as PostgrestSingleResponse<t_companies>;
+  const supabase = await createClient();
 
-  if (error) {
-    console.log(error);
-    return { data: null, error: error.message };
+  try {
+    // 1.会社情報取得
+    const query = supabase.from('t_companies').select('*').eq('id', values.request).single();
+    const { data, error } = (await query) as PostgrestSingleResponse<t_companies>;
+
+    if (error) {
+      console.error(error);
+      return { error: '会社情報の取得' + ERROR_MESSAGE.TEMPLATE };
+    }
+
+    // 2.部署情報取得
+    const queryDep = supabase
+      .from('t_companies_department')
+      .select('*')
+      .eq('t_companies_id', values.request)
+      .eq('delete_flag', 0)
+      .order('id', { ascending: true });
+    const { data: dataDep, error: errorDep } = (await queryDep) as PostgrestSingleResponse<t_companies_department[]>;
+
+    if (errorDep) {
+      console.error(errorDep);
+      return { error: '部署情報の取得' + ERROR_MESSAGE.TEMPLATE };
+    }
+
+    // 3.雇用種別情報取得
+    const queryEmp = supabase
+      .from('t_companies_employment_status')
+      .select('*')
+      .eq('t_companies_id', values.request)
+      .eq('delete_flag', 0)
+      .order('id', { ascending: true });
+    const { data: dataEmp, error: errorEmp } = (await queryEmp) as PostgrestSingleResponse<
+      t_companies_employment_status[]
+    >;
+
+    if (errorEmp) {
+      console.error(errorEmp);
+      return { error: '雇用種別情報の取得' + ERROR_MESSAGE.TEMPLATE };
+    }
+
+    // Response set
+    const depInit: DepartmentData[] = dataDep
+      ? dataDep.map((m) => {
+          return {
+            id: m.id!.toString(),
+            name: m.department_name ?? '',
+            disabled: false,
+            delete_flag: false,
+          };
+        })
+      : [];
+
+    const empInit: EmploymentData[] | null = dataEmp
+      ? dataEmp.map((m) => {
+          return {
+            id: m.id!.toString(),
+            t_companies_id: m.t_companies_id,
+            employment_status_name: m.employment_status_name ?? '',
+            disabled: true,
+            deduction_flag: m.deduction_flag === 0 ? false : true,
+            credit_flag: m.credit_flag === 0 ? false : true,
+            paypay_flag: m.paypay_flag === 0 ? false : true,
+            set_meal_burden: m.set_meal_burden ? m.set_meal_burden.toString() : '0',
+            delete_flag: false,
+          };
+        })
+      : [];
+
+    console.log(data.usage_status);
+    const defalutDate = getTodayZeroHour();
+
+    const res: CompanyDetailFormValues = {
+      id: data.id?.toString(),
+      company_name: data.company_name ?? '',
+      branch_name: data.branch_name ?? '',
+      postal_code_prefix: data.postal_code ? data.postal_code.slice(0, 3) : '',
+      postal_code_suffix: data.postal_code ? data.postal_code.slice(3, 7) : '',
+      prefectures: data.prefectures ?? '',
+      municipalities: data.municipalities ?? '',
+      town_area: data.town_area ?? '',
+      area_block_number: data.area_block_number ?? '',
+      building_name: data.building_name ?? '',
+      restaurant_name: data.restaurant_name ?? '',
+      location: data.location ?? '',
+      email: data.email ?? '',
+      memo: data.memo ?? '',
+      optional_item_title_1: data.optional_item_title_1 ?? '',
+      optional_item_title_2: data.optional_item_title_2 ?? '',
+      optional_item_notes_1: data.optional_item_notes_1 ?? '',
+      optional_item_notes_2: data.optional_item_notes_2 ?? '',
+      offer_time_from: data.offer_time_from ? convertTimeToDate(data.offer_time_from) : defalutDate,
+      offer_time_to: data.offer_time_to ? convertTimeToDate(data.offer_time_to) : defalutDate,
+      order_period_day: data.order_period_day?.toString() ?? '',
+      order_period_time: data.order_period_time ? convertTimeToDate(data.order_period_time) : defalutDate,
+      cancel_period_day: data.cancel_period_day?.toString() ?? '',
+      cancel_period_time: data.cancel_period_time ? convertTimeToDate(data.cancel_period_time) : defalutDate,
+      departmentInfo: depInit,
+      employmentStatusInfo: empInit,
+      usage_status:
+        data.usage_status.toString() === UsageStatus.AVAILABLE ? UsageStatus.AVAILABLE : UsageStatus.DEACTIVATION,
+    };
+
+    return { data: res };
+  } catch (error) {
+    console.error(error);
+    return { error: ERROR_MESSAGE.UNEXPECTED };
   }
-
-  // 2.部署情報取得
-  const queryDep = supabase
-    .from('t_companies_department')
-    .select('*')
-    .eq('t_companies_id', values.request)
-    .eq('delete_flag', 0)
-    .order('id', { ascending: true });
-  const { data: dataDep, error: errorDep } = (await queryDep) as PostgrestSingleResponse<t_companies_department[]>;
-
-  if (errorDep) {
-    console.log(errorDep);
-    return { data: null, error: errorDep.message };
-  }
-
-  // 3.雇用種別情報取得
-  const queryEmp = supabase
-    .from('t_companies_employment_status')
-    .select('*')
-    .eq('t_companies_id', values.request)
-    .eq('delete_flag', 0)
-    .order('id', { ascending: true });
-  const { data: dataEmp, error: errorEmp } = (await queryEmp) as PostgrestSingleResponse<
-    t_companies_employment_status[]
-  >;
-
-  if (errorEmp) {
-    console.log(errorEmp);
-    return { data: null, error: errorEmp.message };
-  }
-
-  // Response set
-  const depInit: DepartmentData[] = dataDep
-    ? dataDep.map((m) => {
-        return {
-          id: m.id!.toString(),
-          name: m.department_name ?? '',
-          disabled: false,
-          delete_flag: false,
-        };
-      })
-    : [];
-
-  const empInit: EmploymentData[] | null = dataEmp
-    ? dataEmp.map((m) => {
-        return {
-          id: m.id!.toString(),
-          t_companies_id: m.t_companies_id,
-          employment_status_name: m.employment_status_name ?? '',
-          disabled: true,
-          deduction_flag: m.deduction_flag === 0 ? false : true,
-          credit_flag: m.credit_flag === 0 ? false : true,
-          paypay_flag: m.paypay_flag === 0 ? false : true,
-          set_meal_burden: m.set_meal_burden ? m.set_meal_burden.toString() : '0',
-          delete_flag: false,
-        };
-      })
-    : [];
-
-  console.log(data.usage_status);
-  const defalutDate = getTodayZeroHour();
-
-  const res: CompanyDetailFormValues = {
-    id: data.id?.toString(),
-    company_name: data.company_name ?? '',
-    branch_name: data.branch_name ?? '',
-    post_code: data.post_code ?? '',
-    prefectures: data.prefectures ?? '',
-    municipalities: data.municipalities ?? '',
-    town_area: data.town_area ?? '',
-    area_block_number: data.area_block_number ?? '',
-    building_name: data.building_name ?? '',
-    restaurant_name: data.restaurant_name ?? '',
-    location: data.location ?? '',
-    email: data.email ?? '',
-    memo: data.memo ?? '',
-    optional_item_title_1: data.optional_item_title_1 ?? '',
-    optional_item_title_2: data.optional_item_title_2 ?? '',
-    optional_item_notes_1: data.optional_item_notes_1 ?? '',
-    optional_item_notes_2: data.optional_item_notes_2 ?? '',
-    offer_time_from: data.offer_time_from ? convertTimeToDate(data.offer_time_from) : defalutDate,
-    offer_time_to: data.offer_time_to ? convertTimeToDate(data.offer_time_to) : defalutDate,
-    order_period_day: data.order_period_day?.toString() ?? '',
-    order_period_time: data.order_period_time ? convertTimeToDate(data.order_period_time) : defalutDate,
-    cancel_period_day: data.cancel_period_day?.toString() ?? '',
-    cancel_period_time: data.cancel_period_time ? convertTimeToDate(data.cancel_period_time) : defalutDate,
-    departmentInfo: depInit,
-    employmentStatusInfo: empInit,
-    usage_status: data.usage_status,
-  };
-
-  console.log(res);
-
-  return {
-    data: data ? res : null,
-    error: null,
-  };
 };
 
 /**
@@ -136,12 +141,9 @@ export const _searchComponyDetail = async (
 export const _insertComponyDetail = async (
   values: ApiRequest<CompanyDetailFormValues>
 ): Promise<ApiResponse<number>> => {
-  const req = values.request;
-  const client = new Client({
-    connectionString: process.env.SUPABASE_DB_CONNECTION_STRING,
-  });
+  const client = createPgClient();
 
-  let res: ApiResponse<number> = { data: null, error: null };
+  const req = values.request;
 
   try {
     // connection Start
@@ -157,7 +159,7 @@ export const _insertComponyDetail = async (
     const insertValues: Omit<t_companies, 'id' | 'created_at' | 'updated_at'> = {
       company_name: req.company_name,
       branch_name: req.branch_name,
-      post_code: req.post_code,
+      postal_code: req.postal_code_prefix,
       prefectures: req.prefectures,
       municipalities: req.municipalities,
       town_area: req.town_area,
@@ -178,7 +180,7 @@ export const _insertComponyDetail = async (
       order_period_time: getTimeString(req.order_period_time!),
       cancel_period_day: Number(req.cancel_period_day),
       cancel_period_time: getTimeString(req.cancel_period_time!),
-      usage_status: req.usage_status,
+      usage_status: Number(req.usage_status),
     };
     const { columns, placeholders, values } = getPostgreSqlItems(insertValues);
     const insertCompanyText = `INSERT INTO t_companies (${columns.join(',')}) VALUES (${placeholders}) RETURNING id;`;
@@ -243,23 +245,17 @@ export const _insertComponyDetail = async (
     console.log('Transaction completed, new company ID:', newCompanyId);
 
     // Response setting
-    res = {
-      data: newCompanyId,
-      error: null,
-    };
+    return { data: newCompanyId };
   } catch (error) {
     // Rollback
-    console.error('Transaction failed:', error);
     await client.query('ROLLBACK');
-    res = {
-      data: null,
-      error: (error as Error).message,
-    };
+
+    console.error('Transaction failed:', error);
+    return { error: ERROR_MESSAGE.UNEXPECTED };
   } finally {
     // Transaction End
     await client.end();
   }
-  return res;
 };
 
 /**
@@ -271,13 +267,10 @@ export const _insertComponyDetail = async (
 export const _updateComponyDetail = async (
   values: ApiRequest<CompanyDetailFormValues>
 ): Promise<ApiResponse<number>> => {
+  const client = createPgClient();
+
   const req = values.request;
   const timestamp = getNow();
-  const client = new Client({
-    connectionString: process.env.SUPABASE_DB_CONNECTION_STRING,
-  });
-
-  let res: ApiResponse<number> = { data: null, error: null };
 
   try {
     // connection Start
@@ -287,13 +280,13 @@ export const _updateComponyDetail = async (
     // Transaction Start
     await client.query('BEGIN');
 
-    /* Update - t_companies_employment_status
+    /* Update - t_companies
   　------------------------------------------------------------------ */
-    // InsertData setting
+    // UpdateData setting
     const updateValues: Omit<t_companies, 'id' | 'url_key' | 'created_at'> = {
       company_name: req.company_name,
       branch_name: req.branch_name,
-      post_code: req.post_code,
+      postal_code: req.postal_code_prefix,
       prefectures: req.prefectures,
       municipalities: req.municipalities,
       town_area: req.town_area,
@@ -313,17 +306,19 @@ export const _updateComponyDetail = async (
       order_period_time: getTimeString(req.order_period_time!),
       cancel_period_day: Number(req.cancel_period_day),
       cancel_period_time: getTimeString(req.cancel_period_time!),
-      usage_status: req.usage_status,
+      usage_status: Number(req.usage_status),
       updated_at: timestamp,
     };
     const { columns, values } = getPostgreSqlItems(updateValues);
     const updateCompanyText = `UPDATE t_companies SET ${columns.map((col, index) => `${col} = $${index + 1}`).join(', ')} WHERE id = ${req.id} RETURNING id;`;
 
-    // Insert
+    // Update
     const result = await client.query(updateCompanyText, values);
 
     if (result.rowCount === 0) {
-      throw new Error('企業情報の更新処理に失敗しました。');
+      const errorMsg = '企業情報の更新' + ERROR_MESSAGE.TEMPLATE;
+      console.error(errorMsg);
+      throw new Error(errorMsg);
     }
 
     const updatedId = result.rows[0]?.id;
@@ -345,7 +340,9 @@ export const _updateComponyDetail = async (
           const deleteCompanyText = `UPDATE t_companies_department SET delete_flag = 1, updated_at = $1 WHERE id = $2;`;
           const res = await client.query(deleteCompanyText, [timestamp, item.id]);
           if (res.rowCount === 0) {
-            throw new Error('企業部署情報の削除処理に失敗しました。');
+            const errorMsg = '企業部署情報の削除' + ERROR_MESSAGE.TEMPLATE;
+            console.log(errorMsg);
+            throw new Error(errorMsg);
           }
         }
       }
@@ -355,7 +352,9 @@ export const _updateComponyDetail = async (
           const updateCompanyText = `UPDATE t_companies_department SET department_name = $1, updated_at = $2 WHERE id = $3;`;
           const res = await client.query(updateCompanyText, [item.name, timestamp, item.id]);
           if (res.rowCount === 0) {
-            throw new Error('企業部署情報の更新処理に失敗しました。');
+            const errorMsg = '企業部署情報の更新' + ERROR_MESSAGE.TEMPLATE;
+            console.log(errorMsg);
+            throw new Error(errorMsg);
           }
         }
       }
@@ -377,7 +376,9 @@ export const _updateComponyDetail = async (
           // Insert
           const res = await client.query(insertDepartmentText, valuesDep);
           if (res.rowCount === 0) {
-            throw new Error('企業部署情報の登録処理に失敗しました。');
+            const errorMsg = '企業部署情報の新規登録' + ERROR_MESSAGE.TEMPLATE;
+            console.log(errorMsg);
+            throw new Error(errorMsg);
           }
         }
       }
@@ -394,8 +395,11 @@ export const _updateComponyDetail = async (
         for (const item of deleteList) {
           const deleteCompanyText = `UPDATE t_companies_employment_status SET delete_flag = 1, updated_at = $1 WHERE id = $2;`;
           const res = await client.query(deleteCompanyText, [timestamp, item.id]);
+          // const ress = await client.query({text:deleteCompanyText, values:[timestamp, item.id]});
           if (res.rowCount === 0) {
-            throw new Error('企業雇用形態情報の削除処理に失敗しました。');
+            const errorMsg = '企業雇用形態情報の削除' + ERROR_MESSAGE.TEMPLATE;
+            console.log(errorMsg);
+            throw new Error(errorMsg);
           }
         }
       }
@@ -423,7 +427,9 @@ export const _updateComponyDetail = async (
             item.id,
           ]);
           if (res.rowCount === 0) {
-            throw new Error('企業雇用形態情報の更新処理に失敗しました。');
+            const errorMsg = '企業雇用形態情報の新規登録' + ERROR_MESSAGE.TEMPLATE;
+            console.error(errorMsg);
+            throw new Error(errorMsg);
           }
         }
       }
@@ -448,7 +454,9 @@ export const _updateComponyDetail = async (
           // Insert
           const res = await client.query(insertEmploymentStatusText, valuesEmp);
           if (res.rowCount === 0) {
-            throw new Error('企業雇用形態情報の登録処理に失敗しました。');
+            const errorMsg = '企業雇用形態情報の新規登録' + ERROR_MESSAGE.TEMPLATE;
+            console.log(errorMsg);
+            throw new Error(errorMsg);
           }
         }
       }
@@ -460,21 +468,15 @@ export const _updateComponyDetail = async (
     console.log('Transaction completed, update company ID:', updatedId);
 
     // Response setting
-    res = {
-      data: updatedId,
-      error: null,
-    };
+    return { data: updatedId };
   } catch (error) {
     // Rollback
-    console.error('Transaction failed:', error);
     await client.query('ROLLBACK');
-    res = {
-      data: null,
-      error: (error as Error).message,
-    };
+
+    console.error('Transaction failed:', error);
+    return { error: ERROR_MESSAGE.UNEXPECTED };
   } finally {
     // Transaction End
     await client.end();
   }
-  return res;
 };

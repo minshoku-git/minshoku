@@ -9,7 +9,6 @@ import {
   MSG_POSTALCODE,
   MSG_REQUIRED,
   REG_HANKAKU_NUM,
-  REG_POSTALCODE,
 } from '@/app/_types/constants';
 import { UsageStatus } from '@/app/_types/enum';
 
@@ -34,11 +33,18 @@ export const CompanyDetailSchema = z
       .string()
       .nonempty({ message: formatString(MSG_REQUIRED, '食堂名') })
       .max(256, formatString(MSG_MAX, '食堂名', '256')),
-    /** 郵便番号 */
-    post_code: z
+    /** 郵便番号(前半) */
+    postal_code_prefix: z
       .string()
       .nonempty({ message: formatString(MSG_REQUIRED, '郵便番号') })
-      .regex(new RegExp(REG_POSTALCODE), formatString(MSG_POSTALCODE, '郵便番号')),
+      .min(3, formatString(MSG_MAX, '郵便番号', '3'))
+      .regex(new RegExp(REG_HANKAKU_NUM), formatString(MSG_POSTALCODE, '郵便番号', '3')),
+    /** 郵便番号(後半) */
+    postal_code_suffix: z
+      .string()
+      .nonempty({ message: formatString(MSG_REQUIRED, '郵便番号') })
+      .min(4, formatString(MSG_MAX, '郵便番号', '4'))
+      .regex(new RegExp(REG_HANKAKU_NUM), formatString(MSG_POSTALCODE, '郵便番号', '4')),
     /** 都道府県 */
     prefectures: z.string().nonempty({ message: formatString(MSG_REQUIRED, '都道府県') }),
     /** 市区 */
@@ -252,3 +258,6 @@ export const CompanyDetailSchema = z
  * 会社詳細 検索条件 FormValues
  */
 export type CompanyDetailFormValues = z.infer<typeof CompanyDetailSchema>;
+
+/** 取得結果 会社詳細 */
+export type CompanyDataDetailResult = CompanyDetailFormValues;

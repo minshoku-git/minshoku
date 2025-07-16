@@ -2,12 +2,15 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Box, Button, Divider, Paper, TableCell, TableRow, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2';
+import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { JSX, useState } from 'react';
+import { JSX, useEffect, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { SelectElement, TextFieldElement } from 'react-hook-form-mui';
 
-import { AlertType, SortType, UsageStatus } from '@/app/_types/enum';
+import { AlertType, SearchType, SortType, UsageStatus } from '@/app/_types/enum';
+import { QUERY_KEYS } from '@/app/_types/queryKeys';
+import { SESSION_STORAGE_KEYS } from '@/app/_types/sessionStorageKeys';
 import { ApiRequest, ApiResponse, HeaderStatus } from '@/app/_types/types';
 import { CustomTable } from '@/app/_ui/_shared/costomTable/customTable';
 import { ResultsCounter } from '@/app/_ui/_shared/resultsCounter';
@@ -27,6 +30,21 @@ const resultHeader: Array<HeaderStatus> = [
   { name: '利用ステータス', variableName: 'usage_status', sort: SortType.ASC },
 ];
 
+const initConditionValues: ApiRequest<ShopSearchFormValues> = {
+  request: {
+    shop_name: '',
+    prefectures: '',
+    municipalities: '',
+    town_area: '',
+    usage_status: '',
+  },
+  sortItems: {
+    nextPage: 1,
+    sortColumn: 'shop_name',
+    ascending: true,
+  },
+};
+
 /**
  * 店舗一覧Component
  * @returns {JSX.Element} JSX
@@ -37,6 +55,7 @@ export const ShopComponent = (): JSX.Element => {
   const router = useRouter();
   const { openSnackbar } = useSnackBar();
   const { openProcessing, closeProcessing } = useProcessing();
+  const [searchType, setSearchType] = useState<SearchType>(SearchType.SEARCH);
 
   /* useState
   ------------------------------------------------------------------ */
@@ -46,20 +65,8 @@ export const ShopComponent = (): JSX.Element => {
   const [sortTarget, setSortTarget] = useState<HeaderStatus>(resultHeader[0]);
 
   const [isSearch, setIsSearch] = useState(false);
-  const [condition, setCondition] = useState<ApiRequest<ShopSearchFormValues>>({
-    request: {
-      shop_name: '',
-      prefectures: '',
-      municipalities: '',
-      town_area: '',
-      usage_status: '',
-    },
-    sortItems: {
-      nextPage: 1,
-      sortColumn: 'shop_name',
-      ascending: true,
-    },
-  });
+  const [condition, setCondition] = useState<ApiRequest<ShopSearchFormValues> | null>(null);
+
   const [result, setResult] = useState<ApiResponse<ShopListSearchResult[]> | null>({
     data: null,
     error: null,
@@ -74,7 +81,7 @@ export const ShopComponent = (): JSX.Element => {
 
   /* useForm
   ------------------------------------------------------------------ */
-  const { control, handleSubmit, reset } = useForm<ShopSearchFormValues>({
+  const { control, handleSubmit, reset, setValue } = useForm<ShopSearchFormValues>({
     mode: 'onSubmit',
     reValidateMode: 'onSubmit',
     resolver: zodResolver(ShopSearchSchema),
@@ -87,11 +94,93 @@ export const ShopComponent = (): JSX.Element => {
     },
   });
 
+  /* useQuery
+  ------------------------------------------------------------------ */
+  const fetchData = async () => {
+    const response = await fetch('/api/shop/search', {
+      method: 'POST',
+      body: JSON.stringify(condition),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const res: ApiResponse<ShopListSearchResult[]> = await response.json();
+    return res;
+  };
+
+  const { data, isFetching, refetch } = useQuery<ApiResponse<ShopListSearchResult[]>>({
+    queryKey: [QUERY_KEYS.SHOP_SEARCH_RESULT, condition],
+    queryFn: fetchData,
+    enabled: false,
+  });
+
+  /* useEffect
+  ------------------------------------------------------------------ */
+  useEffect(() => {
+    const searchCondition = sessionStorage.getItem(SESSION_STORAGE_KEYS.SHOP_SEARCH_CONDITION);
+    const previousPath = sessionStorage.getItem(SESSION_STORAGE_KEYS.PREVIOUS_PATH);
+    console.log(SESSION_STORAGE_KEYS.SHOP_SEARCH_CONDITION, searchCondition);
+    if (searchCondition && previousPath === '/shopDetail') {
+      const req: ApiRequest<ShopSearchFormValues> = JSON.parse(searchCondition);
+      setCondition(req);
+      setValue('shop_name', req.request.shop_name);
+      setValue('usage_status', req.request.usage_status);
+      setValue('prefectures', req.request.prefectures);
+      setValue('municipalities', req.request.municipalities);
+      setValue('town_area', req.request.town_area);
+    }
+    sessionStorage.clear();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    // condition変化時に検索を実行
+    if (condition !== null) {
+      refetch();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [condition]);
+
+  useEffect(() => {
+    if (isFetching) {
+      openProcessing();
+    } else {
+      closeProcessing();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFetching]);
+
+  useEffect(() => {
+    if (!data) {
+      return;
+    }
+    if (data?.error) {
+      openSnackbar(AlertType.ERROR, '検索時にエラーが発生しました。再度発生する場合は、管理者にお問い合わせください。');
+      setResult(null);
+      setIsSearch(false);
+      return;
+    }
+    if (searchType === SearchType.SEARCH) {
+      setSortArray(resultHeader);
+      setSortTarget(resultHeader[0]);
+    }
+    if (searchType === SearchType.SORT) {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth',
+      });
+    }
+    setIsSearch(true);
+    setResult(data ?? null);
+    closeProcessing();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
+
   /* functions
   ------------------------------------------------------------------ */
-  // 検索ハンドラ
+  /** 検索 */
   const searchHandler: SubmitHandler<ShopSearchFormValues> = async (data) => {
-    openProcessing();
     const req: ApiRequest<ShopSearchFormValues> = {
       request: data,
       sortItems: {
@@ -100,109 +189,44 @@ export const ShopComponent = (): JSX.Element => {
         ascending: true,
       },
     };
-
-    const response = await fetch('/api/shop/search', {
-      method: 'POST',
-      body: JSON.stringify(req),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    const res: ApiResponse<ShopListSearchResult[]> = await response.json();
-
-    if (res.error) {
-      openSnackbar(
-        AlertType.ERROR,
-        '検索時にエラーが発生しました。再度発生する場合は、管理者にお問い合わせください。' + res.error
-      );
-      setResult(null);
-      setIsSearch(false);
-    } else {
-      setSortArray(resultHeader);
-      setSortTarget(resultHeader[0]);
-      setCondition(req);
-      setResult(res);
-      setIsSearch(true);
-    }
-    closeProcessing();
+    setSearchType(SearchType.SEARCH);
+    setCondition(req);
   };
 
-  /* 並び替えハンドラ */
+  /** ソート */
   const sortHandler = async (sortColumn: string, ascending: boolean) => {
     openProcessing();
     const req: ApiRequest<ShopSearchFormValues> = {
-      request: condition.request,
+      request: condition?.request ?? initConditionValues.request,
       sortItems: {
         nextPage: 1,
         sortColumn: sortColumn,
         ascending: ascending,
       },
     };
-
-    const response = await fetch('/api/shop/search', {
-      method: 'POST',
-      body: JSON.stringify(req),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    const res: ApiResponse<ShopListSearchResult[]> = await response.json();
-
-    if (res.error) {
-      openSnackbar(AlertType.ERROR, '検索時にエラーが発生しました。再度発生する場合は、管理者にお問い合わせください。');
-      setResult(null);
-      setIsSearch(false);
-    } else {
-      setCondition(req);
-      setResult(res);
-      setIsSearch(true);
-    }
-    closeProcessing();
+    setSearchType(SearchType.SORT);
+    setCondition(req);
   };
 
-  /* ページ送りハンドラ */
+  /** ページネーション */
   const pageChangeHandler = async (_event: React.ChangeEvent<unknown>, nextPage: number) => {
     openProcessing();
     const req: ApiRequest<ShopSearchFormValues> = {
-      request: condition.request,
+      request: condition?.request ?? initConditionValues.request,
       sortItems: {
         nextPage: nextPage ?? 0,
-        sortColumn: condition.sortItems?.sortColumn ?? 'shop_name',
-        ascending: condition.sortItems?.ascending ?? true,
+        sortColumn: condition?.sortItems?.sortColumn ?? 'shop_name',
+        ascending: condition?.sortItems?.ascending ?? true,
       },
     };
-
-    const response = await fetch('/api/shop/search', {
-      method: 'POST',
-      body: JSON.stringify(req),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    const res: ApiResponse<ShopListSearchResult[]> = await response.json();
-
-    if (res.error) {
-      openSnackbar(AlertType.ERROR, '検索時にエラーが発生しました。再度発生する場合は、管理者にお問い合わせください。');
-      setResult(null);
-      setIsSearch(false);
-    } else {
-      window.scrollTo({
-        top: 0,
-        behavior: 'smooth',
-      });
-      setResult(res);
-      setIsSearch(true);
-    }
-    closeProcessing();
+    setSearchType(SearchType.PAGENATION);
+    setCondition(req);
   };
 
   // 明細行リンクハンドラ
   const linkHandler = (id: string) => {
+    sessionStorage.setItem(SESSION_STORAGE_KEYS.SHOP_SEARCH_CONDITION, JSON.stringify(condition));
     router.push(`/shopDetail/${id}`);
-    reset();
   };
 
   // リセット
@@ -344,59 +368,63 @@ export const ShopComponent = (): JSX.Element => {
                 検索
               </Button>
             </Grid>
-            {isSearch && result && (
+            {!isFetching && (
               <>
-                <Divider sx={{ my: 3 }} />
-                {result.paginate?.count && result.paginate?.count > 0 ? (
-                  <Box sx={{ display: 'flex', alignItems: 'end' }}>
-                    <ResultsCounter
-                      startRow={result.paginate?.startRow}
-                      endRow={result.paginate?.endRow}
-                      count={result.paginate?.count}
+                {isSearch && result && (
+                  <>
+                    <Divider sx={{ my: 3 }} />
+                    {result.paginate?.count && result.paginate?.count > 0 ? (
+                      <Box sx={{ display: 'flex', alignItems: 'end' }}>
+                        <ResultsCounter
+                          startRow={result.paginate?.startRow}
+                          endRow={result.paginate?.endRow}
+                          count={result.paginate?.count}
+                        />
+                      </Box>
+                    ) : (
+                      <></>
+                    )}
+                    <CustomTable
+                      paginate={result.paginate}
+                      sortHandler={sortHandler}
+                      pageChangeHandler={pageChangeHandler}
+                      header={resultHeader}
+                      sortArray={sortArray}
+                      setSortArray={setSortArray}
+                      sortTarget={sortTarget}
+                      setSortTarget={setSortTarget}
+                      renderBody={() =>
+                        result.data?.map((row, index) => (
+                          <TableRow
+                            key={index}
+                            hover
+                            sx={{ '&:hover': { cursor: 'pointer' } }}
+                            onClick={() => {
+                              linkHandler(row.id);
+                            }}
+                          >
+                            <TableCell sx={{ whiteSpace: 'pre' }} width={'20%'}>
+                              {row.shop_name}
+                            </TableCell>
+                            <TableCell
+                              width={'50%'}
+                              sx={{
+                                whiteSpace: 'pre-wrap',
+                                wordBreak: 'break-all',
+                                overflowWrap: 'break-word',
+                              }}
+                            >
+                              〒{row.shop_postal_code}
+                              <br />
+                              {row.address}
+                            </TableCell>
+                            <TableCell width={'10%'}>{row.usage_status}</TableCell>
+                          </TableRow>
+                        ))
+                      }
                     />
-                  </Box>
-                ) : (
-                  <></>
+                  </>
                 )}
-                <CustomTable
-                  paginate={result.paginate}
-                  sortHandler={sortHandler}
-                  pageChangeHandler={pageChangeHandler}
-                  header={resultHeader}
-                  sortArray={sortArray}
-                  setSortArray={setSortArray}
-                  sortTarget={sortTarget}
-                  setSortTarget={setSortTarget}
-                  renderBody={() =>
-                    result.data?.map((row, index) => (
-                      <TableRow
-                        key={index}
-                        hover
-                        sx={{ '&:hover': { cursor: 'pointer' } }}
-                        onClick={() => {
-                          linkHandler(row.id);
-                        }}
-                      >
-                        <TableCell sx={{ whiteSpace: 'pre' }} width={'20%'}>
-                          {row.shop_name}
-                        </TableCell>
-                        <TableCell
-                          width={'50%'}
-                          sx={{
-                            whiteSpace: 'pre-wrap',
-                            wordBreak: 'break-all',
-                            overflowWrap: 'break-word',
-                          }}
-                        >
-                          〒{row.shop_post_code}
-                          <br />
-                          {row.address}
-                        </TableCell>
-                        <TableCell width={'10%'}>{row.usage_status}</TableCell>
-                      </TableRow>
-                    ))
-                  }
-                />
               </>
             )}
           </form>

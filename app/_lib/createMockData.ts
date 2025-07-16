@@ -1,6 +1,6 @@
 import { CompanyListSearchResult } from '../(private)/company/_lib/types';
 import { OrderListSearchResult } from '../(private)/order/_lib/types';
-import { ScheduleListSearchResult } from '../(private)/schedule/_lib/types';
+import { ScheduleData, ScheduleListSearchResult } from '../(private)/schedule/_lib/types';
 import { ShopListSearchResult } from '../(private)/shop/_lib/types';
 import { UserListSearchResult } from '../(private)/user/_lib/types';
 
@@ -22,7 +22,7 @@ export function MockDataCreate_UserResult() {
         branch_name: i % 2 ? '本郷事業所' : i % 3 ? 'XXXX支店' : 'OOOO支店',
       },
       user_name_kana: 'ユーザーネーム' + i,
-      user_usage_status: '',
+      user_registration_status: '',
     });
   }
   return result;
@@ -44,16 +44,17 @@ export function MockDataCreate_OrderResult() {
       branch_name: i % 2 ? '本郷事業所' : i % 3 ? 'XXXX支店' : 'OOOO支店',
       count: i,
       payment_state: i % 2 ? '0' : i % 3 ? '1' : '2',
-      order_state: i % 2 ? '0' : i % 3 ? '1' : '2',
+      order_status: i % 2 ? 0 : i % 3 ? 1 : 2,
     });
   }
   return result;
 }
 
 export function MockDataCreate_ScheduleResult() {
-  const result: ScheduleListSearchResult[] = [];
+  const data: ScheduleData[] = [];
+
   for (let i = 1; i <= 30; i++) {
-    result.push({
+    data.push({
       id: 'id' + i.toString().padStart(4, '0'),
       delivery_day: '2025/04/' + i.toString().padStart(2, '0'),
       company_name:
@@ -65,10 +66,12 @@ export function MockDataCreate_ScheduleResult() {
       branch_name: i % 2 ? '本郷事業所' : i % 3 ? 'XXXX支店' : 'OOOO支店',
       shop_name: i % 2 ? 'COCO壱' : 'XXXXXXXXXX',
       menu_name: i % 2 ? 'チキンカレー' : i % 3 ? 'マッサマンカレー' : 'ビーフカレー',
-      count: i,
-      allergen_labelling: i % 2 ? ['ごま', '卵', '乳', '落花生', '大豆'] : i % 3 ? ['えび', 'かに'] : [],
+      order_count: i,
+      allergen_labelling: i % 2 ? 'ごま, 卵, 乳, 落花生, 大豆' : i % 3 ? 'えび, かに' : '',
     });
   }
+
+  const result: ScheduleListSearchResult = { orderAmout: 100, scheduleDatas: data };
   return result;
 }
 
@@ -83,7 +86,7 @@ export function MockDataCreate_ShopSearchResult() {
           ? '〒113-0033\n東京都文京区本郷３丁目４０−３ トーセービル 4階'
           : '〒060-0002\n北海道札幌市中央区北二条西三丁目 札幌北2条ビル 8階 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
       usage_status: i % 2 ? '0' : i % 3 ? '1' : '2',
-      shop_post_code: i % 2 ? '113-0033' : '060-0002',
+      shop_postal_code: i % 2 ? '113-0033' : '060-0002',
     });
   }
   return result;
@@ -96,7 +99,7 @@ export function MockDataCreate_CompanySearchResult() {
       id: 'id' + i.toString().padStart(4, '0'),
       company_name: '株式会社リファクト',
       branch_name: i % 2 ? '本郷事業所' : '札幌事業所',
-      post_code: i % 2 ? '113-0033' : '060-0002',
+      postal_code: i % 2 ? '113-0033' : '060-0002',
       prefectures:
         i % 2
           ? '東京都文京区本郷３丁目４０−３ トーセービル 4階'

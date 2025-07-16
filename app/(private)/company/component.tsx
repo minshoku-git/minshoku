@@ -2,13 +2,15 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Box, Button, Divider, Paper, TableCell, TableRow, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2';
+import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { JSX, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { JSX, useEffect, useState } from 'react';
+import { SubmitHandler, useForm } from 'react-hook-form';
 import { SelectElement, TextFieldElement } from 'react-hook-form-mui';
 
-import { searchComponyList } from '@/app/_actions/actions';
-import { AlertType, SortType, UsageStatus } from '@/app/_types/enum';
+import { AlertType, SearchType, SortType, UsageStatus } from '@/app/_types/enum';
+import { QUERY_KEYS } from '@/app/_types/queryKeys';
+import { SESSION_STORAGE_KEYS } from '@/app/_types/sessionStorageKeys';
 import { ApiRequest, ApiResponse, HeaderStatus } from '@/app/_types/types';
 import { CustomTable } from '@/app/_ui/_shared/costomTable/customTable';
 import { ResultsCounter } from '@/app/_ui/_shared/resultsCounter';
@@ -17,6 +19,7 @@ import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
 
 import { state as stateMockData } from '../../../public/state.json';
 import ItemBase from '../../_ui/_shared/itemBase';
+import { ShopSearchFormValues } from '../shop/_lib/types';
 import { CompanyListSearchResult, CompanySearchFormValues, CompanySearchSchema } from './_lib/types';
 
 /* ページ名 */
@@ -28,6 +31,22 @@ const resultHeader: Array<HeaderStatus> = [
   { name: '住所', variableName: 'address', sort: SortType.ASC },
   { name: '利用ステータス', variableName: 'usage_status', sort: SortType.ASC },
 ];
+
+const initConditionValues: ApiRequest<CompanySearchFormValues> = {
+  request: {
+    company_name: '',
+    branch_name: '',
+    prefectures: '',
+    municipalities: '',
+    town_area: '',
+    usage_status: undefined,
+  },
+  sortItems: {
+    nextPage: 1,
+    sortColumn: 'company_name',
+    ascending: true,
+  },
+};
 
 /**
  * 会社一覧Component
@@ -46,40 +65,18 @@ export const CompanyComponent = (): JSX.Element => {
   const [sortArray, setSortArray] = useState<HeaderStatus[]>(resultHeader);
   /* 現在のソート対象項目 */
   const [sortTarget, setSortTarget] = useState<HeaderStatus>(resultHeader[0]);
+  /* 現在の検索種別 */
+  const [searchType, setSearchType] = useState<SearchType>(SearchType.SEARCH);
 
   /* 検索結果 */
   const [isSearch, setIsSearch] = useState(false);
-  const [condition, setCondition] = useState<ApiRequest<CompanySearchFormValues>>({
-    request: {
-      company_name: '',
-      branch_name: '',
-      prefectures: '',
-      municipalities: '',
-      town_area: '',
-      usage_status: undefined,
-    },
-    sortItems: {
-      nextPage: 1,
-      sortColumn: 'company_name',
-      ascending: true,
-    },
-  });
+  const [condition, setCondition] = useState<ApiRequest<CompanySearchFormValues> | null>(null);
   /* 検索結果 */
-  const [result, setResult] = useState<ApiResponse<CompanyListSearchResult[]> | null>({
-    data: null,
-    error: null,
-    paginate: {
-      count: 0,
-      currentPage: 0,
-      startRow: 0,
-      endRow: 0,
-      totalPage: 0,
-    },
-  });
+  const [result, setResult] = useState<ApiResponse<CompanyListSearchResult[]> | null>(null);
 
   /* useForm
   ------------------------------------------------------------------ */
-  const { handleSubmit, reset, control, getValues } = useForm<CompanySearchFormValues>({
+  const { handleSubmit, reset, control, getValues, setValue } = useForm<CompanySearchFormValues>({
     mode: 'onSubmit',
     reValidateMode: 'onSubmit',
     resolver: zodResolver(CompanySearchSchema),
@@ -93,119 +90,143 @@ export const CompanyComponent = (): JSX.Element => {
     },
   });
 
+  /* useQuery
+ ------------------------------------------------------------------ */
+  const fetchData = async () => {
+    const response = await fetch('/api/company/search', {
+      method: 'POST',
+      body: JSON.stringify(condition),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const res: ApiResponse<CompanyListSearchResult[]> = await response.json();
+    return res;
+  };
+
+  const { data, isFetching, refetch } = useQuery<ApiResponse<CompanyListSearchResult[]>>({
+    queryKey: [QUERY_KEYS.COMPANY_SEARCH_RESULT, condition],
+    queryFn: fetchData,
+    enabled: false,
+  });
+
+  /* useEffect
+  ------------------------------------------------------------------ */
+  useEffect(() => {
+    const searchCondition = sessionStorage.getItem(SESSION_STORAGE_KEYS.COMPANY_SEARCH_CONDITION);
+    const searchConditionLocal = localStorage.getItem('保存');
+    console.log(searchConditionLocal);
+    const previousPath = sessionStorage.getItem(SESSION_STORAGE_KEYS.PREVIOUS_PATH);
+    if (searchCondition && previousPath === '/companyDetail') {
+      const req: ApiRequest<CompanySearchFormValues> = JSON.parse(searchCondition);
+      setCondition(req);
+      setValue('company_name', req.request.company_name);
+      setValue('branch_name', req.request.usage_status);
+      setValue('prefectures', req.request.prefectures);
+      setValue('municipalities', req.request.municipalities);
+      setValue('town_area', req.request.town_area);
+      setValue('usage_status', req.request.usage_status);
+    }
+    sessionStorage.clear();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    // condition変化時に検索を実行
+    if (condition !== null) {
+      refetch();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [condition]);
+
+  useEffect(() => {
+    if (isFetching) {
+      openProcessing();
+    } else {
+      closeProcessing();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFetching]);
+
+  useEffect(() => {
+    if (!data) {
+      return;
+    }
+    if (data?.error) {
+      openSnackbar(AlertType.ERROR, '検索時にエラーが発生しました。再度発生する場合は、管理者にお問い合わせください。');
+      setResult(null);
+      setIsSearch(false);
+      return;
+    }
+    if (searchType === SearchType.SEARCH) {
+      setSortArray(resultHeader);
+      setSortTarget(resultHeader[0]);
+    }
+    if (searchType === SearchType.SORT) {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth',
+      });
+    }
+    setIsSearch(true);
+    setResult(data ?? null);
+    closeProcessing();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
+
   /* functions 
   ------------------------------------------------------------------ */
   /* 検索ハンドラ */
-  const searchHandler = async () => {
+  const searchHandler: SubmitHandler<ShopSearchFormValues> = async (data) => {
     openProcessing();
     const req: ApiRequest<CompanySearchFormValues> = {
-      request: getValues(),
+      request: data,
       sortItems: {
         nextPage: 1,
         sortColumn: 'company_name',
         ascending: true,
       },
     };
-
-    const response = await fetch('/api/company/search', {
-      method: 'POST',
-      body: JSON.stringify(req),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    const res: ApiResponse<CompanyListSearchResult[]> = await response.json();
-
-    if (res.error) {
-      openSnackbar(AlertType.ERROR, '検索時にエラーが発生しました。再度発生する場合は、管理者にお問い合わせください。');
-      setResult(null);
-      setIsSearch(false);
-    } else {
-      setSortArray(resultHeader);
-      setSortTarget(resultHeader[0]);
-      setCondition(req);
-      setResult(res);
-      setIsSearch(true);
-    }
-    closeProcessing();
+    setSearchType(SearchType.SEARCH);
+    setCondition(req);
   };
 
   /* 並び替えハンドラ */
   const sortHandler = async (sortColumn: string, ascending: boolean) => {
     openProcessing();
     const req: ApiRequest<CompanySearchFormValues> = {
-      request: condition.request,
+      request: condition?.request ?? initConditionValues.request,
       sortItems: {
         nextPage: 1,
         sortColumn: sortColumn,
         ascending: ascending,
       },
     };
-
-    const response = await fetch('/api/company/search', {
-      method: 'POST',
-      body: JSON.stringify(req),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    const res: ApiResponse<CompanyListSearchResult[]> = await response.json();
-
-    if (res.error) {
-      openSnackbar(AlertType.ERROR, '検索時にエラーが発生しました。再度発生する場合は、管理者にお問い合わせください。');
-      setResult(null);
-      setIsSearch(false);
-    } else {
-      setCondition(req);
-      setResult(res);
-      setIsSearch(true);
-    }
-    closeProcessing();
+    setSearchType(SearchType.SORT);
+    setCondition(req);
   };
 
   /* ページ送りハンドラ */
   const pageChangeHandler = async (_event: React.ChangeEvent<unknown>, nextPage: number) => {
     openProcessing();
     const req: ApiRequest<CompanySearchFormValues> = {
-      request: condition.request,
+      request: condition?.request ?? initConditionValues.request,
       sortItems: {
         nextPage: nextPage ?? 0,
-        sortColumn: condition.sortItems?.sortColumn ?? 'company_name',
-        ascending: condition.sortItems?.ascending ?? true,
+        sortColumn: condition?.sortItems?.sortColumn ?? 'company_name',
+        ascending: condition?.sortItems?.ascending ?? true,
       },
     };
-
-    const response = await fetch('/api/company/search', {
-      method: 'POST',
-      body: JSON.stringify(req),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    const res: ApiResponse<CompanyListSearchResult[]> = await response.json();
-
-    if (res.error) {
-      openSnackbar(AlertType.ERROR, '検索時にエラーが発生しました。再度発生する場合は、管理者にお問い合わせください。');
-      setResult(null);
-      setIsSearch(false);
-    } else {
-      setResult(res);
-      setIsSearch(true);
-      window.scrollTo({
-        top: 0,
-        behavior: 'smooth',
-      });
-    }
-    closeProcessing();
+    setSearchType(SearchType.PAGENATION);
+    setCondition(req);
   };
 
   // 明細行リンクハンドラ
   const linkHandler = (id: string) => {
+    localStorage.setItem('保存', 'あいうえお');
+    sessionStorage.setItem(SESSION_STORAGE_KEYS.COMPANY_SEARCH_CONDITION, JSON.stringify(condition));
     router.push(`/companyDetail/${id}`);
-    reset();
   };
 
   // リセット
@@ -281,40 +302,7 @@ export const CompanyComponent = (): JSX.Element => {
                   }}
                   gap={2}
                 >
-                  <SelectElement
-                    control={control}
-                    size="small"
-                    name="prefectures"
-                    label="都道府県"
-                    fullWidth
-                    options={stateData}
-                  ></SelectElement>
-                  <SelectElement
-                    control={control}
-                    size="small"
-                    name="municipalities"
-                    label="市区"
-                    fullWidth
-                    options={[
-                      { id: '', label: '未選択', value: '未選択' },
-                      { id: '10', label: '市区1', value: '市区1' },
-                      { id: '20', label: '市区2', value: '市区2' },
-                      { id: '30', label: '市区3', value: '市区3' },
-                    ]}
-                  ></SelectElement>
-                  <SelectElement
-                    control={control}
-                    size="small"
-                    name="town_area"
-                    label="町村"
-                    fullWidth
-                    options={[
-                      { id: '', label: '未選択' },
-                      { id: '10', label: '町村1' },
-                      { id: '20', label: '町村2' },
-                      { id: '30', label: '町村3' },
-                    ]}
-                  ></SelectElement>
+                  <TextFieldElement control={control} size="small" color={'primary'} name="prefectures" fullWidth />
                 </Box>
               </ItemBase>
               <ItemBase name={'利用ステータス'} isRequired={2}>
@@ -391,7 +379,7 @@ export const CompanyComponent = (): JSX.Element => {
                         hover
                         sx={{ '&:hover': { cursor: 'pointer' } }}
                         onClick={() => {
-                          linkHandler(row.id.toString());
+                          linkHandler(row.id);
                         }}
                       >
                         <TableCell width={'20%'}>{row.company_name}</TableCell>
@@ -404,7 +392,7 @@ export const CompanyComponent = (): JSX.Element => {
                           }}
                           width={'50%'}
                         >
-                          〒{row.post_code}
+                          〒{row.postal_code}
                           <br />
                           {row.prefectures}
                           {row.municipalities}
@@ -412,9 +400,7 @@ export const CompanyComponent = (): JSX.Element => {
                           {row.area_block_number}
                           {row.building_name}
                         </TableCell>
-                        <TableCell width={'10%'}>
-                          {UsageStatus.AVAILABLE === row.usage_status ? '利用可能' : '利用停止'}
-                        </TableCell>
+                        <TableCell width={'10%'}>{row.usage_status}</TableCell>
                       </TableRow>
                     ))
                   }

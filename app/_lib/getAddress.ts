@@ -38,8 +38,6 @@ export type JsonResponse = {
  * @returns {AddressResponse} 住所(都道府県・市区・町村)
  */
 export const getAddress = async (postcode: string): Promise<AddressResponse> => {
-  console.log('やほー！');
-
   // 入力文字数確認
   if (postcode.length !== 7) {
     return {
@@ -65,7 +63,7 @@ export const getAddress = async (postcode: string): Promise<AddressResponse> => 
       if (!json.results) {
         console.log(json.message);
         return {
-          errorMessage: '住所を取得できませんでした。番号をお確かめの上、再度お試しください。',
+          errorMessage: '住所を取得できませんでした。郵便番号をお確かめの上、再度お試しください。',
           prefecture: '',
           city: '',
           suburb: '',
@@ -107,7 +105,7 @@ export const getAddress = async (postcode: string): Promise<AddressResponse> => 
     })
     .catch((error) => {
       console.error(error);
-      return { ...res, errorMessage: '住所を取得できませんでした。番号をお確かめの上、再度お試しください。' };
+      return { ...res, errorMessage: '住所を取得できませんでした。郵便番号をお確かめの上、再度お試しください。' };
     });
 
   console.log('返却値:', res);

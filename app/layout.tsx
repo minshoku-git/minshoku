@@ -4,7 +4,7 @@ import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import type { Metadata } from 'next';
 import React from 'react';
 
-import { DirtyProvider, useDirty } from './_ui/dirty/dartyContext';
+import { DirtyProvider } from './_ui/dirty/dartyContext';
 import { notoSansJp } from './_ui/fonts';
 import ThemeProvider from './_ui/theme-provider';
 

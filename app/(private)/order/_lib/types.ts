@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { formatString } from '@/app/_lib/utill';
 import { MSG_INVALID, MSG_MAX, MSG_REQUIRED } from '@/app/_types/constants';
+import { OrderStatus } from '@/app/_types/enum';
 
 /**
  * オーダー一覧 検索条件 Schema
@@ -33,19 +34,14 @@ export const OrderSearchSchema = z
       }),
     ]),
     /** ユーザー名 */
-    userName: z.string().optional(),
+    user_name: z.string().optional(),
     /** 会社名 */
-    companyName: z
+    company_name: z
       .string()
       .max(64, formatString(MSG_MAX, '会社名', '64'))
       .optional(),
-    /** 支店名 */
-    branchName: z
-      .string()
-      .max(64, formatString(MSG_MAX, '会社名', '64'))
-      .optional(),
-    /** ステータス */
-    status: z.string().optional(),
+    /** 注文ステータス */
+    order_status: z.union([z.string().optional(), z.nativeEnum(OrderStatus)]),
   })
   /** 提供時間 FROM<TOではない */
   .superRefine((data, ctx) => {
@@ -99,5 +95,73 @@ export type OrderListSearchResult = {
   /** 支払いステータス */
   payment_state: string;
   /** 注文ステータス */
-  order_state: string;
+  order_status: number;
+};
+
+/** 取得結果 オーダー詳細 */
+export type orderDeteilResponseData = {
+  /** id */
+  id?: string;
+  /** 納品日 */
+  delivery_day?: string | Date;
+  /** 個数 */
+  count?: number;
+  /** 単価 */
+  unit_price?: number;
+  /** 総額 */
+  amount?: number;
+  /** 支払い種別 */
+  payment_type?: number;
+  /** オーダーステータス */
+  order_status?: number;
+  /** 注文日時 */
+  order_datetime?: string | Date;
+  /** スケジュール */
+  t_menu_schedule: {
+    /** メニュー名 */
+    menu_name?: string;
+  };
+  /** 店舗テーブル */
+  t_shops: {
+    /** 店舗名 */
+    shop_name?: string;
+  };
+  /** ユーザーテーブル */
+  t_user: {
+    /** ユーザー名 */
+    user_name?: string;
+    /** ユーザー名カナ */
+    user_name_kana?: string;
+    /** メールアドレス */
+    user_email?: string;
+  };
+  /** 会社テーブル */
+  t_companies: {
+    /** 会社名 */
+    company_name?: string;
+    /** 支店名 */
+    branch_name?: string;
+    /** 郵便番号 */
+    postal_code?: string;
+    /** 都道府県 */
+    prefectures?: string;
+    /** 市区 */
+    municipalities?: string;
+    /** 町村 */
+    town_area?: string;
+    /** 番地 */
+    area_block_number?: string;
+    /** 建物名 */
+    building_name?: string;
+  };
+  /** 企業部署情報テーブル */
+  t_companies_department: {
+    /** 部署名 */
+    department_name?: string;
+  };
+  /** 企業雇用形態テーブル */
+  t_companies_employment_status: {
+    /** 雇用形態名 */
+    employment_status_name?: string;
+  };
 };

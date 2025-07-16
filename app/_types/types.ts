@@ -31,13 +31,13 @@ export type SortItems = {
 };
 
 export type ApiResponse<T> = {
-  data: T | null;
-  error: string | null;
+  data?: T;
+  error?: string;
   paginate?: PaginateData;
 };
 
 export type PaginateData = {
-  count: number | null;
+  count: number;
   currentPage: number;
   totalPage: number;
   startRow: number;

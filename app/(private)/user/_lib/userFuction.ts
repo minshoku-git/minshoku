@@ -1,9 +1,15 @@
 import { PostgrestSingleResponse } from '@supabase/supabase-js';
 
-import { supabase } from '@/app/_lib/supabase/supabase';
+import { createClient } from '@/app/_lib/supabase/server';
 import { getPagenationsItems, getRange } from '@/app/_lib/utill';
-import { convertUserUsageStatusName, UserUsageStatus } from '@/app/_types/enum';
-import { ApiRequest, ApiResponse } from '@/app/_types/types';
+import { ERROR_MESSAGE } from '@/app/_types/constants';
+import {
+  convertUsageStatusName,
+  convertUserRegistrationStatusName,
+  UsageStatus,
+  UserRegistrationStatus,
+} from '@/app/_types/enum';
+import { ApiRequest, ApiResponse, SortItems } from '@/app/_types/types';
 
 import { UserListSearchResult, UserSearchFormValues } from './types';
 
@@ -19,64 +25,167 @@ import { UserListSearchResult, UserSearchFormValues } from './types';
 export const _searchUserList = async (
   values: ApiRequest<UserSearchFormValues>
 ): Promise<ApiResponse<UserListSearchResult[]>> => {
-  const { startRange, endRange } = getRange(values.sortItems?.nextPage ?? 0);
-  const req = values.request;
+  const supabase = await createClient();
 
-  let query = supabase
-    .from('t_user')
-    .select(`id,user_name,user_name_kana,user_usage_status,t_companies_id,t_companies!inner(company_name,branch_name)`)
-    .range(startRange, endRange);
-  let queryCount = supabase
-    .from('t_user')
-    .select(
-      `id,user_name,user_name_kana,user_usage_status,t_companies_id,t_companies!inner(company_name,branch_name)`,
+  const req = values.request;
+  const sortItems = values.sortItems;
+  const { startRange, endRange } = getRange(values.sortItems?.nextPage ?? 0);
+
+  try {
+    /* 件数取得
+    ------------------------------------------------------------------ */
+    let queryCount = supabase.from('t_user').select(
+      `id,
+        user_name,
+        user_name_kana,
+        user_registration_status,
+        usage_status,
+        t_companies_id,
+        t_companies!inner(
+          company_name,
+          branch_name
+        )`,
       {
         count: 'exact',
         head: true,
       }
     );
+    queryCount = applyFilters(queryCount, req);
 
+    const { count, error: countError } = (await queryCount) as PostgrestSingleResponse<UserListSearchResult[]>;
+
+    if (countError) {
+      console.error(countError);
+      return { error: 'ユーザー情報の件数取得' + ERROR_MESSAGE.TEMPLATE };
+    }
+    if (!count) {
+      return {
+        paginate: {
+          count: 0,
+          startRow: 0,
+          endRow: 0,
+          totalPage: 0,
+          currentPage: 0,
+        },
+      };
+    }
+
+    /* 明細行取得
+    ------------------------------------------------------------------ */
+    let query = supabase
+      .from('t_user')
+      .select(
+        `id,
+        user_name,
+        user_name_kana,
+        user_registration_status,
+        usage_status,t_companies_id,
+        t_companies!inner(
+          company_name,
+          branch_name
+        )`
+      )
+      .range(startRange, endRange);
+    query = applyFilters(query, req);
+    query = applySorts(query, sortItems);
+
+    const { data, error } = (await query) as PostgrestSingleResponse<UserListSearchResult[]>;
+    if (error) {
+      console.error(error);
+      return { error: 'ユーザー情報の取得' + ERROR_MESSAGE.TEMPLATE };
+    }
+
+    /* 返却
+    ------------------------------------------------------------------ */
+    const { startRow, endRow, totalPage } = getPagenationsItems(startRange, data.length, count);
+
+    return {
+      data: data.map((m) => {
+        return {
+          ...m,
+          user_registration_status: convertUserRegistrationStatusName(
+            m.user_registration_status.toString() as UserRegistrationStatus
+          ),
+          usage_status: convertUsageStatusName(m.usage_status?.toString() as UsageStatus),
+        };
+      }),
+      paginate: {
+        count,
+        startRow,
+        endRow,
+        totalPage,
+        currentPage: values.sortItems?.nextPage ?? 0,
+      },
+    };
+  } catch (error) {
+    console.error(error);
+    return { error: ERROR_MESSAGE.UNEXPECTED };
+  }
+};
+
+/**
+ * 検索条件を設定します。
+ * @param {any} query - Query
+ * @param {UserSearchFormValues} req
+ * @returns {any} query 検索条件追加後のQuery
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const applyFilters = (query: any, req: UserSearchFormValues) => {
   // ユーザー名
   if (req.user_name) {
     query = query.or(`user_name.ilike.%${req.user_name}%, user_name_kana.ilike.%${req.user_name}%`);
-    queryCount = queryCount.or(`user_name.ilike.%${req.user_name}%, user_name_kana.ilike.%${req.user_name}%`);
   }
   // 会社名
   if (req.company_name) {
     query = query.ilike('t_companies.company_name', `%${req.company_name}%`);
-    queryCount = queryCount.ilike('t_companies.company_name', `%${req.company_name}%`);
   }
   // 支店名
   if (req.branch_name) {
     query = query.ilike('t_companies.branch_name', `%${req.branch_name}%`);
-    queryCount = queryCount.ilike('t_companies.branch_name', `%${req.branch_name}%`);
   }
   // 利用ステータス
-  if (req.user_usage_status) {
-    query = query.eq('user_usage_status', req.user_usage_status);
-    queryCount = queryCount.eq('user_usage_status', req.user_usage_status);
+  if (req.usage_status) {
+    query = query.eq('usage_status', req.usage_status);
+  }
+  // 登録ステータス
+  if (req.user_registration_status) {
+    query = query.eq('user_registration_status', req.user_registration_status);
   }
 
+  return query;
+};
+
+/**
+ * ソート条件を設定します。
+ * @param {query} query - Query
+ * @param {sortItems | undefined} sortItems - ソート条件
+ * @returns {any} query 検索条件追加後のQuery
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const applySorts = (query: any, sortItems: SortItems | undefined) => {
   // ソート順序 ※内部結合の項目は()で参照
   const sortConditions: Array<string> = [
     'user_name',
     't_companies(company_name)',
     't_companies(branch_name)',
-    'user_usage_status',
+    'usage_status',
+    'user_registration_status',
   ];
 
   // ソート初期値を確認
   const sortColumn =
-    values.sortItems?.sortColumn === 'user_name'
+    sortItems?.sortColumn === 'user_name'
       ? 'user_name'
-      : values.sortItems?.sortColumn === 'company_name'
+      : sortItems?.sortColumn === 'company_name'
         ? 't_companies(company_name)'
-        : values.sortItems?.sortColumn === 'branch_name'
+        : sortItems?.sortColumn === 'branch_name'
           ? 't_companies(branch_name)'
-          : 'user_usage_status';
+          : sortItems?.sortColumn === 'usage_status'
+            ? 'usage_status'
+            : 'user_registration_status';
 
   // ソートの最優先項目を設定
-  query = query.order(sortColumn, { ascending: values.sortItems?.ascending });
+  query = query.order(sortColumn, { ascending: sortItems?.ascending });
 
   // 2番目以降のソートを設定
   for (const column of sortConditions) {
@@ -85,57 +194,5 @@ export const _searchUserList = async (
     }
   }
 
-  // 件数取得
-  const { count, error: countError } = (await queryCount) as PostgrestSingleResponse<UserListSearchResult[]>;
-  if (countError) {
-    console.log(countError.message);
-    return {
-      data: null,
-      error: countError.message,
-      paginate: {
-        count: 0,
-        startRow: 0,
-        endRow: 0,
-        totalPage: 0,
-        currentPage: 0,
-      },
-    };
-  }
-
-  // 明細行取得
-  const { data, error } = (await query) as PostgrestSingleResponse<UserListSearchResult[]>;
-  if (error) {
-    console.log(error.message);
-    return {
-      data: null,
-      error: error.message,
-      paginate: {
-        count: 0,
-        startRow: 0,
-        endRow: 0,
-        totalPage: 0,
-        currentPage: 0,
-      },
-    };
-  }
-
-  // 結果返却
-  const { startRow, endRow, totalPage } = getPagenationsItems(startRange, data.length, count ?? 0);
-
-  return {
-    data: data.map((m) => {
-      return {
-        ...m,
-        user_usage_status: convertUserUsageStatusName(m.user_usage_status as UserUsageStatus),
-      };
-    }),
-    error: null,
-    paginate: {
-      count,
-      startRow,
-      endRow,
-      totalPage,
-      currentPage: values.sortItems?.nextPage ?? 0,
-    },
-  };
+  return query;
 };

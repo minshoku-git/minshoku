@@ -4,15 +4,17 @@ import { Box, Button, Divider, Paper, TableCell, TableRow, Typography } from '@m
 import Grid from '@mui/material/Grid2';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { useQuery } from '@tanstack/react-query';
 import { ja } from 'date-fns/locale';
-import { JSX, useState } from 'react';
+import { JSX, useEffect, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { TextFieldElement } from 'react-hook-form-mui';
 import { DatePickerElement } from 'react-hook-form-mui/date-pickers';
 
-import { MockDataCreate_ScheduleResult } from '@/app/_lib/createMockData';
 import { getNow, getTomorrow, getYesterday } from '@/app/_lib/getDateTime';
-import { AlertType, SortType } from '@/app/_types/enum';
+import { AlertType, SearchType, SortType } from '@/app/_types/enum';
+import { QUERY_KEYS } from '@/app/_types/queryKeys';
+import { SESSION_STORAGE_KEYS } from '@/app/_types/sessionStorageKeys';
 import { ApiRequest, ApiResponse, HeaderStatus } from '@/app/_types/types';
 import { CustomTable } from '@/app/_ui/_shared/costomTable/customTable';
 import ItemBase from '@/app/_ui/_shared/itemBase';
@@ -30,8 +32,8 @@ const resultHeader: Array<HeaderStatus> = [
   { name: '会社名 / 支店名', variableName: 'company_name', sort: SortType.ASC },
   { name: '店舗名', variableName: 'shop_name', sort: SortType.ASC },
   { name: 'メニュー名', variableName: 'menu_name', sort: SortType.ASC },
-  { name: '食数', variableName: 'count', sort: SortType.ASC },
-  { name: 'アレルギー', variableName: 'allergies', sort: SortType.ASC },
+  { name: '食数', variableName: 'order_count', sort: SortType.ASC },
+  { name: 'アレルギー', variableName: 'allergen_labelling', sort: SortType.ASC },
 ];
 
 /**
@@ -46,39 +48,18 @@ export const ScheduleComponent = (): JSX.Element => {
 
   /* useState
   ------------------------------------------------------------------ */
+  /* 検索種別 */
+  const [searchType, setSearchType] = useState<SearchType>(SearchType.SEARCH);
   /* ソート配列 */
   const [sortArray, setSortArray] = useState<HeaderStatus[]>(resultHeader);
   /* 現在のソート対象項目 */
   const [sortTarget, setSortTarget] = useState<HeaderStatus>(resultHeader[0]);
 
-  /* 検索結果 */
+  /* 検索状態 */
   const [isSearch, setIsSearch] = useState(false);
-  /* 検索条件 */
-  const [condition, setCondition] = useState<ApiRequest<ScheduleSearchFormValues>>({
-    request: {
-      company_name: '',
-      shop_name: '',
-      deliveryFrom: getNow(),
-      deliveryTo: getNow(),
-    },
-    sortItems: {
-      nextPage: 1,
-      sortColumn: 'company_name',
-      ascending: true,
-    },
-  });
-  /* 検索結果 */
-  const [result, setResult] = useState<ApiResponse<ScheduleListSearchResult[]> | null>({
-    data: null,
-    error: null,
-    paginate: {
-      count: 0,
-      currentPage: 0,
-      startRow: 0,
-      endRow: 0,
-      totalPage: 0,
-    },
-  });
+  /* 検索条件/検索結果 */
+  const [condition, setCondition] = useState<ApiRequest<ScheduleSearchFormValues> | null>(null);
+  const [result, setResult] = useState<ApiResponse<ScheduleListSearchResult> | null>(null);
 
   /* useForm
   ------------------------------------------------------------------ */
@@ -127,9 +108,79 @@ export const ScheduleComponent = (): JSX.Element => {
     setValue('deliveryTo', getNow());
   };
 
-  /** 検索ハンドラ */
+  /* useQuery
+------------------------------------------------------------------ */
+  const fetchData = async () => {
+    const response = await fetch('/api/schedule', {
+      method: 'POST',
+      body: JSON.stringify(condition),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const res: ApiResponse<ScheduleListSearchResult> = await response.json();
+    return res;
+  };
+
+  const { data, isFetching, refetch, isError } = useQuery<ApiResponse<ScheduleListSearchResult>>({
+    queryKey: [QUERY_KEYS.SCHEDULE_SEARCH_RESULT, condition],
+    queryFn: fetchData,
+    enabled: false,
+  });
+
+  /* useEffect
+  ------------------------------------------------------------------ */
+  useEffect(() => {
+    // condition変化時に検索を実行
+    if (condition !== null) {
+      refetch();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [condition]);
+
+  useEffect(() => {
+    if (isFetching) {
+      openProcessing();
+    } else {
+      closeProcessing();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFetching]);
+
+  useEffect(() => {
+    if (!data) {
+      return;
+    }
+    if (data.error || isError) {
+      openSnackbar(
+        AlertType.ERROR,
+        data.error ? data.error : '検索時にエラーが発生しました。再度発生する場合は、管理者にお問い合わせください。'
+      );
+      setResult(null);
+      setIsSearch(false);
+      return;
+    }
+    if (searchType === SearchType.SEARCH) {
+      setSortArray(resultHeader);
+      setSortTarget(resultHeader[0]);
+    }
+    if (searchType === SearchType.SORT) {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth',
+      });
+    }
+    setIsSearch(true);
+    setResult(data ?? null);
+    closeProcessing();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
+
+  /* functions
+  ------------------------------------------------------------------ */
+  /** 検索 */
   const searchHandler: SubmitHandler<ScheduleSearchFormValues> = async (data) => {
-    openProcessing();
     const req: ApiRequest<ScheduleSearchFormValues> = {
       request: data,
       sortItems: {
@@ -138,23 +189,38 @@ export const ScheduleComponent = (): JSX.Element => {
         ascending: true,
       },
     };
-    // const res = await searchScheduleList(req);
-    // todo: 差し替え
-    const res: ApiResponse<ScheduleListSearchResult[]> = {
-      error: '',
-      data: MockDataCreate_ScheduleResult(),
-      paginate: { count: 30, currentPage: 1, endRow: 30, startRow: 1, totalPage: 1 },
+    setSearchType(SearchType.SEARCH);
+    setCondition(req);
+  };
+
+  /** ソート */
+  const sortHandler = async (sortColumn: string, ascending: boolean) => {
+    openProcessing();
+    const req: ApiRequest<ScheduleSearchFormValues> = {
+      request: condition?.request ?? initConditionValues.request,
+      sortItems: {
+        nextPage: 1,
+        sortColumn: sortColumn,
+        ascending: ascending,
+      },
     };
-    if (res.error) {
-      openSnackbar(AlertType.ERROR, '検索時にエラーが発生しました。再度発生する場合は、管理者にお問い合わせください。');
-      setResult(null);
-      setIsSearch(false);
-    } else {
-      setCondition(req);
-      setResult(res);
-      setIsSearch(true);
-    }
-    closeProcessing();
+    setSearchType(SearchType.SORT);
+    setCondition(req);
+  };
+
+  /** ページネーション */
+  const pageChangeHandler = async (_event: React.ChangeEvent<unknown>, nextPage: number) => {
+    openProcessing();
+    const req: ApiRequest<ScheduleSearchFormValues> = {
+      request: condition?.request ?? initConditionValues.request,
+      sortItems: {
+        nextPage: nextPage ?? 0,
+        sortColumn: condition?.sortItems?.sortColumn ?? 'delivery_day',
+        ascending: condition?.sortItems?.ascending ?? true,
+      },
+    };
+    setSearchType(SearchType.PAGENATION);
+    setCondition(req);
   };
 
   /* DOM
@@ -277,7 +343,7 @@ export const ScheduleComponent = (): JSX.Element => {
                   </Button>
                 </Box>
               </ItemBase>
-              <ItemBase name={'会社名'} isRequired={2}>
+              <ItemBase name={'会社名 / 支店名'} isRequired={2}>
                 <Box
                   sx={{
                     display: 'flex',
@@ -335,7 +401,7 @@ export const ScheduleComponent = (): JSX.Element => {
                       count={result.paginate?.count}
                     />
                     {/* 合計食数 */}
-                    <Typography sx={{ fontSize: '14px', ml: 2 }}>合計食数 : 1000</Typography>
+                    <Typography sx={{ fontSize: '14px', ml: 2 }}>合計食数 : {result.data?.orderAmout ?? 0}</Typography>
                   </Box>
                 </>
               ) : (
@@ -343,8 +409,8 @@ export const ScheduleComponent = (): JSX.Element => {
               )}
               <CustomTable
                 paginate={result.paginate}
-                sortHandler={() => {}}
-                pageChangeHandler={() => {}}
+                sortHandler={sortHandler}
+                pageChangeHandler={pageChangeHandler}
                 header={resultHeader}
                 sortArray={sortArray}
                 setSortArray={setSortArray}
@@ -352,7 +418,7 @@ export const ScheduleComponent = (): JSX.Element => {
                 setSortTarget={setSortTarget}
                 renderBody={() =>
                   /* 検索結果 */
-                  result.data?.map((row, index) => (
+                  result.data?.scheduleDatas.map((row, index) => (
                     <TableRow key={index} hover>
                       <TableCell sx={{ whiteSpace: 'pre' }}>{row.delivery_day}</TableCell>
                       <TableCell>
@@ -363,9 +429,9 @@ export const ScheduleComponent = (): JSX.Element => {
                       <TableCell>{row.shop_name}</TableCell>
                       <TableCell>{row.menu_name}</TableCell>
                       <TableCell sx={{ width: '20px' }} align="right">
-                        {row.count}
+                        {row.order_count}
                       </TableCell>
-                      <TableCell sx={{ width: '20px' }}>{row.allergen_labelling.join(' / ')}</TableCell>
+                      <TableCell sx={{ width: '20px' }}>{row.allergen_labelling}</TableCell>
                     </TableRow>
                   ))
                 }
@@ -376,4 +442,18 @@ export const ScheduleComponent = (): JSX.Element => {
       </Paper>
     </>
   );
+};
+
+const initConditionValues: ApiRequest<ScheduleSearchFormValues> = {
+  request: {
+    deliveryFrom: getNow(),
+    deliveryTo: getNow(),
+    company_name: '',
+    shop_name: '',
+  },
+  sortItems: {
+    nextPage: 1,
+    sortColumn: 'delivery_day',
+    ascending: true,
+  },
 };

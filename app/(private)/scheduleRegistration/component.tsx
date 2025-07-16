@@ -6,6 +6,7 @@ import { ChangeEvent, JSX, useRef, useState } from 'react';
 
 import { AlertType } from '@/app/_types/enum';
 import ItemBase from '@/app/_ui/_shared/itemBase';
+import { useProcessing } from '@/app/_ui/processing/processingContext';
 import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
 
 /** ページ名 */
@@ -19,6 +20,7 @@ export const ScheduleRegistrationComponent = (): JSX.Element => {
   /* initialize
   ------------------------------------------------------------------ */
   const { openSnackbar } = useSnackBar();
+  const { openProcessing, closeProcessing } = useProcessing();
 
   /* useState
   ------------------------------------------------------------------ */
@@ -28,9 +30,36 @@ export const ScheduleRegistrationComponent = (): JSX.Element => {
 
   /* functions
   ------------------------------------------------------------------ */
-  const registerHandler = () => {
-    openSnackbar(AlertType.SUCCESS, 'スケジュールを登録しました。');
-    setFile(undefined);
+  const registerHandler = async () => {
+    if (!file) return;
+
+    openProcessing();
+
+    const formData = new FormData();
+    formData.append('csvFile', file);
+
+    try {
+      const res = await fetch('/api/scheduleRegistration/insert', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        console.error('サーバーエラー:', json.message);
+        alert(`エラー: ${json.message}`);
+        return;
+      }
+
+      setFile(undefined);
+      openSnackbar(AlertType.SUCCESS, 'スケジュールを登録しました。');
+    } catch (err) {
+      alert(`通信エラー: ${(err as Error).message}`);
+      openSnackbar(AlertType.ERROR, 'スケジュールの登録に失敗しました。');
+    } finally {
+      closeProcessing();
+    }
   };
 
   /* functions - 添付ファイル

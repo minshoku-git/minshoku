@@ -1,10 +1,11 @@
 'use client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Search } from '@mui/icons-material';
+import { ArrowBack, Search } from '@mui/icons-material';
 import { Box, Button, Divider, Paper, TextField, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ja } from 'date-fns/locale/ja';
 import { useParams, useRouter } from 'next/navigation';
 import { JSX, useEffect, useMemo, useState } from 'react';
@@ -18,6 +19,8 @@ import { getTodayZeroHour } from '@/app/_lib/getDateTime';
 import { checkTempId, getEditFlag } from '@/app/_lib/utill';
 import { TEMP_HYPHEN } from '@/app/_types/constants';
 import { AlertType, UsageStatus } from '@/app/_types/enum';
+import { QUERY_KEYS } from '@/app/_types/queryKeys';
+import { SESSION_STORAGE_KEYS } from '@/app/_types/sessionStorageKeys';
 import { ApiRequest, ApiResponse } from '@/app/_types/types';
 import { DepartmentInput } from '@/app/_ui/_shared/departmentInput';
 import { EmploymentInput } from '@/app/_ui/_shared/employmentInput';
@@ -27,7 +30,8 @@ import { useProcessing } from '@/app/_ui/processing/processingContext';
 import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
 
 import { state as stateMockData } from '../../../../public/state.json';
-import { CompanyDetailFormValues, CompanyDetailSchema } from './_lib/types';
+import { insertCompanyDetail, searchCompanyDetail, updateCompanyDetail } from './_lib/fetcher';
+import { CompanyDataDetailResult, CompanyDetailFormValues, CompanyDetailSchema } from './_lib/types';
 
 /** ページ名 */
 const pageName = '会社詳細';
@@ -42,13 +46,13 @@ export const CompanyComponent = (): JSX.Element => {
   const { openSnackbar } = useSnackBar();
   const { setDirty } = useDirty();
   const { openProcessing, closeProcessing } = useProcessing();
+  const queryClient = useQueryClient();
   const router = useRouter();
-  const params = useParams();
-  const id = (params.id as string) ?? '-';
+  const id = (useParams().id as string) ?? '-';
+  const editMode = useMemo(() => getEditFlag(id), [id]);
 
   /* useState
   ------------------------------------------------------------------ */
-  const editMode = useMemo(() => getEditFlag(id), [id]);
   const [dataLoaded, setDataLoaded] = useState(false);
 
   const [tempIdCounterDep, setTempIdCounterDep] = useState<number>(1);
@@ -67,7 +71,7 @@ export const CompanyComponent = (): JSX.Element => {
     setValue,
     reset,
     getValues,
-    formState: { isDirty, dirtyFields },
+    formState: { isDirty },
   } = useForm<CompanyDetailFormValues>({
     mode: 'onSubmit',
     reValidateMode: 'onSubmit',
@@ -75,57 +79,59 @@ export const CompanyComponent = (): JSX.Element => {
     defaultValues: getInitData(null),
   });
 
+  /* useQuery
+  ------------------------------------------------------------------ */
+  const searchCompanyDetailFetch = async () => {
+    const req: ApiRequest<number> = { request: Number(id) };
+    return searchCompanyDetail(req);
+  };
+
+  const {
+    data: result,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery<ApiResponse<CompanyDataDetailResult>>({
+    queryKey: [QUERY_KEYS.COMPANY_SEARCH_RESULT],
+    queryFn: searchCompanyDetailFetch,
+    enabled: editMode,
+  });
+
   /* useEffect
   ------------------------------------------------------------------ */
   useEffect(() => {
     if (!editMode) {
-      reset();
       setDataLoaded(true);
       return;
-    } else {
-      getInit();
+    }
+    if (isError || result?.error) {
+      console.log(result?.error);
+      openSnackbar(AlertType.WARNING, '会社情報の取得に失敗しました。再度お試しください。');
+      router.push('/company');
+    }
+    if (result?.data) {
+      const data = result.data;
+      const conversion: CompanyDetailFormValues = {
+        ...data,
+        offer_time_to: new Date(data.offer_time_to),
+        offer_time_from: new Date(data.offer_time_from),
+        order_period_time: new Date(data.order_period_time),
+        cancel_period_time: new Date(data.cancel_period_time),
+      };
+      reset(getInitData(conversion));
+      setDataLoaded(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [result]);
 
-  /** 初期表示データ取得 */
-  const getInit = async () => {
-    try {
+  useEffect(() => {
+    if (isLoading) {
       openProcessing();
-      const req: ApiRequest<number> = { request: Number(id) };
-
-      const response = await fetch('/api/companyDetail/search', {
-        method: 'POST',
-        body: JSON.stringify(req),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const res: ApiResponse<CompanyDetailFormValues> = await response.json();
-
-      if (!res.data || !res.data.id) {
-        openSnackbar(AlertType.ERROR, '会社情報の取得に失敗しました。再度お試しください。');
-        router.push('/company');
-        return;
-      }
-      const initdata: CompanyDetailFormValues = {
-        ...res.data,
-        offer_time_to: new Date(res.data.offer_time_to),
-        offer_time_from: new Date(res.data.offer_time_from),
-        order_period_time: new Date(res.data.order_period_time),
-        cancel_period_time: new Date(res.data.cancel_period_time),
-      };
-      reset(getInitData(initdata));
-    } catch (error) {
-      console.error('取得失敗:', error);
-    } finally {
-      setDataLoaded(true);
+    } else {
       closeProcessing();
     }
-  };
-
-  console.log(typeof getValues('cancel_period_time'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading]);
 
   /* useFieldArray 部署情報
   ------------------------------------------------------------------ */
@@ -179,7 +185,7 @@ export const CompanyComponent = (): JSX.Element => {
     setTempIdCounterEmp((x) => x + 1);
   };
 
-  const removeField_emp = (index: string) => {
+  const removeField_emp = () => {
     const delIndex = fields_emp.findIndex((f) => f.id === id);
     if (!checkTempId(id)) {
       const data = getValues('employmentStatusInfo') as EmploymentData[];
@@ -190,64 +196,56 @@ export const CompanyComponent = (): JSX.Element => {
     console.log('deleteEmpArray:', deleteEmpArray);
   };
 
-  /* functions
+  /* functions - Insert
   ------------------------------------------------------------------ */
-  /* 新規登録ハンドラー */
   const insertHandler: SubmitHandler<CompanyDetailFormValues> = async (data) => {
-    console.log('登録データ:', data);
-    openProcessing();
+    insertMutate.mutate(data);
+  };
 
-    const response = await fetch('/api/companyDetail/insert', {
-      method: 'POST',
-      body: JSON.stringify(data),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    const res: ApiResponse<number> = await response.json();
-
-    if (res.error) {
-      openSnackbar(AlertType.ERROR, '会社情報の新規登録に失敗しました。再度お試しください。' + res.error);
-    } else {
+  const insertMutate = useMutation({
+    mutationFn: async (data: CompanyDetailFormValues) => {
+      openProcessing();
+      return insertCompanyDetail(data) as unknown as ApiResponse<number>;
+    },
+    onSuccess: (res) => {
       openSnackbar(AlertType.SUCCESS, '会社情報の登録が完了しました。');
       router.push(`/companyDetail/${res.data}`);
-    }
-    closeProcessing();
-  };
+    },
+    onError: (e) => {
+      console.log(e.message);
+      openSnackbar(AlertType.ERROR, '会社情報の新規登録に失敗しました。再度お試しください。');
+    },
+    onSettled: () => {
+      closeProcessing();
+    },
+  });
 
-  /* 更新ハンドラー */
+  /* functions - Update
+  ------------------------------------------------------------------ */
   const updateHandler: SubmitHandler<CompanyDetailFormValues> = async (data) => {
-    openProcessing();
-
-    const req: ApiRequest<CompanyDetailFormValues> = {
-      request: {
-        ...data,
-        departmentInfo: [...data.departmentInfo, ...deleteDepArray],
-        employmentStatusInfo: [...data.employmentStatusInfo, ...deleteEmpArray],
-      },
-    };
-
-    const response = await fetch('/api/companyDetail/update', {
-      method: 'POST',
-      body: JSON.stringify(req),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    const res: ApiResponse<number> = await response.json();
-
-    if (res.error) {
-      openSnackbar(AlertType.ERROR, '会社情報の更新に失敗しました。再度お試しください。' + res.error);
-    } else {
-      await getInit();
-      window.scrollTo(0, 0);
-      openSnackbar(AlertType.SUCCESS, '会社情報の更新が完了しました。');
-    }
-    closeProcessing();
+    updateMutate.mutate(data);
   };
 
+  const updateMutate = useMutation({
+    mutationFn: async (data: CompanyDetailFormValues) => {
+      openProcessing();
+      return updateCompanyDetail(data) as unknown as ApiResponse<number>;
+    },
+    onSuccess: (_res: ApiResponse<number>) => {
+      refetch();
+      openSnackbar(AlertType.SUCCESS, '会社情報の更新が完了しました。');
+    },
+    onError: (e) => {
+      console.error(e.message);
+      openSnackbar(AlertType.ERROR, '会社情報の更新に失敗しました。再度お試しください。');
+    },
+    onSettled: () => {
+      closeProcessing();
+    },
+  });
+
+  /* functions - clickboardHandler
+  ------------------------------------------------------------------ */
   /* 'URLと案内文をコピー'ハンドラー */
   // TODO: メッセージ文連携待ち＋URL設定忘れずに
   const message =
@@ -262,7 +260,9 @@ export const CompanyComponent = (): JSX.Element => {
   // 住所取得
   const getAddressHandler = async () => {
     setAddressLoading(true);
-    const { prefecture, suburb, city, errorMessage } = await getAddress(getValues('post_code'));
+    const { prefecture, suburb, city, errorMessage } = await getAddress(
+      getValues('postal_code_prefix') + getValues('postal_code_suffix')
+    );
 
     if (errorMessage) {
       setValue('prefectures', '');
@@ -278,6 +278,12 @@ export const CompanyComponent = (): JSX.Element => {
     return;
   };
 
+  /** 検索画面に戻る */
+  const pageBack = async () => {
+    sessionStorage.setItem(SESSION_STORAGE_KEYS.PREVIOUS_PATH, '/companyDetail');
+    router.push('/company');
+  };
+
   /* dirty
   ------------------------------------------------------------------ */
   useEffect(() => {
@@ -286,6 +292,8 @@ export const CompanyComponent = (): JSX.Element => {
 
   useEffect(() => {
     return () => {
+      // 画面離脱時にクエリを無効化・再フェッチ予約する。
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMPANY_SEARCH_RESULT] });
       setDirty(false); // CleanUp
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -310,14 +318,6 @@ export const CompanyComponent = (): JSX.Element => {
     return hours;
   }
 
-  // 都道府県をモックから取得
-  const stateData = [
-    { id: '', label: '未選択' },
-    ...stateMockData.map((d: string, index: number) => {
-      return { id: index.toString(), label: d };
-    }),
-  ];
-
   /* JSX
   ------------------------------------------------------------------ */
   return (
@@ -328,10 +328,17 @@ export const CompanyComponent = (): JSX.Element => {
           <Typography component="h2" variant="h6" color="primary" gutterBottom sx={{ px: 3, py: 2, mb: 0 }}>
             {pageName}
           </Typography>
-          <Box sx={{ flexGrow: 1 }} />
+          {editMode && (
+            <>
+              <Box sx={{ flexGrow: 1 }} />
+              <Button sx={{ mr: 3 }} variant="outlined" startIcon={<ArrowBack />} onClick={() => pageBack()}>
+                戻る
+              </Button>
+            </>
+          )}
         </Grid>
         <Divider />
-        {editMode && (
+        {dataLoaded && editMode && (
           <Box sx={{ m: 3, mb: 0, display: 'flex' }}>
             <Box sx={{ flexGrow: 1 }} />
             <Button variant="contained" onClick={clickboardHandler}>
@@ -399,7 +406,7 @@ export const CompanyComponent = (): JSX.Element => {
                     sx={{
                       display: 'flex',
                       flexDirection: 'row',
-                      alignItems: 'center',
+                      alignItems: 'start',
                       width: '640px',
                     }}
                     gap={2}
@@ -408,10 +415,26 @@ export const CompanyComponent = (): JSX.Element => {
                       control={control}
                       size="small"
                       color="primary"
-                      name="post_code"
-                      disabled={addressLoading}
-                      sx={{ width: '150px' }}
-                      slotProps={{ htmlInput: { maxLength: 7 } }}
+                      name="postal_code_prefix"
+                      sx={{ width: '80px' }}
+                      slotProps={{ htmlInput: { maxLength: 3 } }}
+                    />
+                    <Box
+                      sx={{
+                        height: '40px',
+                        display: 'flex',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Typography sx={{ mx: 0 }}>{'-'}</Typography>
+                    </Box>
+                    <TextFieldElement
+                      control={control}
+                      size="small"
+                      color="primary"
+                      name="postal_code_suffix"
+                      sx={{ width: '80px' }}
+                      slotProps={{ htmlInput: { maxLength: 4 } }}
                     />
                     <Button
                       startIcon={<Search />}
@@ -430,7 +453,6 @@ export const CompanyComponent = (): JSX.Element => {
                     size="small"
                     color="primary"
                     name="prefectures"
-                    disabled={addressLoading}
                     fullWidth
                     slotProps={{ htmlInput: { maxLength: 128 } }}
                   />
@@ -441,7 +463,6 @@ export const CompanyComponent = (): JSX.Element => {
                     size="small"
                     color="primary"
                     name="municipalities"
-                    disabled={addressLoading}
                     fullWidth
                     slotProps={{ htmlInput: { maxLength: 128 } }}
                   />
@@ -452,7 +473,6 @@ export const CompanyComponent = (): JSX.Element => {
                     size="small"
                     color="primary"
                     name="town_area"
-                    disabled={addressLoading}
                     fullWidth
                     slotProps={{ htmlInput: { maxLength: 128 } }}
                   />
@@ -816,13 +836,14 @@ const getInitData = (data: CompanyDetailFormValues | null) => {
           },
         ];
 
-  const initData: CompanyDetailFormValues = {
+  const initValues: CompanyDetailFormValues = {
     id: data?.id ? data?.id.toString() : '-',
     departmentInfo: depInit,
     employmentStatusInfo: empInit,
     company_name: data?.company_name ?? '',
     branch_name: data?.branch_name ?? '',
-    post_code: data?.post_code ?? '',
+    postal_code_prefix: data?.postal_code_prefix ?? '',
+    postal_code_suffix: data?.postal_code_suffix ?? '',
     prefectures: data?.prefectures ?? '',
     municipalities: data?.municipalities ?? '',
     town_area: data?.town_area ?? '',
@@ -845,5 +866,5 @@ const getInitData = (data: CompanyDetailFormValues | null) => {
     usage_status: data?.usage_status ?? UsageStatus.AVAILABLE,
   };
 
-  return initData;
+  return initValues;
 };

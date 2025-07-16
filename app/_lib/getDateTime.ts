@@ -70,10 +70,30 @@ export function getLastMonthEndDay(): Date {
 
 /**
  * getTimeString
- * 日付から文字列の時間('HH:mm')の取得
- * @param date - 日付
+ * Dateから文字列の時間('HH:mm')の取得
+ * @param date - 日時
  * @returns {string} 'HH:mm'
  */
 export function getTimeString(date: Date): string {
   return format(date, 'HH:mm');
+}
+
+/**
+ * getTimeString
+ * Dateから文字列の日付('yyyy/MM/dd')の取得
+ * @param date - 日付
+ * @returns {string} 'yyyy/MM/dd'
+ */
+export function getDateString(date: Date): string {
+  return format(date, 'yyyy/MM/dd');
+}
+
+/**
+ * getDatetimeString
+ * Dateから文字列の日付('yyyy/MM/dd HH:mm')の取得
+ * @param date - 日付
+ * @returns {string} 'yyyy/MM/dd HH:mm'
+ */
+export function getDatetimeString(date: Date): string {
+  return format(date, 'yyyy/MM/dd HH:mm');
 }

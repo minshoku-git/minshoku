@@ -11,3 +11,8 @@
   const id = params.id; // 1001
 
   const pathname = usePathname(); // /1001?name=taro
+
+*VSCODE設定
+開いているファイルのフォーカス及びフォルダの展開を抑制する
+explorer.autoReveal = false
+

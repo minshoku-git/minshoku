@@ -36,11 +36,11 @@ export const getEditFlag = (id: string): boolean => {
  * getPostCodeAddHyphen
  * 郵便番号7桁にハイフンを付けた文字列を返却する。
  *
- * @param {string} post_code - 郵便番号7桁
+ * @param {string} postal_code - 郵便番号7桁
  * @returns {string} XXX-XXXX
  */
-export const getPostCodeAddHyphen = (post_code: string): string => {
-  return post_code.slice(0, 3) + HYPHEN + post_code.slice(3, 7);
+export const getPostCodeAddHyphen = (postal_code: string): string => {
+  return postal_code.slice(0, 3) + HYPHEN + postal_code.slice(3, 7);
 };
 
 /**

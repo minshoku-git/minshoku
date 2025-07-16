@@ -17,6 +17,12 @@ export const PAGE_MAX_COUNT: number = 30;
 export const KB_BYTE_SIZE: number = 1024;
 
 /**
+ * 署名付きURLの有効期限
+ * @returns {number} - 60 * 60 (1時間)
+ */
+export const EXPIRES_IN_TIME: number = 60 * 60;
+
+/**
  * 添付可能な画像拡張子
  * @returns {Array<string>} - ['image/png', 'image/jpg', 'image/jpeg']
  */
@@ -34,13 +40,21 @@ export const HYPHEN: string = '-';
  */
 export const TEMP_HYPHEN: string = 'temp-';
 
+/* Supabase Storage
+------------------------------------------------------------------ */
+/**
+ * 仮ID用文字列('temp-')
+ * @returns {string} - 'temp-'
+ */
+export const BUCKET_SHOP_IMAGES: string = 'shop-images';
+
 /* バリデーションメッセージ
 ------------------------------------------------------------------ */
 export const MSG_REQUIRED = '{0}は必須入力です。';
 export const MSG_INVALID = '{0}を正しく入力してください。';
 export const MSG_MAX = '{0}は{1}文字以内で入力してください。';
 export const MSG_EMAIL = '{0}は正しく入力してください。';
-export const MSG_POSTALCODE = '{0}は半角数字7桁を入力してください。';
+export const MSG_POSTALCODE = '{0}は半角数字{1}桁を入力してください。';
 export const MSG_HANKAKU_NUM = '{0}は半角数字を入力してください。';
 
 /* 正規表現集
@@ -51,3 +65,19 @@ export const REG_HANKAKU_NUM = '^\\d+$';
 export const REG_ZENKAKU_KANA = '^[\u30A0-\u30FF]+$';
 
 export const MAX_IMAGE_SIZE = 5; // 5MB
+
+export const ERROR_MSG_UNEXPECTED = '予期せぬエラーが発生しました。再度お試しください。';
+
+/**
+ * エラーメッセージ
+ */
+export const ERROR_MESSAGE = {
+  /**
+   * ERROR_MESSAGE.UNEXPECTED
+   * 予期せぬエラーが発生しました。再度お試しください。 */
+  UNEXPECTED: '予期せぬエラーが発生しました。再度お試しください。',
+  /**
+   * ERROR_MESSAGE.TEMPLATE
+   * に失敗しました。再度お試しください。 */
+  TEMPLATE: 'に失敗しました。再度お試しください。',
+};

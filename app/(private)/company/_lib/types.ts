@@ -42,7 +42,7 @@ export type CompanyListSearchResult = {
   /** 支店名 */
   branch_name: string;
   /** 支店名 */
-  post_code: string;
+  postal_code: string;
   /** 住所_都道府県 */
   prefectures: string;
   /** 住所_市区 */
@@ -54,5 +54,5 @@ export type CompanyListSearchResult = {
   /** 建物名 */
   building_name: string;
   /** 利用ステータス */
-  usage_status: string | UsageStatus;
+  usage_status: string | number;
 };

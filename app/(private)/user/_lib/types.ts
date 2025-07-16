@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { formatString } from '@/app/_lib/utill';
 import { MSG_MAX } from '@/app/_types/constants';
-import { UserUsageStatus } from '@/app/_types/enum';
+import { UsageStatus, UserRegistrationStatus } from '@/app/_types/enum';
 
 /**
  * ユーザー一覧 検索条件 FormValues
@@ -20,8 +20,10 @@ export const UserSearchSchema = z.object({
     .string()
     .max(64, formatString(MSG_MAX, '支店名', '64'))
     .optional(),
-  /** ユーザー利用ステータス */
-  user_usage_status: z.union([z.string().optional(), z.nativeEnum(UserUsageStatus)]),
+  /** 利用ステータス */
+  usage_status: z.union([z.string().optional(), z.nativeEnum(UsageStatus)]),
+  /** ユーザー登録ステータス */
+  user_registration_status: z.union([z.string().optional(), z.nativeEnum(UserRegistrationStatus)]),
 });
 
 /**
@@ -46,6 +48,8 @@ export type UserListSearchResult = {
     /** 支店名 */
     branch_name: string;
   };
-  /** ユーザー利用ステータス */
-  user_usage_status: string | UserUsageStatus;
+  /** ユーザー登録ステータス */
+  user_registration_status: string | UserRegistrationStatus;
+  /** 利用ステータス */
+  usage_status?: string | UsageStatus;
 };

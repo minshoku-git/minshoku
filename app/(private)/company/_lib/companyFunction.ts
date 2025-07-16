@@ -1,9 +1,10 @@
 import { PostgrestSingleResponse } from '@supabase/supabase-js';
 
-import { supabase } from '@/app/_lib/supabase/supabase';
+import { createClient } from '@/app/_lib/supabase/server';
 import { getPagenationsItems, getRange } from '@/app/_lib/utill';
+import { ERROR_MESSAGE } from '@/app/_types/constants';
 import { convertUsageStatusName, UsageStatus } from '@/app/_types/enum';
-import { ApiRequest, ApiResponse } from '@/app/_types/types';
+import { ApiRequest, ApiResponse, SortItems } from '@/app/_types/types';
 import { CompanyListSearchResult, CompanySearchFormValues } from '@/app/(private)/company/_lib/types';
 
 /* 会社一覧
@@ -18,49 +19,124 @@ import { CompanyListSearchResult, CompanySearchFormValues } from '@/app/(private
 export const _searchComponyList = async (
   values: ApiRequest<CompanySearchFormValues>
 ): Promise<ApiResponse<CompanyListSearchResult[]>> => {
-  const { startRange, endRange } = getRange(values.sortItems?.nextPage ?? 0);
-
-  let query = supabase.from('t_companies').select('*').range(startRange, endRange);
-  let queryCount = supabase.from('t_companies').select('*', { count: 'exact', head: true });
+  const supabase = await createClient();
 
   const req = values.request;
+  const sortItems = values.sortItems;
+  const { startRange, endRange } = getRange(values.sortItems?.nextPage ?? 0);
 
+  try {
+    /* 件数取得
+    ------------------------------------------------------------------ */
+    let queryCount = supabase.from('t_companies').select('*', { count: 'exact', head: true });
+    queryCount = applyFilters(queryCount, req);
+
+    const { count, error: countError }: PostgrestSingleResponse<CompanyListSearchResult[]> = await queryCount;
+
+    if (countError) {
+      console.error(countError);
+      return { error: '会社情報の件数取得' + ERROR_MESSAGE.TEMPLATE };
+    }
+    if (!count) {
+      return {
+        paginate: {
+          count: 0,
+          startRow: 0,
+          endRow: 0,
+          totalPage: 0,
+          currentPage: 0,
+        },
+      };
+    }
+
+    /* 明細行取得
+    ------------------------------------------------------------------ */
+    let query = supabase.from('t_companies').select('*').range(startRange, endRange);
+    query = applyFilters(query, req);
+    query = applySorts(query, sortItems);
+
+    const { data, error }: PostgrestSingleResponse<CompanyListSearchResult[]> = await query;
+
+    if (error) {
+      console.error(error);
+      return { error: '会社情報の取得' + ERROR_MESSAGE.TEMPLATE };
+    }
+
+    const resData: CompanyListSearchResult[] = data.map((m) => {
+      return {
+        ...m,
+        usage_status: convertUsageStatusName(m.usage_status.toString() as UsageStatus),
+      };
+    });
+
+    /* 返却
+    ------------------------------------------------------------------ */
+    const { startRow, endRow, totalPage } = getPagenationsItems(startRange, data.length, count ?? 0);
+    return {
+      data: resData,
+      paginate: {
+        count,
+        startRow,
+        endRow,
+        totalPage,
+        currentPage: values.sortItems?.nextPage ?? 0,
+      },
+    };
+  } catch (error) {
+    console.error(error);
+    return { error: ERROR_MESSAGE.UNEXPECTED };
+  }
+};
+
+/**
+ * 検索条件を設定します。
+ * @param {any} query - Query
+ * @param {ShopSearchFormValues} req
+ * @returns {any} query 検索条件追加後のQuery
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const applyFilters = (query: any, req: CompanySearchFormValues): any => {
   // 会社名
   if (req.company_name) {
     query = query.ilike('company_name', `%${req.company_name}%`);
-    queryCount = queryCount.ilike('company_name', `%${req.company_name}%`);
   }
   // 支店名
   if (req.branch_name) {
     query = query.ilike('branch_name', `%${req.branch_name}%`);
-    queryCount = queryCount.ilike('branch_name', `%${req.branch_name}%`);
   }
   // 住所_都道府県
   if (req.prefectures) {
     query = query.eq('prefectures', req.prefectures);
-    queryCount = queryCount.eq('prefectures', req.prefectures);
     // 住所_市区
     if (req.municipalities) {
       query = query.eq('municipalities', req.municipalities);
-      queryCount = queryCount.eq('municipalities', req.municipalities);
       // 住所_町村
       if (req.town_area) {
         query = query.eq('town_area', req.town_area);
-        queryCount = queryCount.eq('town_area', req.town_area);
       }
     }
   }
   // 利用ステータス
   if (req.usage_status) {
-    query = query.eq('usage_status', req.usage_status);
-    queryCount = queryCount.eq('usage_status', req.usage_status);
+    query = query.eq('usage_status', Number(req.usage_status));
   }
 
+  return query;
+};
+
+/**
+ * ソート条件を設定します。
+ * @param {query} query - Query
+ * @param {sortItems | undefined} sortItems - ソート条件
+ * @returns {any} query 検索条件追加後のQuery
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const applySorts = (query: any, sortItems: SortItems | undefined): any => {
   // ソート順序
   const sortConditions: Array<string> = ['company_name', 'branch_name', 'address', 'usage_status'];
   // ソート用住所
   const sortConditionsAddress: Array<string> = [
-    'post_code',
+    'postal_code',
     'prefectures',
     'municipalities',
     'town_area',
@@ -68,17 +144,17 @@ export const _searchComponyList = async (
     'building_name',
   ];
 
-  const sortColumn = values.sortItems?.sortColumn ?? 'company_name';
+  const sortColumn = sortItems?.sortColumn ?? 'company_name';
 
   // ソートの最優先項目を設定
   if (sortColumn === 'address') {
     for (const columnAdd of sortConditionsAddress) {
       query = query.order(columnAdd, {
-        ascending: values.sortItems?.ascending,
+        ascending: sortItems?.ascending,
       });
     }
   } else {
-    query = query.order(sortColumn, { ascending: values.sortItems?.ascending });
+    query = query.order(sortColumn, { ascending: sortItems?.ascending });
   }
 
   // 2番目以降のソートを設定
@@ -94,58 +170,5 @@ export const _searchComponyList = async (
     }
   }
 
-  // 件数取得
-  const { count, error: countError }: PostgrestSingleResponse<CompanyListSearchResult[]> = await queryCount;
-  if (countError) {
-    console.log('countError', countError);
-    return {
-      data: null,
-      error: countError.message,
-      paginate: {
-        count: 0,
-        startRow: 0,
-        endRow: 0,
-        totalPage: 0,
-        currentPage: 0,
-      },
-    };
-  }
-
-  // 明細行取得
-  const { data, error }: PostgrestSingleResponse<CompanyListSearchResult[]> = await query;
-  if (error) {
-    console.log('error', error);
-    return {
-      data: null,
-      error: error.message,
-      paginate: {
-        count: 0,
-        startRow: 0,
-        endRow: 0,
-        totalPage: 0,
-        currentPage: 0,
-      },
-    };
-  }
-
-  const resData: CompanyListSearchResult[] = data.map((m) => {
-    return {
-      ...m,
-      usage_status: convertUsageStatusName(m.usage_status as UsageStatus),
-    };
-  });
-
-  // 結果返却
-  const { startRow, endRow, totalPage } = getPagenationsItems(startRange, data.length, count ?? 0);
-  return {
-    data: resData,
-    error: null,
-    paginate: {
-      count,
-      startRow,
-      endRow,
-      totalPage,
-      currentPage: values.sortItems?.nextPage ?? 0,
-    },
-  };
+  return query;
 };

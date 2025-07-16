@@ -79,6 +79,14 @@ export type ScheduleSearchFormValues = z.infer<typeof ScheduleSearchSchema>;
 
 /** 検索結果 スケジュール一覧 */
 export type ScheduleListSearchResult = {
+  /** スケジュールデータ */
+  scheduleDatas: ScheduleData[];
+  /** 合計食数 */
+  orderAmout: number;
+};
+
+/** 検索結果 スケジュール一覧 */
+export type ScheduleData = {
   /** ID */
   id: string;
   /** 納品日 */
@@ -92,7 +100,15 @@ export type ScheduleListSearchResult = {
   /** メニュー名 */
   menu_name: string;
   /** 食数 */
-  count: number;
+  order_count: number;
   /** アレルギー */
-  allergen_labelling: Array<string>;
+  allergen_labelling: string;
+};
+
+/** 検索結果 スケジュール一覧 */
+export type Testcsv = {
+  /** ID */
+  id: string;
+  /** メニュー名 */
+  menu_name: string;
 };
