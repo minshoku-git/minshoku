@@ -5,7 +5,6 @@ import Image from 'next/image';
 
 import hum_close from '../../_ui/styles/images/hum-close.svg';
 import hum_show from '../../_ui/styles/images/hum-show.svg';
-import icon_shop_b from '../../_ui/styles/images/icon-shop_b.svg';
 import item_image_curry from "../../_ui/styles/images/item-image-curry.jpg"
 
 const page: React.FC = () => {
@@ -42,7 +41,7 @@ const page: React.FC = () => {
                 <picture className="bl-card-thumb">
                   <Image src={item_image_curry} alt="" />
                   <Button className="bl-card-thumb-ui">
-                    <Image src={icon_shop_b} alt="icon_shop_b" />
+                    <Image src={item_image_curry} alt="icon_shop_b" />
                   </Button>
                 </picture>
 
