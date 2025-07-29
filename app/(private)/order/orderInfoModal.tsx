@@ -69,7 +69,7 @@ const styles: { [key: string]: React.CSSProperties } = {
  * @returns {JSX.Element} JSX
  */
 const OrderInfoModal = (props: OrderInfoModalProps): React.JSX.Element => {
-  const data = props.data?.data;
+  const data = props.data?.success ? props.data.data : null;
 
   return (
     <>
@@ -163,35 +163,35 @@ const OrderInfoModal = (props: OrderInfoModalProps): React.JSX.Element => {
                 {/* 任意項目 */}
                 {((data.t_companies.optional_item_title_1 && data.t_user.optional_item_answer_1) ||
                   (data.t_companies.optional_item_title_2 && data.t_user.optional_item_answer_2)) && (
-                  <TableContainer>
-                    <Table>
-                      <TableHead>
-                        <TableRow>
-                          <TableCell sx={{ ...styles.tableCell, width: '40%' }}>任意項目</TableCell>
-                          <TableCell sx={{ ...styles.tableCell, width: '70%' }}>回答</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {data.t_companies.optional_item_title_1 && data.t_user.optional_item_answer_1 && (
+                    <TableContainer>
+                      <Table>
+                        <TableHead>
                           <TableRow>
-                            <TableCell sx={{ ...styles.tableBodyCell }}>
-                              {data.t_companies.optional_item_title_1}
-                            </TableCell>
-                            <TableCell sx={{ ...styles.tableBodyCell }}>{data.t_user.optional_item_answer_1}</TableCell>
+                            <TableCell sx={{ ...styles.tableCell, width: '40%' }}>任意項目</TableCell>
+                            <TableCell sx={{ ...styles.tableCell, width: '70%' }}>回答</TableCell>
                           </TableRow>
-                        )}
-                        {data.t_companies.optional_item_title_2 && data.t_user.optional_item_answer_2 && (
-                          <TableRow>
-                            <TableCell sx={{ ...styles.tableBodyCell }}>
-                              {data.t_companies.optional_item_title_2}
-                            </TableCell>
-                            <TableCell sx={{ ...styles.tableBodyCell }}>{data.t_user.optional_item_answer_2}</TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                )}
+                        </TableHead>
+                        <TableBody>
+                          {data.t_companies.optional_item_title_1 && data.t_user.optional_item_answer_1 && (
+                            <TableRow>
+                              <TableCell sx={{ ...styles.tableBodyCell }}>
+                                {data.t_companies.optional_item_title_1}
+                              </TableCell>
+                              <TableCell sx={{ ...styles.tableBodyCell }}>{data.t_user.optional_item_answer_1}</TableCell>
+                            </TableRow>
+                          )}
+                          {data.t_companies.optional_item_title_2 && data.t_user.optional_item_answer_2 && (
+                            <TableRow>
+                              <TableCell sx={{ ...styles.tableBodyCell }}>
+                                {data.t_companies.optional_item_title_2}
+                              </TableCell>
+                              <TableCell sx={{ ...styles.tableBodyCell }}>{data.t_user.optional_item_answer_2}</TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  )}
                 {/* 注文履歴 */}
                 <TableContainer>
                   <Table>

@@ -1,8 +1,10 @@
 import { createPgClient } from '@/app/_lib/supabase/server';
 import { t_menu_schedule } from '@/app/_lib/supabase/tableTypes';
+import { rollbackWithLog } from '@/app/_lib/supabase/transaction';
 import { getPostgreSqlItems } from '@/app/_lib/utill';
-import { ERROR_MESSAGE } from '@/app/_types/constants';
 import { ApiResponse } from '@/app/_types/types';
+import { CustomError } from '@/app/errors/customError';
+import { ErrorCodes } from '@/app/errors/ErrorCodes';
 
 import { scheduleCsvValues } from './types';
 
@@ -33,7 +35,11 @@ export const _RefreshingScheduleData = async (values: scheduleCsvValues[]): Prom
     const deleteCompanyText = 'DELETE FROM t_menu_schedule;';
     const res = await client.query(deleteCompanyText);
     if (res.rowCount === 0) {
-      throw new Error('スケジュール情報の削除処理に失敗しました。');
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        'スケジュール情報の削除処理' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
     }
     console.log('deleted count:', res.rowCount);
 
@@ -59,22 +65,43 @@ export const _RefreshingScheduleData = async (values: scheduleCsvValues[]): Prom
       const result = await client.query(insertScheduleText, values);
 
       if (result.rowCount === 0) {
-        throw new Error('スケジュール情報の登録処理に失敗しました。');
+        throw new CustomError(
+          ErrorCodes.NOT_FOUND.code,
+          'スケジュール情報の登録処理' + ErrorCodes.NOT_FOUND.message,
+          ErrorCodes.NOT_FOUND.status
+        );
       }
     }
 
     /* --------------------------------------------------------------- */
     // throw new Error('疑似エラー:ロールバックを確認しました。');
+
     // Commit
     await client.query('COMMIT');
     console.log('Transaction completed, inserted count:', req.length);
-    return { data: req.length };
-  } catch (error) {
-    // Rollback
-    await client.query('ROLLBACK');
 
-    console.error('Transaction failed:', error);
-    return { error: ERROR_MESSAGE.UNEXPECTED };
+    // Response setting
+    return { success: true, data: req.length };
+  } catch (e: unknown) {
+    console.error('Transaction failed:', e);
+    await rollbackWithLog(client);
+
+    if (e instanceof CustomError) {
+      return {
+        success: false,
+        error: {
+          code: e.code,
+          message: e.message,
+        },
+      };
+    }
+    return {
+      success: false,
+      error: {
+        code: ErrorCodes.INTERNAL_SERVER_ERROR.code,
+        message: ErrorCodes.INTERNAL_SERVER_ERROR.message,
+      },
+    };
   } finally {
     // Transaction End
     await client.end();

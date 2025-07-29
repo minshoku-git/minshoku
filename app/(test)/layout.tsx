@@ -1,23 +1,11 @@
 'use client';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import MenuIcon from '@mui/icons-material/Menu';
-import { Box, Button, Link, ListSubheader } from '@mui/material';
+import { Box } from '@mui/material';
 import { AppBar as MuiAppBar, AppBarProps as MuiAppBarProps } from '@mui/material';
-import Divider from '@mui/material/Divider';
-import Drawer from '@mui/material/Drawer';
-import IconButton from '@mui/material/IconButton';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemButton from '@mui/material/ListItemButton';
-import ListItemText from '@mui/material/ListItemText';
 import { styled, useTheme } from '@mui/material/styles';
-import Toolbar from '@mui/material/Toolbar';
-import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import * as React from 'react';
 
-import ConfirmDialog from '../_ui/dirty/conformDialog';
 import { useDirty } from '../_ui/dirty/dartyContext';
 import DirtyCheck from '../_ui/dirty/dirty';
 import { OpenProcessing } from '../_ui/processing/processing';

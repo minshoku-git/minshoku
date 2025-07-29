@@ -59,7 +59,7 @@ export const UserDetailComponent = (): JSX.Element => {
   const [dialogMessage, setDialogMessage] = useState<string>('');
   const [userData, setUserData] = useState<UserDataDetailResult | undefined>();
   const [dialogActionHandler, setDialogActionHandler] = useState<() => void>(() => {
-    return () => {};
+    return () => { };
   });
 
   /* useForm
@@ -100,13 +100,15 @@ export const UserDetailComponent = (): JSX.Element => {
   /* useEffect
   ------------------------------------------------------------------ */
   useEffect(() => {
-    if (isError || result?.error) {
-      console.log(result?.error);
-      openSnackbar(AlertType.WARNING, 'ユーザー情報の取得に失敗しました。再度お試しください。');
+    if (!result) {
+      return;
+    }
+    if (!result.success) {
+      openSnackbar(AlertType.ERROR, result.error.message);
       router.push('/user');
       return;
     }
-    if (result?.data) {
+    if (result.data) {
       console.log(result);
       const data = result.data;
       const initData: Partial<UserDetailFormValues> = {
@@ -141,9 +143,13 @@ export const UserDetailComponent = (): JSX.Element => {
       openProcessing();
       return updateUserDetail(data) as unknown as ApiResponse<number>;
     },
-    onSuccess: (_res: ApiResponse<number>) => {
-      refetch();
-      openSnackbar(AlertType.INFO, 'ユーザー情報を更新しました。');
+    onSuccess: (res: ApiResponse<number>) => {
+      if (res.success) {
+        refetch();
+        openSnackbar(AlertType.INFO, 'ユーザー情報を更新しました。');
+      } else {
+        openSnackbar(AlertType.ERROR, res.error.message);
+      }
     },
     onError: (e) => {
       console.error(e.message);
@@ -168,9 +174,13 @@ export const UserDetailComponent = (): JSX.Element => {
       openProcessing();
       return updateUserDetail(data) as unknown as ApiResponse<number>;
     },
-    onSuccess: (_res: ApiResponse<number>) => {
-      refetch();
-      openSnackbar(AlertType.INFO, 'ユーザー情報を更新しました。');
+    onSuccess: (res: ApiResponse<number>) => {
+      if (res.success) {
+        refetch();
+        openSnackbar(AlertType.INFO, 'ユーザー情報を更新しました。');
+      } else {
+        openSnackbar(AlertType.ERROR, res.error.message);
+      }
     },
     onError: (e) => {
       console.error(e.message);

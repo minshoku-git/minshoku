@@ -2,10 +2,12 @@ import { PostgrestSingleResponse } from '@supabase/supabase-js';
 
 import { getDateString, getDatetimeString, getNow } from '@/app/_lib/getDateTime';
 import { createClient, createPgClient } from '@/app/_lib/supabase/server';
+import { rollbackWithLog } from '@/app/_lib/supabase/transaction';
 import { getPagenationsItems, getRange } from '@/app/_lib/utill';
-import { ERROR_MESSAGE } from '@/app/_types/constants';
 import { OrderStatus } from '@/app/_types/enum';
 import { ApiRequest, ApiResponse, SortItems } from '@/app/_types/types';
+import { CustomError } from '@/app/errors/customError';
+import { ErrorCodes } from '@/app/errors/ErrorCodes';
 
 import { orderDeteilResponseData, OrderListSearchResult, OrderSearchFormValues } from './types';
 
@@ -23,42 +25,47 @@ export const _searchOrderList = async (
   values: ApiRequest<OrderSearchFormValues>
 ): Promise<ApiResponse<OrderListSearchResult[]>> => {
   const supabase = await createClient();
-
-  const { startRange, endRange } = getRange(values.sortItems?.nextPage ?? 0);
   const req = values.request;
   const sortItems = values.sortItems;
+  const { startRange, endRange } = getRange(sortItems?.nextPage ?? 0);
 
-  /* 件数取得
-  ------------------------------------------------------------------ */
-  let queryCount = supabase.from('v_order').select('*', { count: 'exact', head: true });
-  queryCount = applyFilters(queryCount, req);
+  try {
+    /* 件数取得
+    ------------------------------------------------------------------ */
+    let queryCount = supabase.from('v_order').select('*', { count: 'exact', head: true });
+    queryCount = applyFilters(queryCount, req);
 
-  const { count, error: countError } = (await queryCount) as PostgrestSingleResponse<OrderListSearchResult[]>;
-  if (countError) {
-    console.log('countError', countError);
-    return {
-      error: countError.message,
-    };
-  }
-  if (!count) {
-    return {
-      paginate: {
-        count: 0, // 0件で処理終了
-        startRow: 0,
-        endRow: 0,
-        totalPage: 0,
-        currentPage: 0,
-      },
-    };
-  }
-  console.log('スケジュール件数の取得結果:', count);
+    const { count, error: countError } = await queryCount;
+    if (countError) {
+      console.error('countError', countError);
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        'オーダー情報の件数取得' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
+    }
 
-  /* 明細行取得
-  ------------------------------------------------------------------ */
-  let query = supabase
-    .from('v_order')
-    .select(
-      `id,
+    if (!count) {
+      return {
+        success: true,
+        data: [],
+        paginate: {
+          count: 0,
+          startRow: 0,
+          endRow: 0,
+          totalPage: 0,
+          currentPage: 0,
+        },
+      };
+    }
+
+    /* 明細行取得
+    ------------------------------------------------------------------ */
+    let query = supabase
+      .from('v_order')
+      .select(
+        `
+        id,
         t_menu_schedule_id,
         delivery_day,
         count,
@@ -69,44 +76,70 @@ export const _searchOrderList = async (
         user_name,
         user_name_kana
       `
-    )
-    .range(startRange, endRange);
-  query = applyFilters(query, req);
-  query = applySorts(query, sortItems);
+      )
+      .range(startRange, endRange);
+    query = applyFilters(query, req);
+    query = applySorts(query, sortItems);
 
-  const { data, error } = (await query) as PostgrestSingleResponse<OrderListSearchResult[]>;
-  if (error) {
-    console.log('error', error);
-    return {
-      error: error.message,
-    };
-  }
-  console.log('スケジュール一覧の取得結果:', data);
+    const { data, error } = await query;
+    if (error) {
+      console.error('query error', error);
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        'オーダー情報の取得' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
+    }
 
-  /* 返却
-  ------------------------------------------------------------------ */
-  const res: OrderListSearchResult[] = data.map((m) => {
-    return {
+    /* 返却
+    ------------------------------------------------------------------ */
+    const res: OrderListSearchResult[] = data.map((m) => ({
       ...m,
       id: m.id!.toString(),
       delivery_day: getDateString(new Date(m.delivery_day)),
-    };
-  });
+    }));
 
-  // 結果返却
-  const { startRow, endRow, totalPage } = getPagenationsItems(startRange, data.length, count ?? 0);
-  return {
-    data: res,
-    paginate: {
-      count,
-      startRow,
-      endRow,
-      totalPage,
-      currentPage: values.sortItems?.nextPage ?? 0,
-    },
-  };
+    const { startRow, endRow, totalPage } = getPagenationsItems(startRange, data.length, count ?? 0);
+    return {
+      success: true,
+      data: res,
+      paginate: {
+        count,
+        startRow,
+        endRow,
+        totalPage,
+        currentPage: values.sortItems?.nextPage ?? 0,
+      },
+    };
+  } catch (e: unknown) {
+    console.error(e);
+
+    if (e instanceof CustomError) {
+      return {
+        success: false,
+        error: {
+          code: e.code,
+          message: e.message,
+        },
+      };
+    }
+
+    return {
+      success: false,
+      error: {
+        code: ErrorCodes.INTERNAL_SERVER_ERROR.code,
+        message: ErrorCodes.INTERNAL_SERVER_ERROR.message,
+      },
+    };
+  }
 };
 
+/**
+ * 検索条件を設定します。
+ * @param {any} query - Query
+ * @param {OrderSearchFormValues} req
+ * @returns {any} query 検索条件追加後のQuery
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const applyFilters = (query: any, req: OrderSearchFormValues) => {
   // ユーザー名;
@@ -133,6 +166,12 @@ const applyFilters = (query: any, req: OrderSearchFormValues) => {
   return query;
 };
 
+/**
+ * ソート条件を設定します。
+ * @param {query} query - Query
+ * @param {sortItems | undefined} sortItems - ソート条件
+ * @returns {any} query 検索条件追加後のQuery
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const applySorts = (query: any, sortItems: SortItems | undefined) => {
   // ソート順序
@@ -233,9 +272,13 @@ export const _searchOrderDetail = async (values: ApiRequest<number>): Promise<Ap
       .single();
     const { data, error } = (await query) as PostgrestSingleResponse<orderDeteilResponseData>;
 
-    if (error) {
-      console.log(error);
-      return { error: error.message };
+    if (error || !data) {
+      console.error(error);
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        'オーダー情報の取得' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
     }
 
     /* 累計注文数
@@ -249,8 +292,11 @@ export const _searchOrderDetail = async (values: ApiRequest<number>): Promise<Ap
       (await queryTotalOrderCount) as PostgrestSingleResponse<orderDeteilResponseData>;
 
     if (errorTotalOrderCount) {
-      console.log(errorTotalOrderCount);
-      return { error: 'オーダー情報(累計注文数)の取得' + ERROR_MESSAGE.TEMPLATE };
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        'オーダー情報(累計注文数)の取得' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
     }
 
     /* 前回注文日
@@ -268,8 +314,11 @@ export const _searchOrderDetail = async (values: ApiRequest<number>): Promise<Ap
       (await queryLastOrderDateTime) as PostgrestSingleResponse<orderDeteilResponseData>;
 
     if (errorLastOrderDateTime) {
-      console.log(errorLastOrderDateTime);
-      return { error: 'オーダー情報(前回注文日)の取得' + ERROR_MESSAGE.TEMPLATE };
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        'オーダー情報(前回注文日)の取得' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
     }
 
     /* 返却
@@ -320,11 +369,23 @@ export const _searchOrderDetail = async (values: ApiRequest<number>): Promise<Ap
     };
 
     return {
+      success: true,
       data: res,
     };
-  } catch (e) {
+  } catch (e: unknown) {
+    console.error(e);
+    if (e instanceof CustomError) {
+      return {
+        success: false,
+        error: {
+          code: e.code,
+          message: e.message,
+        },
+      };
+    }
     return {
-      error: (e as Error).message,
+      success: false,
+      error: { code: ErrorCodes.INTERNAL_SERVER_ERROR.code, message: ErrorCodes.INTERNAL_SERVER_ERROR.message },
     };
   }
 };
@@ -342,8 +403,6 @@ export const _orderCancel = async (values: ApiRequest<number>): Promise<ApiRespo
   const id = values.request;
 
   // ステータスをキャンセルに更新
-  let res: ApiResponse<number> = {};
-
   try {
     // connection Start
     await client.connect();
@@ -352,12 +411,12 @@ export const _orderCancel = async (values: ApiRequest<number>): Promise<ApiRespo
     // Transaction Start
     await client.query('BEGIN');
 
-    // 楽観排他処理しよね。
+    // 楽観排他処理
     const selectSql = `SELECT id FROM t_order WHERE id = $1 AND order_status = $2`;
     const resultSelect = await client.query(selectSql, [id, OrderStatus.VALID]);
 
     if (resultSelect.rowCount === 0) {
-      throw new Error('オーダー情報が更新されています。画面を更新してご確認ください。');
+      throw new CustomError(ErrorCodes.CONFLICT);
     }
 
     /* Update - t_order
@@ -367,7 +426,10 @@ export const _orderCancel = async (values: ApiRequest<number>): Promise<ApiRespo
     // Update
     const result = await client.query(updateSql, [OrderStatus.CANCEL, timestamp, timestamp, id, OrderStatus.VALID]);
     if (result.rowCount === 0) {
-      throw new Error('オーダー情報の更新' + ERROR_MESSAGE.TEMPLATE);
+      throw new CustomError({
+        ...ErrorCodes.NOT_FOUND,
+        message: 'オーダー情報の更新' + ErrorCodes.NOT_FOUND.message,
+      });
     }
     const updatedId = result.rows[0]?.id;
 
@@ -384,15 +446,29 @@ export const _orderCancel = async (values: ApiRequest<number>): Promise<ApiRespo
     console.log('Transaction completed, Update user ID:', updatedId);
 
     // Response setting
-    res = { data: updatedId };
-  } catch (error) {
-    // Rollback
-    console.error('Transaction failed:', error);
-    await client.query('ROLLBACK');
-    return { error: ERROR_MESSAGE.UNEXPECTED };
+    return { success: true, data: updatedId };
+  } catch (e: unknown) {
+    console.error('Transaction failed:', e);
+    await rollbackWithLog(client);
+
+    if (e instanceof CustomError) {
+      return {
+        success: false,
+        error: {
+          code: e.code,
+          message: e.message,
+        },
+      };
+    }
+    return {
+      success: false,
+      error: {
+        code: ErrorCodes.INTERNAL_SERVER_ERROR.code,
+        message: ErrorCodes.INTERNAL_SERVER_ERROR.message,
+      },
+    };
   } finally {
     // Transaction End
     await client.end();
   }
-  return res;
 };

@@ -4,6 +4,8 @@ import { getDateString } from '@/app/_lib/getDateTime';
 import { createClient } from '@/app/_lib/supabase/server';
 import { getPagenationsItems, getRange } from '@/app/_lib/utill';
 import { ApiRequest, ApiResponse, SortItems } from '@/app/_types/types';
+import { CustomError } from '@/app/errors/customError';
+import { ErrorCodes } from '@/app/errors/ErrorCodes';
 
 import { ScheduleData, ScheduleListSearchResult, ScheduleSearchFormValues } from './types';
 
@@ -21,42 +23,46 @@ export const _searchScheduleList = async (
   values: ApiRequest<ScheduleSearchFormValues>
 ): Promise<ApiResponse<ScheduleListSearchResult>> => {
   const supabase = await createClient();
-
   const { startRange, endRange } = getRange(values.sortItems?.nextPage ?? 0);
   const req = values.request;
   const sortItems = values.sortItems;
 
-  /* 件数取得
+  try {
+    /* 件数取得
   ------------------------------------------------------------------ */
-  let queryCount = supabase.from('v_menu_schedule').select('*', { count: 'exact', head: true });
-  queryCount = applyFilters(queryCount, req);
+    let queryCount = supabase.from('v_menu_schedule').select('*', { count: 'exact', head: true });
+    queryCount = applyFilters(queryCount, req);
 
-  const { count, error: countError } = (await queryCount) as PostgrestSingleResponse<ScheduleData[]>;
-  if (countError) {
-    console.log('countError', countError);
-    return {
-      error: countError.message,
-    };
-  }
-  if (!count) {
-    return {
-      paginate: {
-        count: 0, // 0件で処理終了
-        startRow: 0,
-        endRow: 0,
-        totalPage: 0,
-        currentPage: 0,
-      },
-    };
-  }
-  console.log('スケジュール件数の取得結果:', count);
+    const { count, error: countError } = (await queryCount) as PostgrestSingleResponse<ScheduleData[]>;
+    if (countError) {
+      console.log('countError', countError);
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        'スケジュール情報の件数取得' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
+    }
+    if (!count) {
+      return {
+        success: true,
+        data: { orderAmout: 0, scheduleDatas: [] },
+        paginate: {
+          count: 0,
+          startRow: 0,
+          endRow: 0,
+          totalPage: 0,
+          currentPage: 0,
+        },
+      };
+    }
+    console.log('スケジュール件数の取得結果:', count);
 
-  /* 明細行取得
+    /* 明細行取得
   ------------------------------------------------------------------ */
-  let query = supabase
-    .from('v_menu_schedule')
-    .select(
-      `id,
+    let query = supabase
+      .from('v_menu_schedule')
+      .select(
+        `id,
       delivery_day,
       company_name,
       branch_name,
@@ -64,65 +70,90 @@ export const _searchScheduleList = async (
       menu_name,
       order_count
       `
-    )
-    .range(startRange, endRange);
-  query = applyFilters(query, req);
-  query = applySorts(query, sortItems);
+      )
+      .range(startRange, endRange);
+    query = applyFilters(query, req);
+    query = applySorts(query, sortItems);
 
-  const { data, error } = (await query) as PostgrestSingleResponse<ScheduleData[]>;
-  if (error) {
-    console.log('error', error);
-    return {
-      error: error.message,
-    };
-  }
-  console.log('スケジュール一覧の取得結果:', data);
+    const { data, error } = (await query) as PostgrestSingleResponse<ScheduleData[]>;
+    if (error) {
+      console.error('query error', error);
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        'スケジュール情報の件数取得' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
+    }
 
-  /* 納品数合計
+    /* 納品数合計
   ------------------------------------------------------------------ */
-  // MEMO:
-  // VIEWにはSUM()が使用不可のため、該当レコードの納品数を取得し、合計数を算出する。
-  let orderCountQuery = supabase.from('v_menu_schedule').select('order_count');
-  orderCountQuery = applyFilters(orderCountQuery, req);
-  const { data: orderCountData, error: orderCountError } = (await query) as PostgrestSingleResponse<ScheduleData[]>;
+    // MEMO:
+    // VIEWにはSUM()が使用不可のため、該当レコードの納品数を取得し、合計数を算出する。
+    let orderCountQuery = supabase.from('v_menu_schedule').select('order_count');
+    orderCountQuery = applyFilters(orderCountQuery, req);
+    const { data: orderCountData, error: orderCountError } = (await query) as PostgrestSingleResponse<ScheduleData[]>;
 
-  if (orderCountError) {
-    console.log('orderAmountError', orderCountError);
-    return {
-      error: orderCountError.message,
-    };
-  }
+    if (orderCountError) {
+      console.log('orderAmountError', orderCountError);
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        '納品数合計の取得' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
+    }
 
-  const totalOrderCount = orderCountData.reduce((acc, item) => acc + item.order_count, 0);
+    const totalOrderCount = orderCountData.reduce((acc, item) => acc + item.order_count, 0);
 
-  console.log('スケジュール一覧納品数合計:', totalOrderCount);
+    console.log('スケジュール一覧納品数合計:', totalOrderCount);
 
-  /* 返却
+    /* 返却
   ------------------------------------------------------------------ */
-  const res: ScheduleListSearchResult = {
-    orderAmout: totalOrderCount,
-    scheduleDatas: data.map((m) => {
+    const res: ScheduleListSearchResult = {
+      orderAmout: totalOrderCount,
+      scheduleDatas: data.map((m) => {
+        return {
+          ...m,
+          id: m.id!.toString(),
+          delivery_day: getDateString(new Date(m.delivery_day)),
+          sum: totalOrderCount,
+        };
+      }),
+    };
+
+    // 結果返却
+    const { startRow, endRow, totalPage } = getPagenationsItems(startRange, data.length, count ?? 0);
+    return {
+      success: true,
+      data: res,
+      paginate: {
+        count,
+        startRow,
+        endRow,
+        totalPage,
+        currentPage: values.sortItems?.nextPage ?? 0,
+      },
+    };
+  } catch (e: unknown) {
+    console.error(e);
+
+    if (e instanceof CustomError) {
       return {
-        ...m,
-        id: m.id!.toString(),
-        delivery_day: getDateString(new Date(m.delivery_day)),
-        sum: totalOrderCount,
+        success: false,
+        error: {
+          code: e.code,
+          message: e.message,
+        },
       };
-    }),
-  };
+    }
 
-  // 結果返却
-  const { startRow, endRow, totalPage } = getPagenationsItems(startRange, data.length, count ?? 0);
-  return {
-    data: res,
-    paginate: {
-      count,
-      startRow,
-      endRow,
-      totalPage,
-      currentPage: values.sortItems?.nextPage ?? 0,
-    },
-  };
+    return {
+      success: false,
+      error: {
+        code: ErrorCodes.INTERNAL_SERVER_ERROR.code,
+        message: ErrorCodes.INTERNAL_SERVER_ERROR.message,
+      },
+    };
+  }
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

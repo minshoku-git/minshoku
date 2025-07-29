@@ -29,7 +29,6 @@ import { useDirty } from '@/app/_ui/dirty/dartyContext';
 import { useProcessing } from '@/app/_ui/processing/processingContext';
 import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
 
-import { state as stateMockData } from '../../../../public/state.json';
 import { insertCompanyDetail, searchCompanyDetail, updateCompanyDetail } from './_lib/fetcher';
 import { CompanyDataDetailResult, CompanyDetailFormValues, CompanyDetailSchema } from './_lib/types';
 
@@ -91,7 +90,6 @@ export const CompanyComponent = (): JSX.Element => {
   const {
     data: result,
     isLoading,
-    isError,
     refetch,
   } = useQuery<ApiResponse<CompanyDataDetailResult>>({
     queryKey: [QUERY_KEYS.COMPANY_SEARCH_RESULT],
@@ -106,12 +104,14 @@ export const CompanyComponent = (): JSX.Element => {
       setDataLoaded(true);
       return;
     }
-    if (isError || result?.error) {
-      console.log(result?.error);
-      openSnackbar(AlertType.WARNING, '会社情報の取得に失敗しました。再度お試しください。');
+    if (!result) {
+      return;
+    }
+    if (!result.success) {
+      openSnackbar(AlertType.WARNING, result.error.message);
       router.push('/company');
     }
-    if (result?.data) {
+    else if (result.data) {
       const data = result.data;
       const conversion: CompanyDetailFormValues = {
         ...data,
@@ -240,8 +240,12 @@ export const CompanyComponent = (): JSX.Element => {
       return insertCompanyDetail(data) as unknown as ApiResponse<number>;
     },
     onSuccess: (res) => {
-      openSnackbar(AlertType.SUCCESS, '会社情報の登録が完了しました。');
-      router.push(`/companyDetail/${res.data}`);
+      if (res.success) {
+        openSnackbar(AlertType.SUCCESS, '会社情報の登録が完了しました。');
+        router.push(`/companyDetail/${res.data}`);
+      } else {
+        openSnackbar(AlertType.ERROR, res.error.message);
+      }
     },
     onError: (e) => {
       console.log(e.message);
@@ -263,9 +267,14 @@ export const CompanyComponent = (): JSX.Element => {
       openProcessing();
       return updateCompanyDetail(data) as unknown as ApiResponse<number>;
     },
-    onSuccess: (_res: ApiResponse<number>) => {
-      refetch();
-      openSnackbar(AlertType.SUCCESS, '会社情報の更新が完了しました。');
+    onSuccess: (res: ApiResponse<number>) => {
+      if (res.success) {
+        refetch();
+        openSnackbar(AlertType.SUCCESS, '会社情報の更新が完了しました。');
+        router.push(`/companyDetail/${res.data}`);
+      } else {
+        openSnackbar(AlertType.ERROR, res.error.message);
+      }
     },
     onError: (e) => {
       console.error(e.message);
@@ -482,7 +491,7 @@ export const CompanyComponent = (): JSX.Element => {
                     color="primary"
                     name="address"
                     fullWidth
-                    // slotProps={{ htmlInput: { maxLength: 128 } }}
+                  // slotProps={{ htmlInput: { maxLength: 128 } }}
                   />
                 </ItemBase>
                 <ItemBase name={'番地'} isRequired={0}>
@@ -786,41 +795,41 @@ const getInitData = (data: CompanyDetailFormValues | null) => {
     data && data.departmentInfo.length > 0
       ? data?.departmentInfo
       : [
-          {
-            id: TEMP_HYPHEN + 0,
-            name: '設定なし',
-            disabled: false,
-            delete_flag: false,
-          },
-        ];
+        {
+          id: TEMP_HYPHEN + 0,
+          name: '設定なし',
+          disabled: false,
+          delete_flag: false,
+        },
+      ];
 
   const empInit: EmploymentData[] =
     data && data.employmentStatusInfo.length > 0
       ? data.employmentStatusInfo
       : [
-          {
-            id: TEMP_HYPHEN + 0,
-            employment_status_name: '社員',
-            credit_flag: false,
-            paypay_flag: false,
-            deduction_flag: false,
-            set_meal_burden: '0',
-            disabled: false,
-            delete_flag: false,
-          },
-        ];
+        {
+          id: TEMP_HYPHEN + 0,
+          employment_status_name: '社員',
+          credit_flag: false,
+          paypay_flag: false,
+          deduction_flag: false,
+          set_meal_burden: '0',
+          disabled: false,
+          delete_flag: false,
+        },
+      ];
 
   const domainInit: DepartmentData[] =
     data && data.domain.length > 0
       ? data?.domain
       : [
-          {
-            id: TEMP_HYPHEN + 0,
-            name: '',
-            disabled: false,
-            delete_flag: false,
-          },
-        ];
+        {
+          id: TEMP_HYPHEN + 0,
+          name: '',
+          disabled: false,
+          delete_flag: false,
+        },
+      ];
 
   const initValues: CompanyDetailFormValues = {
     id: data?.id ? data?.id.toString() : '-',

@@ -151,11 +151,8 @@ export const ScheduleComponent = (): JSX.Element => {
     if (!data) {
       return;
     }
-    if (data.error || isError) {
-      openSnackbar(
-        AlertType.ERROR,
-        data.error ? data.error : '検索時にエラーが発生しました。再度発生する場合は、管理者にお問い合わせください。'
-      );
+    if (!data.success) {
+      openSnackbar(AlertType.ERROR, data.error.message);
       setResult(null);
       setIsSearch(false);
       return;
@@ -387,7 +384,7 @@ export const ScheduleComponent = (): JSX.Element => {
               </Button>
             </Grid>
           </form>
-          {isSearch && result && (
+          {isSearch && result?.success && (
             <>
               <Divider sx={{ my: 3 }} />
               {result.paginate?.count && result.paginate?.count > 0 ? (

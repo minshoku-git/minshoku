@@ -145,8 +145,8 @@ export const CompanyComponent = (): JSX.Element => {
     if (!data) {
       return;
     }
-    if (data?.error) {
-      openSnackbar(AlertType.ERROR, '検索時にエラーが発生しました。再度発生する場合は、管理者にお問い合わせください。');
+    if (!data.success) {
+      openSnackbar(AlertType.ERROR, data.error.message);
       setResult(null);
       return;
     }
@@ -341,7 +341,7 @@ export const CompanyComponent = (): JSX.Element => {
               </Button>
             </Grid>
             {/* ======= 検索結果 ========================================== */}
-            {isSearch && result && (
+            {isSearch && result?.success && (
               <>
                 <Divider sx={{ my: 3 }} />
                 {result.paginate?.count && result.paginate?.count > 0 ? (

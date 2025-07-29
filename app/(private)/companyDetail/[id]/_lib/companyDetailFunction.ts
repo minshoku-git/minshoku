@@ -4,10 +4,13 @@ import { DepartmentData, EmploymentData } from '@/app/_lib/createMockData';
 import { getNow, getTimeString, getTodayXHour } from '@/app/_lib/getDateTime';
 import { createClient, createPgClient } from '@/app/_lib/supabase/server';
 import { t_companies, t_companies_department, t_companies_employment_status } from '@/app/_lib/supabase/tableTypes';
+import { rollbackWithLog } from '@/app/_lib/supabase/transaction';
 import { checkTempId, convertTimeToDate, getPostgreSqlItems } from '@/app/_lib/utill';
 import { ERROR_MESSAGE } from '@/app/_types/constants';
 import { UsageStatus } from '@/app/_types/enum';
 import { ApiRequest, ApiResponse } from '@/app/_types/types';
+import { CustomError } from '@/app/errors/customError';
+import { ErrorCodes } from '@/app/errors/ErrorCodes';
 
 import { CompanyDetailFormValues } from './types';
 
@@ -34,9 +37,13 @@ export const _searchCompanyDetail = async (
     const query = supabase.from('t_companies').select('*').eq('id', values.request).single();
     const { data, error } = (await query) as PostgrestSingleResponse<t_companies>;
 
-    if (error) {
+    if (error || !data) {
       console.error(error);
-      return { error: '会社情報の取得' + ERROR_MESSAGE.TEMPLATE };
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        '会社情報の取得' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
     }
 
     // 2-1.部署情報取得
@@ -50,7 +57,11 @@ export const _searchCompanyDetail = async (
 
     if (errorDep) {
       console.error(errorDep);
-      return { error: '部署情報の取得' + ERROR_MESSAGE.TEMPLATE };
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        '部署情報の取得' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
     }
 
     // 3-2.雇用種別情報 使用状況取得
@@ -81,7 +92,11 @@ export const _searchCompanyDetail = async (
     );
 
     if (usageDepartment.find((f) => f.error)) {
-      return { error: '部署情報(利用状況)の取得' + ERROR_MESSAGE.TEMPLATE };
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        '部署情報(利用状況)の取得' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
     }
 
     // 3-1.雇用種別情報取得
@@ -97,7 +112,11 @@ export const _searchCompanyDetail = async (
 
     if (errorEmp) {
       console.error(errorEmp);
-      return { error: '雇用種別情報の取得' + ERROR_MESSAGE.TEMPLATE };
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        '雇用種別情報の取得' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
     }
 
     // 3-2.雇用種別情報 使用状況取得
@@ -128,7 +147,11 @@ export const _searchCompanyDetail = async (
     );
 
     if (usageEmployment.find((f) => f.error)) {
-      return { error: '雇用種別情報(利用状況)の取得' + ERROR_MESSAGE.TEMPLATE };
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        '雇用種別情報(利用状況)の取得' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
     }
 
     // Response set
@@ -203,10 +226,22 @@ export const _searchCompanyDetail = async (
         data.usage_status.toString() === UsageStatus.AVAILABLE ? UsageStatus.AVAILABLE : UsageStatus.DEACTIVATION,
     };
 
-    return { data: res };
-  } catch (error) {
-    console.error(error);
-    return { error: ERROR_MESSAGE.UNEXPECTED };
+    return { success: true, data: res };
+  } catch (e: unknown) {
+    console.error(e);
+    if (e instanceof CustomError) {
+      return {
+        success: false,
+        error: {
+          code: e.code,
+          message: e.message,
+        },
+      };
+    }
+    return {
+      success: false,
+      error: { code: ErrorCodes.INTERNAL_SERVER_ERROR.code, message: ErrorCodes.INTERNAL_SERVER_ERROR.message },
+    };
   }
 };
 
@@ -322,13 +357,28 @@ export const _insertComponyDetail = async (
     console.log('Transaction completed, new company ID:', newCompanyId);
 
     // Response setting
-    return { data: newCompanyId };
-  } catch (error) {
+    return { success: true, data: newCompanyId };
+  } catch (e: unknown) {
+    console.error('Transaction failed:', e);
     // Rollback
-    await client.query('ROLLBACK');
+    await rollbackWithLog(client);
 
-    console.error('Transaction failed:', error);
-    return { error: ERROR_MESSAGE.UNEXPECTED };
+    if (e instanceof CustomError) {
+      return {
+        success: false,
+        error: {
+          code: e.code,
+          message: e.message,
+        },
+      };
+    }
+    return {
+      success: false,
+      error: {
+        code: ErrorCodes.INTERNAL_SERVER_ERROR.code,
+        message: ErrorCodes.INTERNAL_SERVER_ERROR.message,
+      },
+    };
   } finally {
     // Transaction End
     await client.end();
@@ -542,13 +592,28 @@ export const _updateComponyDetail = async (values: CompanyDetailFormValues): Pro
     console.log('Transaction completed, update company ID:', updatedId);
 
     // Response setting
-    return { data: updatedId };
-  } catch (error) {
+    return { success: true, data: updatedId };
+  } catch (e: unknown) {
+    console.error('Transaction failed:', e);
     // Rollback
-    await client.query('ROLLBACK');
+    await rollbackWithLog(client);
 
-    console.error('Transaction failed:', error);
-    return { error: ERROR_MESSAGE.UNEXPECTED };
+    if (e instanceof CustomError) {
+      return {
+        success: false,
+        error: {
+          code: e.code,
+          message: e.message,
+        },
+      };
+    }
+    return {
+      success: false,
+      error: {
+        code: ErrorCodes.INTERNAL_SERVER_ERROR.code,
+        message: ErrorCodes.INTERNAL_SERVER_ERROR.message,
+      },
+    };
   } finally {
     // Transaction End
     await client.end();

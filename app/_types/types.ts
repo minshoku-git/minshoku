@@ -30,12 +30,6 @@ export type SortItems = {
   ascending: boolean;
 };
 
-export type ApiResponse<T> = {
-  data?: T;
-  error?: string;
-  paginate?: PaginateData;
-};
-
 export type PaginateData = {
   count: number;
   currentPage: number;
@@ -43,3 +37,19 @@ export type PaginateData = {
   startRow: number;
   endRow: number;
 };
+
+export type ApiSuccess<T> = {
+  success: true;
+  data: T;
+  paginate?: PaginateData;
+};
+
+export type ApiError = {
+  success: false;
+  error: {
+    code: string;
+    message: string;
+  };
+};
+
+export type ApiResponse<T> = ApiSuccess<T> | ApiError;

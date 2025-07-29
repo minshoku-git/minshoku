@@ -6,10 +6,13 @@ import { getImageSignedUrl } from '@/app/_lib/subabaseStorage/getImageUrl';
 import { uploadFile } from '@/app/_lib/subabaseStorage/uploadFile';
 import { createClient, createPgClient } from '@/app/_lib/supabase/server';
 import { t_shops } from '@/app/_lib/supabase/tableTypes';
+import { rollbackWithLog } from '@/app/_lib/supabase/transaction';
 import { getPostgreSqlItems } from '@/app/_lib/utill';
 import { BUCKET_SHOP_IMAGES, ERROR_MESSAGE } from '@/app/_types/constants';
 import { UsageStatus } from '@/app/_types/enum';
 import { ApiRequest, ApiResponse } from '@/app/_types/types';
+import { CustomError } from '@/app/errors/customError';
+import { ErrorCodes } from '@/app/errors/ErrorCodes';
 
 import { shopDeteilRequestData, shopDeteilResponseData } from './types';
 
@@ -31,9 +34,13 @@ export const _searchShopDetail = async (values: ApiRequest<number>): Promise<Api
     const query = supabase.from('t_shops').select('*').eq('id', id).single();
     const { data, error } = (await query) as PostgrestSingleResponse<t_shops>;
 
-    if (error) {
+    if (error || !data) {
       console.error(error);
-      return { error: '店舗情報の取得' + ERROR_MESSAGE.TEMPLATE };
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        '店舗情報の取得' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
     }
 
     // 画像URLを取得
@@ -43,7 +50,11 @@ export const _searchShopDetail = async (values: ApiRequest<number>): Promise<Api
       imageUrl = await getImageSignedUrl(supabase, BUCKET_SHOP_IMAGES, filepath);
       if (!imageUrl) {
         console.error(error);
-        return { error: '店舗画像ファイルの取得' + ERROR_MESSAGE.TEMPLATE };
+        throw new CustomError(
+          ErrorCodes.NOT_FOUND.code,
+          '店舗画像ファイルの取得' + ErrorCodes.NOT_FOUND.message,
+          ErrorCodes.NOT_FOUND.status
+        );
       }
     }
 
@@ -66,11 +77,24 @@ export const _searchShopDetail = async (values: ApiRequest<number>): Promise<Api
     };
 
     return {
+      success: true,
       data: res,
     };
-  } catch (e) {
+  } catch (e: unknown) {
     console.error(e);
-    return { error: ERROR_MESSAGE.UNEXPECTED };
+    if (e instanceof CustomError) {
+      return {
+        success: false,
+        error: {
+          code: e.code,
+          message: e.message,
+        },
+      };
+    }
+    return {
+      success: false,
+      error: { code: ErrorCodes.INTERNAL_SERVER_ERROR.code, message: ErrorCodes.INTERNAL_SERVER_ERROR.message },
+    };
   }
 };
 
@@ -85,8 +109,6 @@ export const _insertShopDetail = async (values: shopDeteilRequestData): Promise<
   const req = values;
   const supabase = await createClient();
   const pgClient = createPgClient();
-
-  let res: ApiResponse<number> = {};
 
   try {
     // connection Start
@@ -122,7 +144,11 @@ export const _insertShopDetail = async (values: shopDeteilRequestData): Promise<
     // Insert
     const result = await pgClient.query(insertShopText, values);
     if (result.rowCount === 0) {
-      return { error: '店舗情報の新規登録' + ERROR_MESSAGE.TEMPLATE };
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        '店舗情報の新規登録' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
     }
 
     const newShopId: number = result.rows[0]?.id;
@@ -141,17 +167,30 @@ export const _insertShopDetail = async (values: shopDeteilRequestData): Promise<
     await pgClient.query('COMMIT');
     console.log('Transaction completed, new company ID:', newShopId);
 
-    res = { data: newShopId };
-  } catch (error) {
-    // Rollback
-    await pgClient.query('ROLLBACK');
-    console.error('Transaction failed:', error);
+    return { success: true, data: newShopId };
+  } catch (e: unknown) {
+    console.error('Transaction failed:', e);
+    await rollbackWithLog(pgClient);
 
-    res = { error: ERROR_MESSAGE.UNEXPECTED };
+    if (e instanceof CustomError) {
+      return {
+        success: false,
+        error: {
+          code: e.code,
+          message: e.message,
+        },
+      };
+    }
+    return {
+      success: false,
+      error: {
+        code: ErrorCodes.INTERNAL_SERVER_ERROR.code,
+        message: ErrorCodes.INTERNAL_SERVER_ERROR.message,
+      },
+    };
   } finally {
     // Transaction End
     await pgClient.end();
-    return res;
   }
 };
 
@@ -167,8 +206,6 @@ export const _updateShopDetail = async (values: shopDeteilRequestData): Promise<
   const supabase = await createClient();
   const pgClient = createPgClient();
   const timestamp = getNow();
-
-  let res: ApiResponse<number> = {};
 
   try {
     // connection Start
@@ -186,7 +223,11 @@ export const _updateShopDetail = async (values: shopDeteilRequestData): Promise<
 
     if (error) {
       console.error(error);
-      return { error: '店舗画像ファイルの取得' + ERROR_MESSAGE.TEMPLATE };
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        '店舗画像ファイルの取得' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
     }
 
     /* Update - t_shops
@@ -223,7 +264,11 @@ export const _updateShopDetail = async (values: shopDeteilRequestData): Promise<
 
     if (result.rowCount === 0) {
       console.error(error);
-      return { error: '店舗情報の更新' + ERROR_MESSAGE.TEMPLATE };
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        '店舗情報の更新' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
     }
 
     const updatedId = result.rows[0]?.id;
@@ -249,23 +294,35 @@ export const _updateShopDetail = async (values: shopDeteilRequestData): Promise<
 
     /* --------------------------------------------------------------- */
     // throw new Error('疑似エラー:ロールバックを確認しました。');
+
     // Commit
     await pgClient.query('COMMIT');
     console.log('Transaction completed, update company ID:', updatedId);
 
     // Response setting
-    res = {
-      data: updatedId,
-    };
-  } catch (error) {
-    // Rollback
-    await pgClient.query('ROLLBACK');
+    return { success: true, data: updatedId };
+  } catch (e: unknown) {
+    console.error('Transaction failed:', e);
+    await rollbackWithLog(pgClient);
 
-    console.error('Transaction failed:', error);
-    res = { error: ERROR_MESSAGE.UNEXPECTED };
+    if (e instanceof CustomError) {
+      return {
+        success: false,
+        error: {
+          code: e.code,
+          message: e.message,
+        },
+      };
+    }
+    return {
+      success: false,
+      error: {
+        code: ErrorCodes.INTERNAL_SERVER_ERROR.code,
+        message: ErrorCodes.INTERNAL_SERVER_ERROR.message,
+      },
+    };
   } finally {
     // Transaction End
     await pgClient.end();
   }
-  return res;
 };

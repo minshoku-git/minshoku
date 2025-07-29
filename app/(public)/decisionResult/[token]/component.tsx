@@ -20,7 +20,7 @@ export const DecisionResultComponent = (props: props): JSX.Element => {
   /* initialize
   ------------------------------------------------------------------ */
   const router = useRouter();
-  const result: DecisionResult | null = props.result?.data ?? null;
+  const result: DecisionResult | null = props.result?.success ? props.result.data : null;
 
   /* useState
   ------------------------------------------------------------------ */

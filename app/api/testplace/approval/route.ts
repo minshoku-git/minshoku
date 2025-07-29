@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
   const res = await approval(token);
   console.log(`クリック記録: user_id = ${token}`);
 
-  if (res.error) {
+  if (!res.success) {
     return NextResponse.redirect(new URL('/login', req.url));
   } else {
     return NextResponse.redirect(new URL('/decisionResult', req.url));

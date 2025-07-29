@@ -33,9 +33,11 @@ export const WaitingApprovalBadge = (): JSX.Element => {
   /* useEffect
     ------------------------------------------------------------------ */
   useEffect(() => {
-    if (isError || result?.error) {
-      console.log(result?.error);
-      openSnackbar(AlertType.WARNING, '承認待ちユーザー数の取得に失敗しました。');
+    if (!result) {
+      return
+    }
+    if (!result.success) {
+      openSnackbar(AlertType.WARNING, result.error.message);
       return;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -45,7 +47,7 @@ export const WaitingApprovalBadge = (): JSX.Element => {
     ------------------------------------------------------------------ */
   return (
     <>
-      {result?.data && (
+      {result?.success && (
         <Avatar sx={{ bgcolor: '#f7514d', width: 28, height: 28, fontSize: 12 }}>{result.data}</Avatar>
       )}{' '}
     </>

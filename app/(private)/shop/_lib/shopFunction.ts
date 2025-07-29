@@ -5,6 +5,8 @@ import { t_shops } from '@/app/_lib/supabase/tableTypes';
 import { getPagenationsItems, getPostCodeAddHyphen, getRange } from '@/app/_lib/utill';
 import { convertUsageStatusName, UsageStatus } from '@/app/_types/enum';
 import { ApiRequest, ApiResponse, SortItems } from '@/app/_types/types';
+import { CustomError } from '@/app/errors/customError';
+import { ErrorCodes } from '@/app/errors/ErrorCodes';
 
 import { ShopListSearchResult, ShopSearchFormValues } from './types';
 
@@ -22,68 +24,100 @@ export const _searchShopList = async (
   values: ApiRequest<ShopSearchFormValues>
 ): Promise<ApiResponse<ShopListSearchResult[]>> => {
   const supabase = await createClient();
-
   const req = values.request;
   const sortItems = values.sortItems;
   const { startRange, endRange } = getRange(sortItems?.nextPage ?? 0);
 
-  /* 件数取得
-  ------------------------------------------------------------------ */
-  let queryCount = supabase.from('t_shops').select('*', { count: 'exact', head: true });
-  queryCount = applyFilters(queryCount, req);
+  try {
+    /* 件数取得
+    ------------------------------------------------------------------ */
+    let queryCount = supabase.from('t_shops').select('*', { count: 'exact', head: true });
+    queryCount = applyFilters(queryCount, req);
 
-  const { count, error: countError } = (await queryCount) as PostgrestSingleResponse<t_shops[]>;
-  if (countError) {
-    console.error('countError', countError);
-    return { error: countError.message };
-  }
-  if (!count) {
+    const { count, error: countError } = (await queryCount) as PostgrestSingleResponse<t_shops[]>;
+    if (countError) {
+      console.error('countError', countError);
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        '店舗情報の件数取得' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
+    }
+    if (!count) {
+      return {
+        success: true,
+        data: [],
+        paginate: {
+          count: 0,
+          startRow: 0,
+          endRow: 0,
+          totalPage: 0,
+          currentPage: 0,
+        },
+      };
+    }
+
+    /* 明細行取得
+    ------------------------------------------------------------------ */
+    let query = supabase.from('t_shops').select('*').range(startRange, endRange);
+    query = applyFilters(query, req);
+    query = applySorts(query, sortItems);
+
+    const { data, error } = (await query) as PostgrestSingleResponse<t_shops[]>;
+    if (error) {
+      console.error('query error', error);
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        'スケジュール情報の件数取得' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
+    }
+
+    /* 返却
+    ------------------------------------------------------------------ */
+    const res: ShopListSearchResult[] = data.map((m) => {
+      return {
+        ...m,
+        id: m.id!.toString(),
+        shop_postal_code: m?.shop_postal_code ? getPostCodeAddHyphen(m?.shop_postal_code) : '',
+        address: m.shop_address! + m.shop_area_block_number + m.shop_building_name,
+        usage_status: convertUsageStatusName(m.usage_status as UsageStatus),
+      };
+    });
+
+    const { startRow, endRow, totalPage } = getPagenationsItems(startRange, data.length, count);
     return {
+      success: true,
+      data: res,
       paginate: {
-        count: 0,
-        startRow: 0,
-        endRow: 0,
-        totalPage: 0,
-        currentPage: 0,
+        count,
+        startRow,
+        endRow,
+        totalPage,
+        currentPage: values.sortItems?.nextPage ?? 0,
+      },
+    };
+  } catch (e: unknown) {
+    console.error(e);
+
+    if (e instanceof CustomError) {
+      return {
+        success: false,
+        error: {
+          code: e.code,
+          message: e.message,
+        },
+      };
+    }
+
+    return {
+      success: false,
+      error: {
+        code: ErrorCodes.INTERNAL_SERVER_ERROR.code,
+        message: ErrorCodes.INTERNAL_SERVER_ERROR.message,
       },
     };
   }
-
-  /* 明細行取得
-  ------------------------------------------------------------------ */
-  let query = supabase.from('t_shops').select('*').range(startRange, endRange);
-  query = applyFilters(query, req);
-  query = applySorts(query, sortItems);
-
-  const { data, error } = (await query) as PostgrestSingleResponse<t_shops[]>;
-  if (error) {
-    console.error('error', error);
-    return { error: error.message };
-  }
-
-  /* 返却
-  ------------------------------------------------------------------ */
-  const res: ShopListSearchResult[] = data.map((m) => {
-    return {
-      ...m,
-      id: m.id!.toString(),
-      shop_postal_code: m?.shop_postal_code ? getPostCodeAddHyphen(m?.shop_postal_code) : '',
-      address: m.shop_address! + m.shop_area_block_number + m.shop_building_name,
-      usage_status: convertUsageStatusName(m.usage_status as UsageStatus),
-    };
-  });
-
-  const { startRow, endRow, totalPage } = getPagenationsItems(startRange, data.length, count);
-  return {
-    data: res,
-    paginate: {
-      count,
-      startRow,
-      endRow,
-      totalPage,
-      currentPage: values.sortItems?.nextPage ?? 0,
-    },
-  };
 };
 
 /**

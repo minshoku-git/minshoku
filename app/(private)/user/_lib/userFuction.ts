@@ -2,7 +2,6 @@ import { PostgrestSingleResponse } from '@supabase/supabase-js';
 
 import { createClient } from '@/app/_lib/supabase/server';
 import { getPagenationsItems, getRange } from '@/app/_lib/utill';
-import { ERROR_MESSAGE } from '@/app/_types/constants';
 import {
   convertUsageStatusName,
   convertUserRegistrationStatusName,
@@ -10,6 +9,8 @@ import {
   UserRegistrationStatus,
 } from '@/app/_types/enum';
 import { ApiRequest, ApiResponse, SortItems } from '@/app/_types/types';
+import { CustomError } from '@/app/errors/customError';
+import { ErrorCodes } from '@/app/errors/ErrorCodes';
 
 import { UserListSearchResult, UserSearchFormValues } from './types';
 
@@ -55,11 +56,17 @@ export const _searchUserList = async (
     const { count, error: countError } = (await queryCount) as PostgrestSingleResponse<UserListSearchResult[]>;
 
     if (countError) {
-      console.error(countError);
-      return { error: 'ユーザー情報の件数取得' + ERROR_MESSAGE.TEMPLATE };
+      console.error('countError', countError);
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        'ユーザー情報の件数取得' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
     }
     if (!count) {
       return {
+        success: true,
+        data: [],
         paginate: {
           count: 0,
           startRow: 0,
@@ -92,7 +99,11 @@ export const _searchUserList = async (
     const { data, error } = (await query) as PostgrestSingleResponse<UserListSearchResult[]>;
     if (error) {
       console.error(error);
-      return { error: 'ユーザー情報の取得' + ERROR_MESSAGE.TEMPLATE };
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        'ユーザー情報の取得' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
     }
 
     /* 返却
@@ -100,6 +111,7 @@ export const _searchUserList = async (
     const { startRow, endRow, totalPage } = getPagenationsItems(startRange, data.length, count);
 
     return {
+      success: true,
       data: data.map((m) => {
         return {
           ...m,
@@ -117,9 +129,24 @@ export const _searchUserList = async (
         currentPage: values.sortItems?.nextPage ?? 0,
       },
     };
-  } catch (error) {
-    console.error(error);
-    return { error: ERROR_MESSAGE.UNEXPECTED };
+  } catch (e: unknown) {
+    console.error(e);
+    if (e instanceof CustomError) {
+      return {
+        success: false,
+        error: {
+          code: e.code,
+          message: e.message,
+        },
+      };
+    }
+    return {
+      success: false,
+      error: {
+        code: ErrorCodes.INTERNAL_SERVER_ERROR.code,
+        message: ErrorCodes.INTERNAL_SERVER_ERROR.message,
+      },
+    };
   }
 };
 

@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 
 import { ApiRequest, ApiResponse } from '@/app/_types/types';
 import { LoginFormValues } from '@/app/(public)/login/_lib/types';
+import { CustomError } from '@/app/errors/customError';
+import { ErrorCodes } from '@/app/errors/ErrorCodes';
 
 import { createClient } from './server';
 import { t_administrator } from './tableTypes';
@@ -13,7 +15,7 @@ import { t_administrator } from './tableTypes';
  * @param password
  * @returns {Promise<ApiResponse<string>>}
  */
-export const signUp = async (req: ApiRequest<LoginFormValues>): Promise<ApiResponse<string>> => {
+export const signUp = async (req: ApiRequest<LoginFormValues>): Promise<ApiResponse<null>> => {
   const supabase = await createClient();
   const { email, password } = req.request;
 
@@ -28,12 +30,28 @@ export const signUp = async (req: ApiRequest<LoginFormValues>): Promise<ApiRespo
 
     if (signUpError) {
       console.error('Error signing up:', signUpError);
-      return { error: signUpError.message };
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        'ユーザー登録' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
     }
-    return { data: '' };
-  } catch (error) {
-    console.error('Error signing up:', error);
-    return { error: (error as Error).message };
+    return { success: true, data: null };
+  } catch (e: unknown) {
+    console.error(e);
+    if (e instanceof CustomError) {
+      return {
+        success: false,
+        error: {
+          code: e.code,
+          message: e.message,
+        },
+      };
+    }
+    return {
+      success: false,
+      error: { code: ErrorCodes.INTERNAL_SERVER_ERROR.code, message: ErrorCodes.INTERNAL_SERVER_ERROR.message },
+    };
   }
 };
 
@@ -57,7 +75,7 @@ export const signIn = async (req: ApiRequest<LoginFormValues>): Promise<ApiRespo
 
     if (error && !data) {
       console.error('Error signing in:', error);
-      return { error: '入力されたメールアドレスは登録されていません。', data: '' };
+      throw new CustomError(ErrorCodes.EMAIL_NOT_REGISTERED);
     }
 
     // 2.サインイン
@@ -68,14 +86,27 @@ export const signIn = async (req: ApiRequest<LoginFormValues>): Promise<ApiRespo
 
     if (signInError) {
       console.error('Error signing in:', signInError);
-      return { error: 'ログイン処理に失敗しました。', data: '' };
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        'ログイン処理' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
     }
-    return { data: '' };
-  } catch (error) {
-    console.error('Error signing in:', error);
+    return { success: true, data: '' };
+  } catch (e: unknown) {
+    console.error(e);
+    if (e instanceof CustomError) {
+      return {
+        success: false,
+        error: {
+          code: e.code,
+          message: e.message,
+        },
+      };
+    }
     return {
-      error: '例外が発生しました。再度お試しの上、繰り返しエラーが発生する場合は、管理者までお問合せください。',
-      data: '',
+      success: false,
+      error: { code: ErrorCodes.INTERNAL_SERVER_ERROR.code, message: ErrorCodes.INTERNAL_SERVER_ERROR.message },
     };
   }
 };
@@ -116,14 +147,33 @@ export const getUser = async (): Promise<ApiResponse<string>> => {
 
     if (getUserError || !data?.user) {
       console.error('Error signing out:', getUserError);
-      return { error: getUserError?.message ?? 'userdata none' };
-    } else {
-      console.log('User signed out:');
-      return { data: '' };
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        'ログイン処理' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
     }
-  } catch (error) {
-    console.error('Error signing out:', error);
-    return { error: (error as Error).message };
+    console.log('User signed out:');
+    return { success: true, data: '' };
+  } catch (e: unknown) {
+    console.error('Transaction failed:', e);
+
+    if (e instanceof CustomError) {
+      return {
+        success: false,
+        error: {
+          code: e.code,
+          message: e.message,
+        },
+      };
+    }
+    return {
+      success: false,
+      error: {
+        code: ErrorCodes.INTERNAL_SERVER_ERROR.code,
+        message: ErrorCodes.INTERNAL_SERVER_ERROR.message,
+      },
+    };
   }
 };
 
@@ -146,17 +196,32 @@ export const approval = async (id: string): Promise<ApiResponse<number>> => {
     const { error, data } = (await query) as PostgrestSingleResponse<test>;
     if (error) {
       console.log(error.message);
-      return {
-        error: error.message,
-      };
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        'ユーザー情報の承認' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
     }
 
+    return { success: true, data: data?.id ? data.id : 0 };
+  } catch (e: unknown) {
+    console.error('Transaction failed:', e);
+
+    if (e instanceof CustomError) {
+      return {
+        success: false,
+        error: {
+          code: e.code,
+          message: e.message,
+        },
+      };
+    }
     return {
-      data: data?.id ? data.id : 0,
-    };
-  } catch (e) {
-    return {
-      error: (e as Error).message,
+      success: false,
+      error: {
+        code: ErrorCodes.INTERNAL_SERVER_ERROR.code,
+        message: ErrorCodes.INTERNAL_SERVER_ERROR.message,
+      },
     };
   }
 };

@@ -2,6 +2,7 @@ import nodemailer from 'nodemailer';
 import SMTPTransport from 'nodemailer/lib/smtp-transport';
 
 import { ApiRequest, ApiResponse } from '@/app/_types/types';
+import { ErrorCodes } from '@/app/errors/ErrorCodes';
 
 /* transport
 ------------------------------------------------------------------ */
@@ -38,11 +39,16 @@ export const send = async (req: ApiRequest<string>): Promise<ApiResponse<string>
       // `,
     })
     .then(() => {
-      return {};
+      const result: ApiResponse<string> = { success: true, data: '' };
+      return result;
     })
     .catch((error) => {
       console.error((error as Error).message);
-      return { error: (error as Error).message };
+      const result: ApiResponse<string> = {
+        success: false,
+        error: { code: ErrorCodes.EMAIL_SEND_FAILED.code, message: ErrorCodes.EMAIL_SEND_FAILED.message },
+      };
+      return result;
     });
 };
 

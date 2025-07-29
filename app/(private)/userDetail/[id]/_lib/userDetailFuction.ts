@@ -3,10 +3,13 @@ import { PostgrestSingleResponse } from '@supabase/supabase-js';
 import { getNow } from '@/app/_lib/getDateTime';
 import { createClient, createPgClient } from '@/app/_lib/supabase/server';
 import { t_user } from '@/app/_lib/supabase/tableTypes';
+import { rollbackWithLog } from '@/app/_lib/supabase/transaction';
 import { getPostgreSqlItems } from '@/app/_lib/utill';
 import { ERROR_MESSAGE } from '@/app/_types/constants';
 import { UsageStatus, UserRegistrationStatus } from '@/app/_types/enum';
 import { ApiRequest, ApiResponse } from '@/app/_types/types';
+import { CustomError } from '@/app/errors/customError';
+import { ErrorCodes } from '@/app/errors/ErrorCodes';
 
 import { UserDataDetailResult, UserDetailFormValues } from './types';
 
@@ -57,19 +60,36 @@ export const _searchUserDetail = async (values: ApiRequest<number>): Promise<Api
 
     if (error) {
       console.error(error);
-      return { error: 'ユーザー情報の取得' + ERROR_MESSAGE.TEMPLATE };
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        'ユーザー情報の取得' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
     }
 
     return {
+      success: true,
       data: {
         ...data,
         usage_status: data.usage_status as UsageStatus,
         user_registration_status: data.user_registration_status.toString() as UserRegistrationStatus,
       },
     };
-  } catch (error) {
-    console.error(error);
-    return { error: ERROR_MESSAGE.UNEXPECTED };
+  } catch (e: unknown) {
+    console.error(e);
+    if (e instanceof CustomError) {
+      return {
+        success: false,
+        error: {
+          code: e.code,
+          message: e.message,
+        },
+      };
+    }
+    return {
+      success: false,
+      error: { code: ErrorCodes.INTERNAL_SERVER_ERROR.code, message: ErrorCodes.INTERNAL_SERVER_ERROR.message },
+    };
   }
 };
 
@@ -82,9 +102,9 @@ export const _searchUserDetail = async (values: ApiRequest<number>): Promise<Api
  */
 export const _updateUserDetail = async (values: ApiRequest<UserDetailFormValues>): Promise<ApiResponse<number>> => {
   const supabase = await createClient();
-
   const req = values.request;
   const timestamp = getNow();
+
   try {
     const query = supabase
       .from('t_user')
@@ -103,13 +123,29 @@ export const _updateUserDetail = async (values: ApiRequest<UserDetailFormValues>
 
     if (error) {
       console.error(error);
-      return { error: 'ユーザー情報の更新' + ERROR_MESSAGE.TEMPLATE };
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        'ユーザー情報の更新' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
     }
 
-    return { data: Number(data.id) };
-  } catch (error) {
-    console.error(error);
-    return { error: ERROR_MESSAGE.UNEXPECTED };
+    return { success: true, data: Number(data.id) };
+  } catch (e: unknown) {
+    console.error(e);
+    if (e instanceof CustomError) {
+      return {
+        success: false,
+        error: {
+          code: e.code,
+          message: e.message,
+        },
+      };
+    }
+    return {
+      success: false,
+      error: { code: ErrorCodes.INTERNAL_SERVER_ERROR.code, message: ErrorCodes.INTERNAL_SERVER_ERROR.message },
+    };
   }
 };
 
@@ -145,15 +181,29 @@ export const _disapprovalUserRegistrationStatus = async (
 
     if (error) {
       console.error(error);
-      return { error: 'ユーザー情報の否認' + ERROR_MESSAGE.TEMPLATE };
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        'ユーザー情報の否認' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
     }
 
+    return { success: true, data: Number(data.id) };
+  } catch (e: unknown) {
+    console.error(e);
+    if (e instanceof CustomError) {
+      return {
+        success: false,
+        error: {
+          code: e.code,
+          message: e.message,
+        },
+      };
+    }
     return {
-      data: Number(data.id),
+      success: false,
+      error: { code: ErrorCodes.INTERNAL_SERVER_ERROR.code, message: ErrorCodes.INTERNAL_SERVER_ERROR.message },
     };
-  } catch (error) {
-    console.error(error);
-    return { error: ERROR_MESSAGE.UNEXPECTED };
   }
 };
 
@@ -191,15 +241,29 @@ export const _pullBackUserRegistrationStatus = async (
 
     if (error) {
       console.error(error);
-      return { error: 'ユーザー情報の引き戻し承認' + ERROR_MESSAGE.TEMPLATE };
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        'ユーザー情報の引き戻し承認' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
     }
 
+    return { success: true, data: Number(data.id) };
+  } catch (e: unknown) {
+    console.error(e);
+    if (e instanceof CustomError) {
+      return {
+        success: false,
+        error: {
+          code: e.code,
+          message: e.message,
+        },
+      };
+    }
     return {
-      data: Number(data.id),
+      success: false,
+      error: { code: ErrorCodes.INTERNAL_SERVER_ERROR.code, message: ErrorCodes.INTERNAL_SERVER_ERROR.message },
     };
-  } catch (error) {
-    console.error(error);
-    return { error: ERROR_MESSAGE.UNEXPECTED };
   }
 };
 
@@ -215,11 +279,8 @@ export const _approvalUserRegistrationStatus = async (
 ): Promise<ApiResponse<number>> => {
   const pgClient = createPgClient();
   const supabase = await createClient();
-
   const req = values.request;
   const timestamp = getNow();
-
-  let res: ApiResponse<number> = {};
 
   try {
     // connection Start
@@ -275,16 +336,30 @@ export const _approvalUserRegistrationStatus = async (
     await pgClient.query('COMMIT');
     console.log('Transaction completed, new company ID:', updateId);
 
-    res = { data: updateId };
-  } catch (error) {
+    return { success: true, data: updateId };
+  } catch (e: unknown) {
+    console.error('Transaction failed:', e);
     // Rollback
-    await pgClient.query('ROLLBACK');
-    console.error('Transaction failed:', error);
+    await rollbackWithLog(pgClient);
 
-    res = { error: ERROR_MESSAGE.UNEXPECTED };
+    if (e instanceof CustomError) {
+      return {
+        success: false,
+        error: {
+          code: e.code,
+          message: e.message,
+        },
+      };
+    }
+    return {
+      success: false,
+      error: {
+        code: ErrorCodes.INTERNAL_SERVER_ERROR.code,
+        message: ErrorCodes.INTERNAL_SERVER_ERROR.message,
+      },
+    };
   } finally {
     // Transaction End
     await pgClient.end();
-    return res;
   }
 };

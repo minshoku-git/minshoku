@@ -92,13 +92,15 @@ export const ShopComponent = (): JSX.Element => {
     if (!editMode) {
       return;
     }
-    if (isError || result?.error) {
-      console.log(result?.error);
-      openSnackbar(AlertType.WARNING, '店舗情報の取得に失敗しました。再度お試しください。');
+    if (!result) {
+      return;
+    }
+    if (!result.success) {
+      openSnackbar(AlertType.ERROR, result.error.message);
       router.push('/shop');
       return;
     }
-    if (result?.data) {
+    else if (result.data) {
       console.log(result);
       const data = result.data;
       const initData: Partial<shopDeteilResponseData> = {
@@ -145,8 +147,12 @@ export const ShopComponent = (): JSX.Element => {
       return insertShopDetail(formData) as unknown as ApiResponse<number>;
     },
     onSuccess: (res) => {
-      openSnackbar(AlertType.SUCCESS, '店舗情報の登録が完了しました。');
-      router.push(`/shopDetail/${res.data}`);
+      if (res.success) {
+        openSnackbar(AlertType.SUCCESS, '店舗情報の登録が完了しました。');
+        router.push(`/companyDetail/${res.data}`);
+      } else {
+        openSnackbar(AlertType.ERROR, res.error.message);
+      }
     },
     onError: (e) => {
       console.log(e.message);
@@ -215,8 +221,8 @@ export const ShopComponent = (): JSX.Element => {
       openSnackbar(
         AlertType.WARNING,
         '添付可能なファイルサイズを超過しています。\n添付可能なファイルサイズ：1MB\n添付されたファイルサイズ：' +
-          filesize +
-          'MB'
+        filesize +
+        'MB'
       );
       return;
     }
@@ -384,7 +390,7 @@ export const ShopComponent = (): JSX.Element => {
                   color="primary"
                   name="shop_address"
                   fullWidth
-                  // slotProps={{ htmlInput: { maxLength: 128 } }}
+                // slotProps={{ htmlInput: { maxLength: 128 } }}
                 />
               </ItemBase>
               <ItemBase name={'番地'} isRequired={0}>

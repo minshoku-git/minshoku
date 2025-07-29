@@ -57,7 +57,7 @@ export const SignUpComponent = () => {
       const res: ApiResponse<string> = await response.json();
 
       // API返却値によって処理を分岐する。
-      if (!res.error) {
+      if (res.success) {
         // OKの場合、画面遷移する。
         openSnackbar(AlertType.INFO, '登録完了メールを確認してください。');
       } else {

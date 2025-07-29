@@ -2,10 +2,11 @@ import { PostgrestSingleResponse } from '@supabase/supabase-js';
 
 import { createClient } from '@/app/_lib/supabase/server';
 import { getPagenationsItems, getPostCodeAddHyphen, getRange } from '@/app/_lib/utill';
-import { ERROR_MESSAGE } from '@/app/_types/constants';
 import { convertUsageStatusName, UsageStatus } from '@/app/_types/enum';
 import { ApiRequest, ApiResponse, SortItems } from '@/app/_types/types';
 import { CompanyListSearchResult, CompanySearchFormValues } from '@/app/(private)/company/_lib/types';
+import { CustomError } from '@/app/errors/customError';
+import { ErrorCodes } from '@/app/errors/ErrorCodes';
 
 /* 会社一覧
 ------------------------------------------------------------------ */
@@ -35,10 +36,16 @@ export const _searchComponyList = async (
 
     if (countError) {
       console.error(countError);
-      return { error: '会社情報の件数取得' + ERROR_MESSAGE.TEMPLATE };
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        '会社情報の件数取得' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
     }
     if (!count) {
       return {
+        success: true,
+        data: [],
         paginate: {
           count: 0,
           startRow: 0,
@@ -59,7 +66,11 @@ export const _searchComponyList = async (
 
     if (error) {
       console.error(error);
-      return { error: '会社情報の取得' + ERROR_MESSAGE.TEMPLATE };
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        '会社情報の取得' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
     }
 
     /* 返却
@@ -75,6 +86,7 @@ export const _searchComponyList = async (
     const { startRow, endRow, totalPage } = getPagenationsItems(startRange, data.length, count ?? 0);
 
     return {
+      success: true,
       data: resData,
       paginate: {
         count,
@@ -84,9 +96,24 @@ export const _searchComponyList = async (
         currentPage: values.sortItems?.nextPage ?? 0,
       },
     };
-  } catch (error) {
-    console.error(error);
-    return { error: ERROR_MESSAGE.UNEXPECTED };
+  } catch (e: unknown) {
+    console.error(e);
+    if (e instanceof CustomError) {
+      return {
+        success: false,
+        error: {
+          code: e.code,
+          message: e.message,
+        },
+      };
+    }
+    return {
+      success: false,
+      error: {
+        code: ErrorCodes.INTERNAL_SERVER_ERROR.code,
+        message: ErrorCodes.INTERNAL_SERVER_ERROR.message,
+      },
+    };
   }
 };
 

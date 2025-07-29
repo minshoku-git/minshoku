@@ -42,7 +42,7 @@ export const TestPlaceComponent = () => {
 
     const res: ApiResponse<string> = await response.json();
 
-    if (res.error) {
+    if (!res.success) {
       openSnackbar(AlertType.INFO, '送信に失敗しました！');
     } else {
       openSnackbar(AlertType.INFO, '送信しました！');

@@ -90,7 +90,7 @@ export const OrderComponent = (): JSX.Element => {
   // ステータス変更確認ダイアログ
   const [openDialog, setOpenDialog] = useState<boolean>(false);
   const [dialogActionHandler, setDialogActionHandler] = useState<() => void>(() => {
-    return () => {};
+    return () => { };
   });
 
   /* useForm
@@ -155,14 +155,6 @@ export const OrderComponent = (): JSX.Element => {
   }, [condition]);
 
   useEffect(() => {
-    // condition変化時に検索を実行
-    if (conditionDetail !== null) {
-      refetchDetail();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conditionDetail]);
-
-  useEffect(() => {
     if (isFetching) {
       openProcessing();
     } else {
@@ -175,7 +167,7 @@ export const OrderComponent = (): JSX.Element => {
     if (!data) {
       return;
     }
-    if (data?.error) {
+    if (data?.success) {
       openSnackbar(AlertType.ERROR, '検索時にエラーが発生しました。再度発生する場合は、管理者にお問い合わせください。');
       setResult(null);
       setIsSearch(false);
@@ -196,17 +188,6 @@ export const OrderComponent = (): JSX.Element => {
     closeProcessing();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
-
-  useEffect(() => {
-    if (!dataDetail) {
-      return;
-    }
-    if (dataDetail.error) {
-      openSnackbar(AlertType.ERROR, dataDetail.error);
-      setOpen(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dataDetail]);
 
   /* functions
   ------------------------------------------------------------------ */
@@ -255,9 +236,22 @@ export const OrderComponent = (): JSX.Element => {
   };
 
   /** モーダル制御 */
-  const openModal = (id: number) => {
+  const openModal = async (id: number) => {
     setConditionDetail({ request: id });
-    setOpen(true);
+
+    // データ取得
+    const result = await refetchDetail();
+    const response = result.data;
+
+    if (!response) {
+      setOpen(false);
+      return;
+    } else if (!response.success) {
+      openSnackbar(AlertType.ERROR, response.error.message);
+      setOpen(false);
+    } else {
+      setOpen(true);
+    }
   };
 
   /* functions - modal
@@ -277,9 +271,9 @@ export const OrderComponent = (): JSX.Element => {
       const req: ApiRequest<number> = { request: id };
       return orderCancel(req);
     },
-    onSuccess: async (_res: ApiResponse<number>) => {
-      if (_res.error) {
-        openSnackbar(AlertType.ERROR, _res.error);
+    onSuccess: async (res: ApiResponse<number>) => {
+      if (!res.success) {
+        openSnackbar(AlertType.ERROR, res.error.message);
         return;
       }
       await refetch();
@@ -523,7 +517,7 @@ export const OrderComponent = (): JSX.Element => {
                 検索
               </Button>
             </Grid>
-            {isSearch && result && (
+            {isSearch && result?.success && (
               <>
                 <Divider sx={{ my: 3 }} />
                 {result.paginate?.count && result.paginate?.count > 0 ? (

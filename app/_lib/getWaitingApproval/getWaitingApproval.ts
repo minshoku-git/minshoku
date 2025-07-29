@@ -1,6 +1,8 @@
 import { PostgrestSingleResponse } from '@supabase/supabase-js';
 
-import { ERROR_MESSAGE } from '../../_types/constants';
+import { CustomError } from '@/app/errors/customError';
+import { ErrorCodes } from '@/app/errors/ErrorCodes';
+
 import { UserRegistrationStatus } from '../../_types/enum';
 import { ApiResponse } from '../../_types/types';
 import { createClient } from '../supabase/server';
@@ -34,14 +36,29 @@ export const getWaitingApproval = async (): Promise<ApiResponse<number>> => {
 
     if (countError) {
       console.error(countError);
-      return { error: '承認待ちステータスのユーザー数取得' + ERROR_MESSAGE.TEMPLATE };
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        '承認待ちステータスのユーザー数取得' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
     }
-    if (!count) {
-      return { error: ERROR_MESSAGE.UNEXPECTED };
+    return { success: true, data: count ?? 0 };
+  } catch (e: unknown) {
+    if (e instanceof CustomError) {
+      return {
+        success: false,
+        error: {
+          code: e.code,
+          message: e.message,
+        },
+      };
     }
-    return { data: count };
-  } catch (e) {
-    console.log(e);
-    return { error: ERROR_MESSAGE.UNEXPECTED };
+    return {
+      success: false,
+      error: {
+        code: ErrorCodes.INTERNAL_SERVER_ERROR.code,
+        message: ErrorCodes.INTERNAL_SERVER_ERROR.message,
+      },
+    };
   }
 };

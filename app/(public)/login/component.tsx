@@ -52,12 +52,12 @@ export const LoginComponent = () => {
       });
       const res: ApiResponse<string> = await response.json();
 
-      if (!res.error) {
+      if (res.success) {
         router.push('/schedule');
       } else {
         setLoading(false);
         console.log(res.error);
-        openSnackbar(AlertType.ERROR, res.error);
+        openSnackbar(AlertType.ERROR, res.error.message);
       }
     } catch (error) {
       setLoading(false);

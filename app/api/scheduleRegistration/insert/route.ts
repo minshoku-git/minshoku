@@ -5,6 +5,7 @@ import { Readable } from 'stream';
 import { ApiResponse } from '@/app/_types/types';
 import { _RefreshingScheduleData } from '@/app/(private)/scheduleRegistration/_lib/scheduleRegistrationFunction';
 import { scheduleCsvValues } from '@/app/(private)/scheduleRegistration/_lib/types';
+import { ErrorCodes } from '@/app/errors/ErrorCodes';
 
 // POSTエンドポイント
 export async function POST(req: Request): Promise<Response> {
@@ -24,7 +25,7 @@ export async function POST(req: Request): Promise<Response> {
   // skip_empty_lines: true は空行を無視
   const parser = csv.parse({ columns: true, skip_empty_lines: true });
   const scheduleDatas: scheduleCsvValues[] = [];
-  let result: ApiResponse<number> = {};
+  let result: ApiResponse<number> = { success: false, error: { code: '', message: '' } };
 
   // ストリームをパース
   Readable.from(buffer)
@@ -41,9 +42,10 @@ export async function POST(req: Request): Promise<Response> {
     })
     .on('error', (err) => {
       console.error(err);
-      result = { error: 'CSVファイルの読み取りに失敗しました。' };
+      result = {
+        success: false,
+        error: { code: ErrorCodes.INTERNAL_SERVER_ERROR.code, message: ErrorCodes.INTERNAL_SERVER_ERROR.message },
+      };
     });
-
-  // 結果返却
   return NextResponse.json(result);
 }

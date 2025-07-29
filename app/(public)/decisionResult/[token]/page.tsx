@@ -25,10 +25,10 @@ export default async function Page({ params }: { params: Promise<{ token: string
     // 処理済み
 
     // data = await _searchCompanyDetail({ request: Number(id) });
-    res = { data: { userApprovalType: UserApprovalType.APPROVAL } };
+    res = { success: true, data: { userApprovalType: UserApprovalType.APPROVAL } };
   } catch (e) {
     console.error('サーバーAPI取得失敗', e);
-    res = { error: (e as Error).message };
+    res = { success: false, error: { code: (e as Error).message, message: '' } };
   } finally {
     return <DecisionResultComponent result={res} />;
   }
