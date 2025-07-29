@@ -43,7 +43,7 @@ export function MockDataCreate_OrderResult() {
             : '株式会社YPYエデュケーション',
       branch_name: i % 2 ? '本郷事業所' : i % 3 ? 'XXXX支店' : 'OOOO支店',
       count: i,
-      payment_type: i % 2 ? '0' : i % 3 ? '1' : '2',
+      payment_type: i % 2 ? 0 : i % 3 ? 1 : 2,
       order_status: i % 2 ? 0 : i % 3 ? 1 : 2,
     });
   }
@@ -67,7 +67,6 @@ export function MockDataCreate_ScheduleResult() {
       shop_name: i % 2 ? 'COCO壱' : 'XXXXXXXXXX',
       menu_name: i % 2 ? 'チキンカレー' : i % 3 ? 'マッサマンカレー' : 'ビーフカレー',
       order_count: i,
-      allergen_labelling: i % 2 ? 'ごま, 卵, 乳, 落花生, 大豆' : i % 3 ? 'えび, かに' : '',
     });
   }
 
@@ -107,8 +106,6 @@ export function MockDataCreate_CompanySearchResult() {
       usage_status: i % 2 ? '利用可能' : i % 3 ? '利用可能' : '利用停止',
       area_block_number: '',
       building_name: '',
-      municipalities: '',
-      town_area: '',
     });
   }
   return result;

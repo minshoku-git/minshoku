@@ -28,12 +28,12 @@ export const signUp = async (req: ApiRequest<LoginFormValues>): Promise<ApiRespo
 
     if (signUpError) {
       console.error('Error signing up:', signUpError);
-      return { error: signUpError.message, data: null };
+      return { error: signUpError.message };
     }
-    return { error: null, data: '' };
+    return { data: '' };
   } catch (error) {
     console.error('Error signing up:', error);
-    return { error: (error as Error).message, data: null };
+    return { error: (error as Error).message };
   }
 };
 
@@ -70,7 +70,7 @@ export const signIn = async (req: ApiRequest<LoginFormValues>): Promise<ApiRespo
       console.error('Error signing in:', signInError);
       return { error: 'ログイン処理に失敗しました。', data: '' };
     }
-    return { error: null, data: '' };
+    return { data: '' };
   } catch (error) {
     console.error('Error signing in:', error);
     return {
@@ -116,14 +116,14 @@ export const getUser = async (): Promise<ApiResponse<string>> => {
 
     if (getUserError || !data?.user) {
       console.error('Error signing out:', getUserError);
-      return { error: getUserError?.message ?? 'userdata none', data: null };
+      return { error: getUserError?.message ?? 'userdata none' };
     } else {
       console.log('User signed out:');
-      return { error: null, data: null };
+      return { data: '' };
     }
   } catch (error) {
     console.error('Error signing out:', error);
-    return { error: (error as Error).message, data: null };
+    return { error: (error as Error).message };
   }
 };
 
@@ -147,18 +147,15 @@ export const approval = async (id: string): Promise<ApiResponse<number>> => {
     if (error) {
       console.log(error.message);
       return {
-        data: null,
         error: error.message,
       };
     }
 
     return {
       data: data?.id ? data.id : 0,
-      error: null,
     };
   } catch (e) {
     return {
-      data: null,
       error: (e as Error).message,
     };
   }
