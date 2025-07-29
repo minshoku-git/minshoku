@@ -50,7 +50,7 @@ export const _RefreshingScheduleData = async (values: scheduleCsvValues[]): Prom
         t_companies_id: item.t_companies_id,
         t_shops_id: item.t_shops_id,
         allergen_labelling: item.allergen_labelling,
-        unit_price: item.unit_price,
+        list_price: item.list_price,
       };
       const { columns, placeholders, values } = getPostgreSqlItems(insertValues);
       const insertScheduleText = `INSERT INTO t_menu_schedule (${columns.join(',')}) VALUES (${placeholders}) RETURNING id;`;

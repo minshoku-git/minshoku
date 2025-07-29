@@ -3,7 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowBack } from '@mui/icons-material';
 import { Box, Button, Divider, Paper, TextField, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
 import { JSX, useEffect, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
@@ -38,6 +38,7 @@ export const UserDetailComponent = (): JSX.Element => {
   ------------------------------------------------------------------ */
   const router = useRouter();
   const id = (useParams().id as string) ?? '-';
+  const queryClient = useQueryClient();
 
   const { openSnackbar } = useSnackBar();
   const { openProcessing, closeProcessing } = useProcessing();
@@ -149,6 +150,9 @@ export const UserDetailComponent = (): JSX.Element => {
       openSnackbar(AlertType.ERROR, 'ユーザー情報の更新に失敗しました。再度お試しください。');
     },
     onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.WAITING_APPROVAL_SEARCH_RESULT],
+      });
       closeProcessing();
     },
   });
@@ -173,6 +177,9 @@ export const UserDetailComponent = (): JSX.Element => {
       openSnackbar(AlertType.ERROR, 'ユーザー情報の更新に失敗しました。再度お試しください。');
     },
     onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.WAITING_APPROVAL_SEARCH_RESULT],
+      });
       closeProcessing();
     },
   });
@@ -372,7 +379,7 @@ export const UserDetailComponent = (): JSX.Element => {
                     />
                   </ItemBase>
                 )}
-                <ItemBase name={'ステータス'} isRequired={2}>
+                <ItemBase name={'登録ステータス'} isRequired={2}>
                   <TextField
                     size="small"
                     color={'primary'}
@@ -385,18 +392,6 @@ export const UserDetailComponent = (): JSX.Element => {
                 </ItemBase>
                 {userRegistrationStatus === UserRegistrationStatus.REGISTERED && (
                   <>
-                    <ItemBase name={'利用ステータス'} isRequired={0}>
-                      <SelectElement
-                        control={control}
-                        size="small"
-                        name="usage_status"
-                        fullWidth
-                        options={[
-                          { id: UsageStatus.AVAILABLE, label: '利用可能' },
-                          { id: UsageStatus.DEACTIVATION, label: '利用停止' },
-                        ]}
-                      ></SelectElement>
-                    </ItemBase>
                     <ItemBase name={'メモ'} isRequired={1}>
                       <TextareaAutosizeElement
                         control={control}
@@ -408,6 +403,18 @@ export const UserDetailComponent = (): JSX.Element => {
                         placeholder="500文字以内で入力してください。"
                         fullWidth
                       />
+                    </ItemBase>
+                    <ItemBase name={'利用ステータス'} isRequired={0}>
+                      <SelectElement
+                        control={control}
+                        size="small"
+                        name="usage_status"
+                        fullWidth
+                        options={[
+                          { id: UsageStatus.AVAILABLE, label: '利用可能' },
+                          { id: UsageStatus.DEACTIVATION, label: '利用停止' },
+                        ]}
+                      ></SelectElement>
                     </ItemBase>
                   </>
                 )}

@@ -33,9 +33,7 @@ const resultHeader: Array<HeaderStatus> = [
 const initConditionValues: ApiRequest<ShopSearchFormValues> = {
   request: {
     shop_name: '',
-    prefectures: '',
-    municipalities: '',
-    town_area: '',
+    address: '',
     usage_status: '',
   },
   sortItems: {
@@ -77,9 +75,7 @@ export const ShopComponent = (): JSX.Element => {
     resolver: zodResolver(ShopSearchSchema),
     defaultValues: {
       shop_name: '',
-      prefectures: '',
-      municipalities: '',
-      town_area: '',
+      address: '',
       usage_status: '',
     },
   });
@@ -116,9 +112,7 @@ export const ShopComponent = (): JSX.Element => {
       setCondition(req);
       setValue('shop_name', req.request.shop_name);
       setValue('usage_status', req.request.usage_status);
-      setValue('prefectures', req.request.prefectures);
-      setValue('municipalities', req.request.municipalities);
-      setValue('town_area', req.request.town_area);
+      setValue('address', req.request.address);
     }
     sessionStorage.clear();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -280,40 +274,7 @@ export const ShopComponent = (): JSX.Element => {
                   }}
                   gap={2}
                 >
-                  <SelectElement
-                    control={control}
-                    size="small"
-                    name="prefectures"
-                    label="都道府県"
-                    fullWidth
-                    options={stateData}
-                  ></SelectElement>
-                  <SelectElement
-                    control={control}
-                    size="small"
-                    name="municipalities"
-                    label="市区"
-                    fullWidth
-                    options={[
-                      { id: '', label: '未選択', value: '未選択' },
-                      { id: '10', label: '市区1', value: '市区1' },
-                      { id: '20', label: '市区2', value: '市区2' },
-                      { id: '30', label: '市区3', value: '市区3' },
-                    ]}
-                  ></SelectElement>
-                  <SelectElement
-                    control={control}
-                    size="small"
-                    name="town_area"
-                    label="町村"
-                    fullWidth
-                    options={[
-                      { id: '', label: '未選択' },
-                      { id: '10', label: '町村1' },
-                      { id: '20', label: '町村2' },
-                      { id: '30', label: '町村3' },
-                    ]}
-                  ></SelectElement>
+                  <TextFieldElement control={control} size="small" color={'primary'} name="address" fullWidth />
                 </Box>
               </ItemBase>
               <ItemBase name={'利用ステータス'} isRequired={2}>

@@ -59,31 +59,19 @@ export type t_companies = {
   /** 郵便番号 */
   postal_code?: string;
   /** 都道府県 */
-  prefectures?: string;
-  /** 市区 */
-  municipalities?: string;
-  /** 町村 */
-  town_area?: string;
+  address?: string;
   /** 番地 */
   area_block_number?: string;
   /** 建物名 */
   building_name?: string;
-  /** 提供場所 */
-  location?: string;
   /** メールアドレス */
   email?: string;
   /** メモ */
   memo?: string;
-  /** 任意項目_項目名1 */
-  optional_item_title_1?: string;
-  /** 任意項目_注釈1 */
-  optional_item_notes_1?: string;
-  /** 任意項目_項目名2 */
-  optional_item_title_2?: string;
-  /** 任意項目_注釈2 */
-  optional_item_notes_2?: string;
-  /** urlキー */
-  url_key?: string;
+  /** ドメイン */
+  domain: Array<string>;
+  /** 提供場所 */
+  location?: string;
   /** 提供時間_From */
   offer_time_from?: string;
   /** 提供時間_To */
@@ -96,6 +84,16 @@ export type t_companies = {
   cancel_period_day?: number;
   /** キャンセル期限_時間 */
   cancel_period_time?: string;
+  /** 任意項目_項目名1 */
+  optional_item_title_1?: string;
+  /** 任意項目_注釈1 */
+  optional_item_notes_1?: string;
+  /** 任意項目_項目名2 */
+  optional_item_title_2?: string;
+  /** 任意項目_注釈2 */
+  optional_item_notes_2?: string;
+  /** urlキー */
+  url_key?: string;
   /** 利用ステータス */
   usage_status: number;
   /** 登録日時 */
@@ -114,12 +112,8 @@ export type t_shops = {
   shop_name_kana?: string;
   /** 郵便番号 */
   shop_postal_code?: string;
-  /** 都道府県 */
-  shop_prefectures?: string;
-  /** 市区 */
-  shop_municipalities?: string;
-  /** 町村 */
-  shop_town_area?: string;
+  /** 住所 */
+  shop_address?: string;
   /** 番地 */
   shop_area_block_number?: string;
   /** 建物名 */
@@ -167,7 +161,7 @@ export type t_order = {
   /** 個数 */
   count?: number;
   /** 単価 */
-  unit_price?: number;
+  list_price?: number;
   /** 総額 */
   amount?: number;
   /** 企業負担額 */
@@ -178,6 +172,8 @@ export type t_order = {
   payment_type?: number;
   /** オーダーステータス */
   order_status?: number;
+  /** キャンセル日時 */
+  cancel_datetime?: Date;
   /** クレジット取引ID */
   credit_access_id?: string;
   /** クレジット取引パスワード */
@@ -250,7 +246,7 @@ export type t_companies_domain = {
 
 /** 企業部署情報テーブル */
 export type t_administrator = {
-  /** ID（メニュースケジュールID） */
+  /** ID */
   id?: string;
   /** 名前 */
   name?: string;
@@ -262,7 +258,7 @@ export type t_administrator = {
 
 /** スケジュールテーブル */
 export type t_menu_schedule = {
-  /** ID（スケジュールID） */
+  /** ID */
   id?: number;
   /** 店舗ID */
   t_shops_id?: number;
@@ -274,12 +270,16 @@ export type t_menu_schedule = {
   menu_name?: string;
   /** アレルギー表記 */
   allergen_labelling?: string;
+  /** 辛さレベル */
+  spice_level?: number;
   /** 在庫数 */
   stock_count?: number;
   /** 注文数 */
   order_count?: number;
   /** 単価 */
-  unit_price?: number;
+  list_price?: number;
+  /** 売価 */
+  sale_price?: number;
   /** キャンセルフラグ */
   cancel_flag?: number;
   /** 登録日時 */

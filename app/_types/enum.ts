@@ -77,11 +77,11 @@ export const convertUsageStatusName = (value: UsageStatus): string => {
 /** 支払い種別 */
 export enum PaymentType {
   /** 0:会社清算 */
-  SALAEY_DEDUCTIONS = '0',
+  SALAEY_DEDUCTIONS = 0,
   /** 1:クレジットカード */
-  CREDITCARD = '1',
+  CREDITCARD = 1,
   /** 2:PayPay */
-  PAYPAY = '2',
+  PAYPAY = 2,
 }
 
 /** オーダーステータス */

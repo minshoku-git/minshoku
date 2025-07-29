@@ -1,7 +1,7 @@
 import { PostgrestSingleResponse } from '@supabase/supabase-js';
 
 import { createClient } from '@/app/_lib/supabase/server';
-import { getPagenationsItems, getRange } from '@/app/_lib/utill';
+import { getPagenationsItems, getPostCodeAddHyphen, getRange } from '@/app/_lib/utill';
 import { ERROR_MESSAGE } from '@/app/_types/constants';
 import { convertUsageStatusName, UsageStatus } from '@/app/_types/enum';
 import { ApiRequest, ApiResponse, SortItems } from '@/app/_types/types';
@@ -62,16 +62,18 @@ export const _searchComponyList = async (
       return { error: '会社情報の取得' + ERROR_MESSAGE.TEMPLATE };
     }
 
+    /* 返却
+    ------------------------------------------------------------------ */
     const resData: CompanyListSearchResult[] = data.map((m) => {
       return {
         ...m,
+        postal_code: getPostCodeAddHyphen(m.postal_code),
         usage_status: convertUsageStatusName(m.usage_status.toString() as UsageStatus),
       };
     });
 
-    /* 返却
-    ------------------------------------------------------------------ */
     const { startRow, endRow, totalPage } = getPagenationsItems(startRange, data.length, count ?? 0);
+
     return {
       data: resData,
       paginate: {
@@ -104,23 +106,17 @@ const applyFilters = (query: any, req: CompanySearchFormValues): any => {
   if (req.branch_name) {
     query = query.ilike('branch_name', `%${req.branch_name}%`);
   }
-  // 住所_都道府県
-  if (req.prefectures) {
-    query = query.eq('prefectures', req.prefectures);
-    // 住所_市区
-    if (req.municipalities) {
-      query = query.eq('municipalities', req.municipalities);
-      // 住所_町村
-      if (req.town_area) {
-        query = query.eq('town_area', req.town_area);
-      }
-    }
+  // 住所(住所or番地or建物名)
+  if (req.address) {
+    query = query.or(
+      `address.ilike.%${req.address}%, area_block_number.ilike.%${req.address}%, building_name.ilike.%${req.address}%`
+    );
+    console.log(query);
   }
   // 利用ステータス
   if (req.usage_status) {
     query = query.eq('usage_status', Number(req.usage_status));
   }
-
   return query;
 };
 
@@ -135,14 +131,7 @@ const applySorts = (query: any, sortItems: SortItems | undefined): any => {
   // ソート順序
   const sortConditions: Array<string> = ['company_name', 'branch_name', 'address', 'usage_status'];
   // ソート用住所
-  const sortConditionsAddress: Array<string> = [
-    'postal_code',
-    'prefectures',
-    'municipalities',
-    'town_area',
-    'area_block_number',
-    'building_name',
-  ];
+  const sortConditionsAddress: Array<string> = ['postal_code', 'address', 'area_block_number', 'building_name'];
 
   const sortColumn = sortItems?.sortColumn ?? 'company_name';
 

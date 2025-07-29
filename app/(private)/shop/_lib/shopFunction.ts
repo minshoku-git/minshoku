@@ -68,12 +68,7 @@ export const _searchShopList = async (
       ...m,
       id: m.id!.toString(),
       shop_postal_code: m?.shop_postal_code ? getPostCodeAddHyphen(m?.shop_postal_code) : '',
-      address:
-        m.shop_prefectures +
-        (m?.shop_municipalities ?? '') +
-        m.shop_town_area +
-        m.shop_area_block_number +
-        m.shop_building_name,
+      address: m.shop_address! + m.shop_area_block_number + m.shop_building_name,
       usage_status: convertUsageStatusName(m.usage_status as UsageStatus),
     };
   });
@@ -103,17 +98,11 @@ const applyFilters = (query: any, req: ShopSearchFormValues): any => {
   if (req.shop_name) {
     query = query.or(`shop_name.ilike.%${req.shop_name}%, shop_name_kana.ilike.%${req.shop_name}%`);
   }
-  // 住所_都道府県
-  if (req.prefectures) {
-    query = query.eq('prefectures', req.prefectures);
-    // 住所_市区
-    if (req.municipalities) {
-      query = query.eq('municipalities', req.municipalities);
-      // 住所_町村
-      if (req.town_area) {
-        query = query.eq('town_area', req.town_area);
-      }
-    }
+  // 住所(住所or番地or建物名)
+  if (req.address) {
+    query = query.or(
+      `shop_address.ilike.%${req.address}%, shop_area_block_number.ilike.%${req.address}%, shop_building_name.ilike.%${req.address}%`
+    );
   }
   // 利用ステータス
   if (req.usage_status) {
@@ -136,9 +125,7 @@ const applySorts = (query: any, sortItems: SortItems | undefined): any => {
   // ソート用住所
   const sortConditionsAddress: Array<string> = [
     'shop_postal_code',
-    'shop_prefectures',
-    'shop_municipalities',
-    'shop_town_area',
+    'shop_address',
     'shop_area_block_number',
     'shop_building_name',
   ];

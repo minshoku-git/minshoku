@@ -1,6 +1,6 @@
 'use client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowBack, CloudUpload, Delete } from '@mui/icons-material';
+import { ArrowBack, CloudUpload, Delete, Search } from '@mui/icons-material';
 import { Box, Button, Divider, IconButton, Paper, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -9,6 +9,7 @@ import { ChangeEvent, JSX, useEffect, useMemo, useRef, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { SelectElement, TextareaAutosizeElement, TextFieldElement } from 'react-hook-form-mui';
 
+import { getAddress } from '@/app/_lib/getAddress';
 import { getAttachmentSizeOver, getMbSize } from '@/app/_lib/getFile';
 import { t_shops } from '@/app/_lib/supabase/tableTypes';
 import { getEditFlag } from '@/app/_lib/utill';
@@ -49,12 +50,16 @@ export const ShopComponent = (): JSX.Element => {
   const [file, setFile] = useState<File>();
   const inputRef = useRef<HTMLInputElement | null>(null);
 
+  const [addressLoading, setAddressLoading] = useState<boolean>(false);
+
   /* useForm
   ------------------------------------------------------------------ */
   const {
-    handleSubmit,
     control,
+    handleSubmit,
     reset,
+    setValue,
+    getValues,
     formState: { isDirty },
   } = useForm<ShopDetailFormValues>({
     mode: 'onSubmit',
@@ -209,7 +214,7 @@ export const ShopComponent = (): JSX.Element => {
     if (getAttachmentSizeOver(filesize)) {
       openSnackbar(
         AlertType.WARNING,
-        '添付可能なファイルサイズを超過しています。\n添付可能なファイルサイズ：20MB\n添付されたファイルサイズ：' +
+        '添付可能なファイルサイズを超過しています。\n添付可能なファイルサイズ：1MB\n添付されたファイルサイズ：' +
           filesize +
           'MB'
       );
@@ -223,6 +228,23 @@ export const ShopComponent = (): JSX.Element => {
   const fileDelete = () => {
     console.log('fileDelete click!');
     setFile(undefined);
+  };
+
+  // 住所取得
+  const getAddressHandler = async () => {
+    setAddressLoading(true);
+    const { prefecture, suburb, city, errorMessage } = await getAddress(
+      getValues('shop_postal_code_prefix') + getValues('shop_postal_code_suffix')
+    );
+
+    if (errorMessage) {
+      setValue('shop_address', '');
+      openSnackbar(AlertType.WARNING, errorMessage);
+    } else {
+      setValue('shop_address', prefecture + city + suburb);
+    }
+    setAddressLoading(false);
+    return;
   };
 
   /** 検索画面に戻る */
@@ -310,61 +332,60 @@ export const ShopComponent = (): JSX.Element => {
                 />
               </ItemBase>
               <ItemBase name={'郵便番号'} isRequired={0}>
-                <TextFieldElement
-                  control={control}
-                  size="small"
-                  color={'primary'}
-                  name="shop_postal_code"
-                  placeholder="半角数字7桁"
-                  slotProps={{ htmlInput: { maxLength: 7 } }}
-                  fullWidth
-                />
-              </ItemBase>
-              <ItemBase name={'住所'} isRequired={0}>
                 <Box
                   sx={{
                     display: 'flex',
                     flexDirection: 'row',
-                    alignItems: 'flex-start',
+                    alignItems: 'start',
                     width: '640px',
                   }}
                   gap={2}
                 >
-                  <SelectElement
+                  <TextFieldElement
                     control={control}
                     size="small"
-                    name="shop_prefectures"
-                    label="都道府県"
-                    fullWidth
-                    options={stateData}
-                  ></SelectElement>
-                  <SelectElement
+                    color="primary"
+                    name="shop_postal_code_prefix"
+                    sx={{ width: '80px' }}
+                    slotProps={{ htmlInput: { maxLength: 3 } }}
+                  />
+                  <Box
+                    sx={{
+                      height: '40px',
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Typography sx={{ mx: 0 }}>{'-'}</Typography>
+                  </Box>
+                  <TextFieldElement
                     control={control}
                     size="small"
-                    name="shop_municipalities"
-                    label="市区"
-                    fullWidth
-                    options={[
-                      { id: '', label: '未選択' },
-                      { id: '10', label: '市区1' },
-                      { id: '20', label: '市区2' },
-                      { id: '30', label: '市区3' },
-                    ]}
-                  ></SelectElement>
-                  <SelectElement
-                    control={control}
-                    size="small"
-                    name="shop_town_area"
-                    label="町村"
-                    fullWidth
-                    options={[
-                      { id: '', label: '未選択' },
-                      { id: '10', label: '町村1' },
-                      { id: '20', label: '町村2' },
-                      { id: '30', label: '町村3' },
-                    ]}
-                  ></SelectElement>
+                    color="primary"
+                    name="shop_postal_code_suffix"
+                    sx={{ width: '80px' }}
+                    slotProps={{ htmlInput: { maxLength: 4 } }}
+                  />
+                  <Button
+                    startIcon={<Search />}
+                    color="primary"
+                    variant="outlined"
+                    loading={addressLoading}
+                    onClick={() => getAddressHandler()}
+                  >
+                    {'住所検索'}
+                  </Button>
                 </Box>
+              </ItemBase>
+              <ItemBase name={'住所'} isRequired={0}>
+                <TextFieldElement
+                  control={control}
+                  size="small"
+                  color="primary"
+                  name="shop_address"
+                  fullWidth
+                  // slotProps={{ htmlInput: { maxLength: 128 } }}
+                />
               </ItemBase>
               <ItemBase name={'番地'} isRequired={0}>
                 <TextFieldElement
@@ -376,7 +397,7 @@ export const ShopComponent = (): JSX.Element => {
                   slotProps={{ htmlInput: { maxLength: 128 } }}
                 />
               </ItemBase>
-              <ItemBase name={'建物名'} isRequired={0}>
+              <ItemBase name={'建物名'} isRequired={1}>
                 <TextFieldElement
                   control={control}
                   size="small"
@@ -405,17 +426,6 @@ export const ShopComponent = (): JSX.Element => {
                   name="email"
                   fullWidth
                   slotProps={{ htmlInput: { maxLength: 256 } }}
-                />
-              </ItemBase>
-              <ItemBase name={'特定商取引法に基づく表記'} isRequired={1}>
-                <TextareaAutosizeElement
-                  control={control}
-                  size="small"
-                  color={'primary'}
-                  name="specified_commercial_transaction_act"
-                  minRows={3}
-                  resizeStyle="vertical"
-                  fullWidth
                 />
               </ItemBase>
               <ItemBase name={'店舗イメージ'} isRequired={1}>
@@ -455,6 +465,49 @@ export const ShopComponent = (): JSX.Element => {
                   )}
                 </Box>
               </ItemBase>
+              <ItemBase name={'店舗URL'} isRequired={1}>
+                <TextFieldElement
+                  control={control}
+                  size="small"
+                  color={'primary'}
+                  name="shop_url"
+                  fullWidth
+                  slotProps={{ htmlInput: { maxLength: 256 } }}
+                />
+              </ItemBase>
+              <ItemBase name={'店舗紹介文'} isRequired={1}>
+                <TextareaAutosizeElement
+                  control={control}
+                  size="small"
+                  color={'primary'}
+                  name="shop_description"
+                  rows={3}
+                  resizeStyle="vertical"
+                  fullWidth
+                />
+              </ItemBase>
+              <ItemBase name={'特定商取引法に基づく表記'} isRequired={1}>
+                <TextareaAutosizeElement
+                  control={control}
+                  size="small"
+                  color={'primary'}
+                  name="specified_commercial_transaction_act"
+                  rows={6}
+                  resizeStyle="vertical"
+                  fullWidth
+                />
+              </ItemBase>
+              <ItemBase name={'メモ'} isRequired={1}>
+                <TextareaAutosizeElement
+                  control={control}
+                  size="small"
+                  color={'primary'}
+                  name="memo"
+                  rows={3}
+                  resizeStyle="vertical"
+                  fullWidth
+                />
+              </ItemBase>
               <ItemBase name={'利用ステータス'} isRequired={0}>
                 <SelectElement
                   control={control}
@@ -466,18 +519,6 @@ export const ShopComponent = (): JSX.Element => {
                     { id: UsageStatus.DEACTIVATION, label: '利用停止' },
                   ]}
                 ></SelectElement>
-              </ItemBase>
-              <ItemBase name={'メモ'} isRequired={1}>
-                <TextareaAutosizeElement
-                  control={control}
-                  size="small"
-                  color={'primary'}
-                  name="memo"
-                  minRows={3}
-                  resizeStyle="vertical"
-                  fullWidth
-                  slotProps={{ htmlInput: { maxLength: 500 } }}
-                />
               </ItemBase>
             </Grid>
             <Grid sx={{ mt: 2 }} size={{ xs: 12 }}>
@@ -497,15 +538,16 @@ const defalutData: ShopDetailFormValues = {
   id: '-',
   shop_name: '',
   shop_name_kana: '',
-  shop_postal_code: '',
-  shop_prefectures: '',
-  shop_municipalities: '',
-  shop_town_area: '',
+  shop_postal_code_prefix: '',
+  shop_postal_code_suffix: '',
+  shop_address: '',
+  shop_area_block_number: '',
   shop_building_name: '',
   tel_no: '',
   email: '',
+  shop_url: '',
+  shop_description: '',
   specified_commercial_transaction_act: '',
   usage_status: UsageStatus.AVAILABLE,
   memo: '',
-  shop_area_block_number: '',
 };

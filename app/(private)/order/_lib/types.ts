@@ -93,7 +93,7 @@ export type OrderListSearchResult = {
   /** 個数 */
   count: number;
   /** 支払いステータス */
-  payment_state: string;
+  payment_type: number;
   /** 注文ステータス */
   order_status: number;
 };
@@ -107,15 +107,25 @@ export type orderDeteilResponseData = {
   /** 個数 */
   count?: number;
   /** 単価 */
-  unit_price?: number;
+  list_price?: number;
   /** 総額 */
   amount?: number;
+  /** 企業負担額 */
+  companies_burden_amount?: number;
+  /** 個人負担額 */
+  user_burden_amount?: number;
   /** 支払い種別 */
   payment_type?: number;
   /** オーダーステータス */
   order_status?: number;
   /** 注文日時 */
   order_datetime?: string | Date;
+  /** キャンセル日時 */
+  cancel_datetime?: string | Date;
+  /** 累計注文数 */
+  totalOrderCount: number;
+  /** 最終注文日 */
+  lastOrderDateTime: string;
   /** スケジュール */
   t_menu_schedule: {
     /** メニュー名 */
@@ -128,31 +138,31 @@ export type orderDeteilResponseData = {
   };
   /** ユーザーテーブル */
   t_user: {
+    /** ユーザーID */
+    id?: number;
     /** ユーザー名 */
     user_name?: string;
     /** ユーザー名カナ */
     user_name_kana?: string;
     /** メールアドレス */
     user_email?: string;
+    /** 任意項目_回答1 */
+    optional_item_answer_1?: string;
+    /** 任意項目_回答2 */
+    optional_item_answer_2?: string;
   };
   /** 会社テーブル */
   t_companies: {
+    /** ユーザーID */
+    id?: number;
     /** 会社名 */
     company_name?: string;
     /** 支店名 */
     branch_name?: string;
-    /** 郵便番号 */
-    postal_code?: string;
-    /** 都道府県 */
-    prefectures?: string;
-    /** 市区 */
-    municipalities?: string;
-    /** 町村 */
-    town_area?: string;
-    /** 番地 */
-    area_block_number?: string;
-    /** 建物名 */
-    building_name?: string;
+    /** 任意項目_項目名1 */
+    optional_item_title_1?: string;
+    /** 任意項目_項目名2 */
+    optional_item_title_2?: string;
   };
   /** 企業部署情報テーブル */
   t_companies_department: {

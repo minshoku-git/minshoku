@@ -18,12 +18,8 @@ export const CompanySearchSchema = z.object({
     .string()
     .max(256, formatString(MSG_MAX, '支店名', '256'))
     .optional(),
-  /** 住所_都道府県 */
-  prefectures: z.string().optional(),
-  /** 住所_市区 */
-  municipalities: z.string().optional(),
-  /** 住所_町村 */
-  town_area: z.string().optional(),
+  /** 住所 */
+  address: z.string().optional(),
   /** 利用ステータス */
   usage_status: z.union([z.string().optional(), z.nativeEnum(UsageStatus)]),
 });
@@ -41,14 +37,10 @@ export type CompanyListSearchResult = {
   company_name: string;
   /** 支店名 */
   branch_name: string;
-  /** 支店名 */
+  /** 郵便番号 */
   postal_code: string;
-  /** 住所_都道府県 */
-  prefectures: string;
-  /** 住所_市区 */
-  municipalities: string;
-  /** 住所_町域 */
-  town_area: string;
+  /** 住所 */
+  address: string;
   /** 番地 */
   area_block_number: string;
   /** 建物名 */

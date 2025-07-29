@@ -9,11 +9,7 @@ export const ShopSearchSchema = z.object({
   /** 店舗名 */
   shop_name: z.string().optional(),
   /** 都道府県 */
-  prefectures: z.string().optional(),
-  /** 市区 */
-  municipalities: z.string().optional(),
-  /** 町村 */
-  town_area: z.string().optional(),
+  address: z.string().optional(),
   /** 利用ステータス */
   usage_status: z.union([z.string().optional(), z.nativeEnum(UsageStatus)]),
 });

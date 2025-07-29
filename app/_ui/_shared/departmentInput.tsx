@@ -6,13 +6,15 @@ import { Control, FieldArrayWithId, TextFieldElement } from 'react-hook-form-mui
 import { CompanyDetailFormValues } from '@/app/(private)/companyDetail/[id]/_lib/types';
 
 type Props = {
+  name: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   control: Control<any>;
   addField: () => void;
   removeField: (index: string) => void;
-  fields?: FieldArrayWithId<CompanyDetailFormValues, 'departmentInfo', 'id'>[];
+  fields?: FieldArrayWithId<CompanyDetailFormValues>[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   setValue: any;
+  prefix?: string;
 };
 
 /**
@@ -23,7 +25,7 @@ type Props = {
 export const DepartmentInput = (props: Props): JSX.Element => {
   // 入力値の前後の空白削除・入力値の全角空白を半角空白に置換・連続した空白を1個の半角空白にまとめる
   const trimSpase = (value: string, index: number) => {
-    props.setValue(`departmentInfo.${index}.name`, value.trim().replace(/[ 　]+/g, ' '));
+    props.setValue(`${props.name}.${index}.name`, value.trim().replace(/[ 　]+/g, ' '));
     return;
   };
   return (
@@ -40,9 +42,20 @@ export const DepartmentInput = (props: Props): JSX.Element => {
                 mb: 1,
               }}
             >
+              {props.prefix && (
+                <Box
+                  sx={{
+                    height: '40px',
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Typography sx={{ mr: 1 }}>{props.prefix}</Typography>
+                </Box>
+              )}
               <TextFieldElement
                 control={props.control}
-                name={`departmentInfo.${index}.name`}
+                name={`${props.name}.${index}.name`}
                 slotProps={{ htmlInput: { maxLength: 256 } }}
                 size="small"
                 color={'primary'}

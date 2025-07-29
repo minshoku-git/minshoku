@@ -43,7 +43,7 @@ export function MockDataCreate_OrderResult() {
             : '株式会社YPYエデュケーション',
       branch_name: i % 2 ? '本郷事業所' : i % 3 ? 'XXXX支店' : 'OOOO支店',
       count: i,
-      payment_state: i % 2 ? '0' : i % 3 ? '1' : '2',
+      payment_type: i % 2 ? '0' : i % 3 ? '1' : '2',
       order_status: i % 2 ? 0 : i % 3 ? 1 : 2,
     });
   }
@@ -100,7 +100,7 @@ export function MockDataCreate_CompanySearchResult() {
       company_name: '株式会社リファクト',
       branch_name: i % 2 ? '本郷事業所' : '札幌事業所',
       postal_code: i % 2 ? '113-0033' : '060-0002',
-      prefectures:
+      address:
         i % 2
           ? '東京都文京区本郷３丁目４０−３ トーセービル 4階'
           : '北海道札幌市中央区北二条西三丁目 札幌北2条ビル 8階 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',

@@ -12,7 +12,10 @@
     "lint": "run-s lint:prettier lint:eslint",
     "fix:eslint": "next lint --fix",
     "fix:prettier": "prettier --check --write .",
-    "fix": "run-s fix:prettier fix:eslint"
+    "fix": "run-s fix:prettier fix:eslint",
+    "lint:files": "yarn eslint app --ext .ts,.tsx,.js,.jsx -f json -o eslint-report.json",
+    "lint:list": "node app/_scripts/list-eslint-problems.js",
+    "lint:all": "yarn lint:json && yarn lint:list"
   },
   "dependencies": {
     "@emotion/cache": "^11.14.0",

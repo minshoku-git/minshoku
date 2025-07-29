@@ -15,7 +15,7 @@ import { TimePickerElement } from 'react-hook-form-mui/date-pickers';
 
 import { DepartmentData, EmploymentData } from '@/app/_lib/createMockData';
 import { getAddress } from '@/app/_lib/getAddress';
-import { getTodayZeroHour } from '@/app/_lib/getDateTime';
+import { getTodayXHour } from '@/app/_lib/getDateTime';
 import { checkTempId, getEditFlag } from '@/app/_lib/utill';
 import { TEMP_HYPHEN } from '@/app/_types/constants';
 import { AlertType, UsageStatus } from '@/app/_types/enum';
@@ -57,9 +57,11 @@ export const CompanyComponent = (): JSX.Element => {
 
   const [tempIdCounterDep, setTempIdCounterDep] = useState<number>(1);
   const [tempIdCounterEmp, setTempIdCounterEmp] = useState<number>(1);
+  const [tempIdCounterDomain, setTempIdCounterDomain] = useState<number>(1);
 
   const [deleteDepArray, setDeleteDepArray] = useState<DepartmentData[]>([]);
   const [deleteEmpArray, setDeleteEmpArray] = useState<EmploymentData[]>([]);
+  const [deleteDomainArray, setDeleteDomainArray] = useState<DepartmentData[]>([]);
 
   const [addressLoading, setAddressLoading] = useState<boolean>(false);
 
@@ -68,8 +70,8 @@ export const CompanyComponent = (): JSX.Element => {
   const {
     control,
     handleSubmit,
-    setValue,
     reset,
+    setValue,
     getValues,
     formState: { isDirty },
   } = useForm<CompanyDetailFormValues>({
@@ -196,6 +198,36 @@ export const CompanyComponent = (): JSX.Element => {
     console.log('deleteEmpArray:', deleteEmpArray);
   };
 
+  /* useFieldArray ドメイン情報
+   ------------------------------------------------------------------ */
+  const {
+    fields: fields_domain,
+    append: append_domain,
+    remove: remove_domain,
+  } = useFieldArray({ control: control, name: 'domain' });
+
+  const addField_domain = () => {
+    append_domain({
+      id: TEMP_HYPHEN + tempIdCounterDomain,
+      name: '',
+      disabled: false,
+      delete_flag: false,
+    });
+    setTempIdCounterDomain((x) => x + 1);
+  };
+
+  const removeField_domain = (id: string) => {
+    const delIndex = fields_domain.findIndex((f) => f.id === id);
+
+    if (!checkTempId(id)) {
+      const data = getValues('domain') as DepartmentData[];
+      const target = data[delIndex];
+      setDeleteDomainArray([...deleteDomainArray, { ...target, delete_flag: true }]);
+    }
+    remove_domain(delIndex);
+    console.log('domain:', deleteDomainArray);
+  };
+
   /* functions - Insert
   ------------------------------------------------------------------ */
   const insertHandler: SubmitHandler<CompanyDetailFormValues> = async (data) => {
@@ -265,14 +297,10 @@ export const CompanyComponent = (): JSX.Element => {
     );
 
     if (errorMessage) {
-      setValue('prefectures', '');
-      setValue('municipalities', '');
-      setValue('town_area', '');
+      setValue('address', '');
       openSnackbar(AlertType.WARNING, errorMessage);
     } else {
-      setValue('prefectures', prefecture);
-      setValue('municipalities', city);
-      setValue('town_area', suburb);
+      setValue('address', prefecture + city + suburb);
     }
     setAddressLoading(false);
     return;
@@ -447,82 +475,16 @@ export const CompanyComponent = (): JSX.Element => {
                     </Button>
                   </Box>
                 </ItemBase>
-                <ItemBase name={'都道府県'} isRequired={0}>
+                <ItemBase name={'住所'} isRequired={0}>
                   <TextFieldElement
                     control={control}
                     size="small"
                     color="primary"
-                    name="prefectures"
+                    name="address"
                     fullWidth
-                    slotProps={{ htmlInput: { maxLength: 128 } }}
+                    // slotProps={{ htmlInput: { maxLength: 128 } }}
                   />
                 </ItemBase>
-                <ItemBase name={'市区'} isRequired={0}>
-                  <TextFieldElement
-                    control={control}
-                    size="small"
-                    color="primary"
-                    name="municipalities"
-                    fullWidth
-                    slotProps={{ htmlInput: { maxLength: 128 } }}
-                  />
-                </ItemBase>
-                <ItemBase name={'町村'} isRequired={0}>
-                  <TextFieldElement
-                    control={control}
-                    size="small"
-                    color="primary"
-                    name="town_area"
-                    fullWidth
-                    slotProps={{ htmlInput: { maxLength: 128 } }}
-                  />
-                </ItemBase>
-                {/* <ItemBase name={'住所'} isRequired={0}>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      flexDirection: 'row',
-                      alignItems: 'flex-start',
-                      width: '640px',
-                    }}
-                    gap={2}
-                  >
-                    <SelectElement
-                      control={control}
-                      size="small"
-                      name="prefectures"
-                      label="都道府県"
-                      fullWidth
-                      options={stateData}
-                    ></SelectElement>
-                    <SelectElement
-                      control={control}
-                      size="small"
-                      name="municipalities"
-                      label="市区"
-                      fullWidth
-                      options={[
-                        { id: '', label: '未選択', value: '未選択' },
-                        { id: '10', label: '市区1', value: '市区1' },
-                        { id: '20', label: '市区2', value: '市区2' },
-                        { id: '30', label: '市区3', value: '市区3' },
-                      ]}
-                    ></SelectElement>
-                    <SelectElement
-                      control={control}
-                      size="small"
-                      name="town_area"
-                      label="町村"
-                      fullWidth
-                      options={[
-                        { id: '', label: '未選択' },
-                        { id: '10', label: '町村1' },
-                        { id: '20', label: '町村2' },
-                        { id: '30', label: '町村3' },
-                      ]}
-                    ></SelectElement>
-                  </Box>
-                </ItemBase> */}
                 <ItemBase name={'番地'} isRequired={0}>
                   <TextFieldElement
                     control={control}
@@ -541,16 +503,6 @@ export const CompanyComponent = (): JSX.Element => {
                     name="building_name"
                     fullWidth
                     placeholder="建物名・階数など"
-                    slotProps={{ htmlInput: { maxLength: 128 } }}
-                  />
-                </ItemBase>
-                <ItemBase name={'提供場所'} isRequired={0}>
-                  <TextFieldElement
-                    control={control}
-                    size="small"
-                    color="primary"
-                    name="location"
-                    fullWidth
                     slotProps={{ htmlInput: { maxLength: 128 } }}
                   />
                 </ItemBase>
@@ -578,6 +530,7 @@ export const CompanyComponent = (): JSX.Element => {
                 </ItemBase>
                 <ItemBase name={'部署情報'} isRequired={0}>
                   <DepartmentInput
+                    name="departmentInfo"
                     control={control}
                     fields={fields_dep}
                     addField={addField_dep}
@@ -594,49 +547,26 @@ export const CompanyComponent = (): JSX.Element => {
                     setValue={setValue}
                   />
                 </ItemBase>
-                <ItemBase name={'任意項目1'} isRequired={1}>
-                  <Box>
-                    <TextFieldElement
-                      control={control}
-                      size="small"
-                      color="primary"
-                      name="optional_item_title_1"
-                      label="項目名"
-                      sx={{ width: '640px', mb: 1 }}
-                      slotProps={{ htmlInput: { maxLength: 128 } }}
-                    />
-                    <TextFieldElement
-                      control={control}
-                      size="small"
-                      color="primary"
-                      name="optional_item_notes_1"
-                      label="注釈"
-                      sx={{ width: '640px' }}
-                      slotProps={{ htmlInput: { maxLength: 128 } }}
-                    />
-                  </Box>
+                <ItemBase name={'ドメイン情報'} isRequired={0}>
+                  <DepartmentInput
+                    name="domain"
+                    control={control}
+                    fields={fields_domain}
+                    addField={addField_domain}
+                    removeField={removeField_domain}
+                    setValue={setValue}
+                    prefix="@"
+                  />
                 </ItemBase>
-                <ItemBase name={'任意項目2'} isRequired={1}>
-                  <Box>
-                    <TextFieldElement
-                      control={control}
-                      size="small"
-                      color="primary"
-                      name="optional_item_title_2"
-                      label="項目名"
-                      sx={{ width: '640px', mb: 1 }}
-                      slotProps={{ htmlInput: { maxLength: 128 } }}
-                    />
-                    <TextFieldElement
-                      control={control}
-                      size="small"
-                      color="primary"
-                      name="optional_item_notes_2"
-                      label="注釈"
-                      sx={{ width: '640px' }}
-                      slotProps={{ htmlInput: { maxLength: 128 } }}
-                    />
-                  </Box>
+                <ItemBase name={'提供場所'} isRequired={0}>
+                  <TextFieldElement
+                    control={control}
+                    size="small"
+                    color="primary"
+                    name="location"
+                    fullWidth
+                    slotProps={{ htmlInput: { maxLength: 128 } }}
+                  />
                 </ItemBase>
                 <ItemBase name={'提供時間'} isRequired={0}>
                   <Box
@@ -763,6 +693,50 @@ export const CompanyComponent = (): JSX.Element => {
                     </LocalizationProvider>
                   </Box>
                 </ItemBase>
+                <ItemBase name={'任意項目1'} isRequired={1}>
+                  <Box>
+                    <TextFieldElement
+                      control={control}
+                      size="small"
+                      color="primary"
+                      name="optional_item_title_1"
+                      label="項目名"
+                      sx={{ width: '640px', mb: 1 }}
+                      slotProps={{ htmlInput: { maxLength: 128 } }}
+                    />
+                    <TextFieldElement
+                      control={control}
+                      size="small"
+                      color="primary"
+                      name="optional_item_notes_1"
+                      label="注釈"
+                      sx={{ width: '640px' }}
+                      slotProps={{ htmlInput: { maxLength: 128 } }}
+                    />
+                  </Box>
+                </ItemBase>
+                <ItemBase name={'任意項目2'} isRequired={1}>
+                  <Box>
+                    <TextFieldElement
+                      control={control}
+                      size="small"
+                      color="primary"
+                      name="optional_item_title_2"
+                      label="項目名"
+                      sx={{ width: '640px', mb: 1 }}
+                      slotProps={{ htmlInput: { maxLength: 128 } }}
+                    />
+                    <TextFieldElement
+                      control={control}
+                      size="small"
+                      color="primary"
+                      name="optional_item_notes_2"
+                      label="注釈"
+                      sx={{ width: '640px' }}
+                      slotProps={{ htmlInput: { maxLength: 128 } }}
+                    />
+                  </Box>
+                </ItemBase>
                 <ItemBase name={'利用ステータス'} isRequired={0}>
                   <SelectElement
                     control={control}
@@ -836,29 +810,40 @@ const getInitData = (data: CompanyDetailFormValues | null) => {
           },
         ];
 
+  const domainInit: DepartmentData[] =
+    data && data.domain.length > 0
+      ? data?.domain
+      : [
+          {
+            id: TEMP_HYPHEN + 0,
+            name: '',
+            disabled: false,
+            delete_flag: false,
+          },
+        ];
+
   const initValues: CompanyDetailFormValues = {
     id: data?.id ? data?.id.toString() : '-',
     departmentInfo: depInit,
     employmentStatusInfo: empInit,
+    domain: domainInit,
     company_name: data?.company_name ?? '',
     branch_name: data?.branch_name ?? '',
     postal_code_prefix: data?.postal_code_prefix ?? '',
     postal_code_suffix: data?.postal_code_suffix ?? '',
-    prefectures: data?.prefectures ?? '',
-    municipalities: data?.municipalities ?? '',
-    town_area: data?.town_area ?? '',
+    address: data?.address ?? '',
     area_block_number: data?.area_block_number ?? '',
     building_name: data?.building_name ?? '',
     restaurant_name: data?.restaurant_name ?? '',
     email: data?.email ?? '',
     memo: data?.memo ?? '',
     location: data?.location ?? '',
-    offer_time_from: data?.offer_time_from ?? getTodayZeroHour(),
-    offer_time_to: data?.offer_time_to ?? getTodayZeroHour(),
-    cancel_period_day: data?.cancel_period_day ? data?.cancel_period_day.toString() : '',
-    cancel_period_time: data?.cancel_period_time ?? getTodayZeroHour(),
-    order_period_day: data?.order_period_day ? data?.order_period_day.toString() : '',
-    order_period_time: data?.order_period_time ?? getTodayZeroHour(),
+    offer_time_from: data?.offer_time_from ?? getTodayXHour(12), // 12時
+    offer_time_to: data?.offer_time_to ?? getTodayXHour(13), // 13時
+    cancel_period_day: data?.cancel_period_day ? data?.cancel_period_day.toString() : '0',
+    cancel_period_time: data?.cancel_period_time ?? getTodayXHour(13), // 13時
+    order_period_day: data?.order_period_day ? data?.order_period_day.toString() : '0',
+    order_period_time: data?.order_period_time ?? getTodayXHour(12), // 12時
     optional_item_title_1: data?.optional_item_title_1 ?? '',
     optional_item_title_2: data?.optional_item_title_2 ?? '',
     optional_item_notes_1: data?.optional_item_notes_1 ?? '',

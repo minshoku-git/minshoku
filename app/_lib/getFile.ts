@@ -14,11 +14,11 @@ export function getMbSize(bite: number) {
 }
 
 /**
- * 添付ファイルサイズオーバー判定
+ * 添付ファイルサイズオーバー判定(1MB)
  * @returns boolean True:オーバー false:規定内
  */
 export function getAttachmentSizeOver(mb: number) {
-  return 20 < mb;
+  return 1 < mb;
 }
 
 /**

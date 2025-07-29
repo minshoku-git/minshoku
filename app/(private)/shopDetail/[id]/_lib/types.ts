@@ -6,7 +6,7 @@ import {
   MSG_MAX,
   MSG_POSTALCODE,
   MSG_REQUIRED,
-  REG_POSTALCODE,
+  REG_HANKAKU_NUM,
   REG_ZENKAKU_KANA,
 } from '@/app/_types/constants';
 import { UsageStatus } from '@/app/_types/enum';
@@ -28,27 +28,28 @@ export const ShopDetailSchema = z.object({
     .nonempty({ message: formatString(MSG_REQUIRED, '店舗名(カナ)') })
     .regex(new RegExp(REG_ZENKAKU_KANA), '全角カナで入力してください。')
     .max(256, formatString(MSG_MAX, '店舗名(カナ)', '256')),
-  /** 郵便番号 */
-  shop_postal_code: z
+  /** 郵便番号(前半) */
+  shop_postal_code_prefix: z
     .string()
     .nonempty({ message: formatString(MSG_REQUIRED, '郵便番号') })
-    .regex(new RegExp(REG_POSTALCODE), formatString(MSG_POSTALCODE, '郵便番号')),
-  /** 都道府県 */
-  shop_prefectures: z.string().nonempty({ message: formatString(MSG_REQUIRED, '都道府県') }),
-  /** 市区 */
-  shop_municipalities: z.string().nonempty({ message: formatString(MSG_REQUIRED, '市区') }),
-  /** 町村 */
-  shop_town_area: z.string().nonempty({ message: formatString(MSG_REQUIRED, '町村') }),
+    .min(3, formatString(MSG_MAX, '郵便番号', '3'))
+    .regex(new RegExp(REG_HANKAKU_NUM), formatString(MSG_POSTALCODE, '郵便番号', '3')),
+  /** 郵便番号(後半) */
+  shop_postal_code_suffix: z
+    .string()
+    .nonempty({ message: formatString(MSG_REQUIRED, '郵便番号') })
+    .min(4, formatString(MSG_MAX, '郵便番号', '4'))
+    .regex(new RegExp(REG_HANKAKU_NUM), formatString(MSG_POSTALCODE, '郵便番号', '4')),
+
+  /** 住所 */
+  shop_address: z.string().nonempty({ message: formatString(MSG_REQUIRED, '都道府県') }),
   /** 番地 */
   shop_area_block_number: z
     .string()
     .nonempty({ message: formatString(MSG_REQUIRED, '番地') })
     .max(128, formatString(MSG_MAX, '番地', '128')),
   /** 建物名 */
-  shop_building_name: z
-    .string()
-    .nonempty({ message: formatString(MSG_REQUIRED, '建物名') })
-    .max(128, formatString(MSG_MAX, '建物名', '128')),
+  shop_building_name: z.string().max(128, formatString(MSG_MAX, '建物名', '128')),
   /** 電話番号 */
   tel_no: z
     .string()
@@ -60,15 +61,16 @@ export const ShopDetailSchema = z.object({
     .nonempty({ message: formatString(MSG_REQUIRED, 'メールアドレス') })
     .email(formatString(MSG_EMAIL, 'メールアドレス'))
     .max(256, formatString(MSG_MAX, '電話番号', '11')),
-  /** 表記 */
+  /** 店舗URL */
+  shop_url: z.string().url(formatString(MSG_EMAIL, '店舗URL')).optional(),
+  /** 店舗紹介文 */
+  shop_description: z.string().optional(),
+  /** 特定商取引法に基づく表記 */
   specified_commercial_transaction_act: z.string().optional(),
-  /** ステータス */
+  /** 利用ステータス */
   usage_status: z.nativeEnum(UsageStatus),
   /** メモ */
-  memo: z
-    .string()
-    .max(500, formatString(MSG_MAX, 'メモ', '500'))
-    .optional(),
+  memo: z.string().optional(),
 });
 
 /**

@@ -6,7 +6,6 @@ import Typography from '@mui/material/Typography';
 import * as React from 'react';
 import { JSX } from 'react';
 
-/** モーダルスタイル */
 const ModalStyle = {
   position: 'absolute' as const,
   top: '50%',
@@ -19,6 +18,11 @@ const ModalStyle = {
     '0px 5px 5px -3px rgb(100 100 100 / 20%), 0px 8px 10px 1px rgb(100 100 100 / 14%), 0px 3px 14px 2px rgb(100 100 100 / 12%)',
   px: 4,
   py: 4,
+  maxWidth: '90vw',
+  maxHeight: '90vh',
+  boxSizing: 'border-box',
+  display: 'flex',
+  flexDirection: 'column',
 };
 
 /** CustomModalコンポーネントプロパティ */
@@ -64,7 +68,15 @@ const CustomModal = (props: CustomModalProps): JSX.Element => {
             閉じる
           </Button>
         </Box>
-        {props.children}
+        <Box
+          sx={{
+            overflowY: 'auto',
+            flexGrow: 1,
+            minHeight: 0, // flexの中でスクロール可能にするため必要
+          }}
+        >
+          {props.children}
+        </Box>
       </Box>
     </Modal>
   );

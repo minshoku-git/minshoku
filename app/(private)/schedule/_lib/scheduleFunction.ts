@@ -62,8 +62,7 @@ export const _searchScheduleList = async (
       branch_name,
       shop_name,
       menu_name,
-      order_count,
-      allergen_labelling
+      order_count
       `
     )
     .range(startRange, endRange);
@@ -151,14 +150,7 @@ const applyFilters = (query: any, req: ScheduleSearchFormValues) => {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const applySorts = (query: any, sortItems: SortItems | undefined) => {
   // ソート順序
-  const sortConditions: Array<string> = [
-    'delivery_day',
-    'company_name',
-    'shop_name',
-    'menu_name',
-    'order_count',
-    'allergen_labelling',
-  ];
+  const sortConditions: Array<string> = ['delivery_day', 'company_name', 'shop_name', 'menu_name', 'order_count'];
   // ソート用会社名
   const sortConditionsCompanyName: Array<string> = ['company_name', 'branch_name'];
 

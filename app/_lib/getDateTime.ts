@@ -16,12 +16,12 @@ export function getNow(): Date {
 }
 
 /**
- * 現在日0時の取得
+ * 現在日のX時取得
  * @returns {date} 現在日0時
  */
-export function getTodayZeroHour(): Date {
+export function getTodayXHour(H: number = 0): Date {
   const d = getNow();
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), H, 0, 0);
 }
 
 /**

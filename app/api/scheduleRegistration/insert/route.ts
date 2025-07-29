@@ -24,7 +24,7 @@ export async function POST(req: Request): Promise<Response> {
   // skip_empty_lines: true は空行を無視
   const parser = csv.parse({ columns: true, skip_empty_lines: true });
   const scheduleDatas: scheduleCsvValues[] = [];
-  let result: ApiResponse<string> = { data: null, error: null };
+  let result: ApiResponse<number> = {};
 
   // ストリームをパース
   Readable.from(buffer)
@@ -41,7 +41,7 @@ export async function POST(req: Request): Promise<Response> {
     })
     .on('error', (err) => {
       console.error(err);
-      result = { data: null, error: 'CSVファイルの読み取りに失敗しました。' };
+      result = { error: 'CSVファイルの読み取りに失敗しました。' };
     });
 
   // 結果返却

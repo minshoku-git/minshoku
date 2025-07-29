@@ -197,6 +197,17 @@ export const OrderComponent = (): JSX.Element => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
+  useEffect(() => {
+    if (!dataDetail) {
+      return;
+    }
+    if (dataDetail.error) {
+      openSnackbar(AlertType.ERROR, dataDetail.error);
+      setOpen(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataDetail]);
+
   /* functions
   ------------------------------------------------------------------ */
   /** 検索 */
@@ -249,7 +260,7 @@ export const OrderComponent = (): JSX.Element => {
     setOpen(true);
   };
 
-  /* functions - orderCancel
+  /* functions - modal
    ------------------------------------------------------------------ */
   /** キャンセルハンドラ */
   const orderCancelHandler = (id: number) => {
@@ -283,6 +294,16 @@ export const OrderComponent = (): JSX.Element => {
       closeProcessing();
     },
   });
+
+  /** ユーザー詳細画面表示ハンドラ */
+  const openUserDetailHandler = (id: number) => {
+    window.open(`/userDetail/${id}`, '_blank', 'noopener,noreferrer');
+  };
+
+  /** 会社詳細画面表示ハンドラ */
+  const openCompanyDetailHandler = (id: number) => {
+    window.open(`/companyDetail/${id}`, '_blank', 'noopener,noreferrer');
+  };
 
   /* functions - daily
   ------------------------------------------------------------------ */
@@ -548,9 +569,9 @@ export const OrderComponent = (): JSX.Element => {
                         </TableCell>
                         <TableCell align={'right'}>{row.count}</TableCell>
                         <TableCell>
-                          {PaymentType.SALAEY_DEDUCTIONS === row.payment_state
+                          {PaymentType.SALAEY_DEDUCTIONS === row.payment_type
                             ? '会社清算'
-                            : PaymentType.CREDITCARD === row.payment_state
+                            : PaymentType.CREDITCARD === row.payment_type
                               ? 'クレジットカード'
                               : 'PayPay'}
                         </TableCell>
@@ -563,7 +584,9 @@ export const OrderComponent = (): JSX.Element => {
                   open={open}
                   setOpen={setOpen}
                   searchedDate={new Date()}
-                  cancelHandler={() => orderCancelHandler(Number(dataDetail?.data?.id) ?? 0)}
+                  cancelHandler={orderCancelHandler}
+                  openUserDetailHandler={openUserDetailHandler}
+                  openCompanyDetailHandler={openCompanyDetailHandler}
                   data={dataDetail}
                   isFetching={isFetchingDetail}
                 />

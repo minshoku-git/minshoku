@@ -33,7 +33,6 @@ const resultHeader: Array<HeaderStatus> = [
   { name: '店舗名', variableName: 'shop_name', sort: SortType.ASC },
   { name: 'メニュー名', variableName: 'menu_name', sort: SortType.ASC },
   { name: '食数', variableName: 'order_count', sort: SortType.ASC },
-  { name: 'アレルギー', variableName: 'allergen_labelling', sort: SortType.ASC },
 ];
 
 /**
@@ -431,7 +430,6 @@ export const ScheduleComponent = (): JSX.Element => {
                       <TableCell sx={{ width: '20px' }} align="right">
                         {row.order_count}
                       </TableCell>
-                      <TableCell sx={{ width: '20px' }}>{row.allergen_labelling}</TableCell>
                     </TableRow>
                   ))
                 }

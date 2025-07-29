@@ -81,7 +81,7 @@ export const LoginComponent = () => {
               minWidth: '852px',
             }}
           >
-            <Image src="/logo.png" alt="みんなの社食" width="200" height="52" />
+            <Image src="/logo.svg" alt="みんなの社食" width="200" height="52" />
             <Box sx={{ my: 2, width: 280 }}>
               <Box sx={{ display: 'flex', flexDirection: 'row', mb: 0.5 }}>
                 <Typography variant="body2" sx={{ flexGrow: 1 }}>

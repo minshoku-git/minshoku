@@ -101,8 +101,6 @@ export type ScheduleData = {
   menu_name: string;
   /** 食数 */
   order_count: number;
-  /** アレルギー */
-  allergen_labelling: string;
 };
 
 /** 検索結果 スケジュール一覧 */

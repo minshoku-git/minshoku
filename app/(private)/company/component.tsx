@@ -36,9 +36,7 @@ const initConditionValues: ApiRequest<CompanySearchFormValues> = {
   request: {
     company_name: '',
     branch_name: '',
-    prefectures: '',
-    municipalities: '',
-    town_area: '',
+    address: '',
     usage_status: undefined,
   },
   sortItems: {
@@ -83,9 +81,7 @@ export const CompanyComponent = (): JSX.Element => {
     defaultValues: {
       company_name: '',
       branch_name: '',
-      prefectures: '',
-      municipalities: '',
-      town_area: '',
+      address: '',
       usage_status: undefined,
     },
   });
@@ -115,17 +111,13 @@ export const CompanyComponent = (): JSX.Element => {
   ------------------------------------------------------------------ */
   useEffect(() => {
     const searchCondition = sessionStorage.getItem(SESSION_STORAGE_KEYS.COMPANY_SEARCH_CONDITION);
-    const searchConditionLocal = localStorage.getItem('保存');
-    console.log(searchConditionLocal);
     const previousPath = sessionStorage.getItem(SESSION_STORAGE_KEYS.PREVIOUS_PATH);
     if (searchCondition && previousPath === '/companyDetail') {
       const req: ApiRequest<CompanySearchFormValues> = JSON.parse(searchCondition);
       setCondition(req);
       setValue('company_name', req.request.company_name);
       setValue('branch_name', req.request.usage_status);
-      setValue('prefectures', req.request.prefectures);
-      setValue('municipalities', req.request.municipalities);
-      setValue('town_area', req.request.town_area);
+      setValue('address', req.request.address);
       setValue('usage_status', req.request.usage_status);
     }
     sessionStorage.clear();
@@ -156,10 +148,10 @@ export const CompanyComponent = (): JSX.Element => {
     if (data?.error) {
       openSnackbar(AlertType.ERROR, '検索時にエラーが発生しました。再度発生する場合は、管理者にお問い合わせください。');
       setResult(null);
-      setIsSearch(false);
       return;
     }
     if (searchType === SearchType.SEARCH) {
+      console.log();
       setSortArray(resultHeader);
       setSortTarget(resultHeader[0]);
     }
@@ -169,6 +161,7 @@ export const CompanyComponent = (): JSX.Element => {
         behavior: 'smooth',
       });
     }
+    console.log('とれていまうす');
     setIsSearch(true);
     setResult(data ?? null);
     closeProcessing();
@@ -302,7 +295,7 @@ export const CompanyComponent = (): JSX.Element => {
                   }}
                   gap={2}
                 >
-                  <TextFieldElement control={control} size="small" color={'primary'} name="prefectures" fullWidth />
+                  <TextFieldElement control={control} size="small" color={'primary'} name="address" fullWidth />
                 </Box>
               </ItemBase>
               <ItemBase name={'利用ステータス'} isRequired={2}>
@@ -394,9 +387,7 @@ export const CompanyComponent = (): JSX.Element => {
                         >
                           〒{row.postal_code}
                           <br />
-                          {row.prefectures}
-                          {row.municipalities}
-                          {row.town_area}
+                          {row.address}
                           {row.area_block_number}
                           {row.building_name}
                         </TableCell>

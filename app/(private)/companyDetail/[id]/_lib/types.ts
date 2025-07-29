@@ -2,12 +2,14 @@ import { z } from 'zod';
 
 import { formatString } from '@/app/_lib/utill';
 import {
+  MSG_DOMAIN,
   MSG_EMAIL,
   MSG_HANKAKU_NUM,
   MSG_INVALID,
   MSG_MAX,
   MSG_POSTALCODE,
   MSG_REQUIRED,
+  REG_DOMAIN,
   REG_HANKAKU_NUM,
 } from '@/app/_types/constants';
 import { UsageStatus } from '@/app/_types/enum';
@@ -46,11 +48,7 @@ export const CompanyDetailSchema = z
       .min(4, formatString(MSG_MAX, '郵便番号', '4'))
       .regex(new RegExp(REG_HANKAKU_NUM), formatString(MSG_POSTALCODE, '郵便番号', '4')),
     /** 都道府県 */
-    prefectures: z.string().nonempty({ message: formatString(MSG_REQUIRED, '都道府県') }),
-    /** 市区 */
-    municipalities: z.string().nonempty({ message: formatString(MSG_REQUIRED, '市区') }),
-    /** 町村 */
-    town_area: z.string().nonempty({ message: formatString(MSG_REQUIRED, '町村') }),
+    address: z.string().nonempty({ message: formatString(MSG_REQUIRED, '住所') }),
     /** 番地 */
     area_block_number: z
       .string()
@@ -61,11 +59,6 @@ export const CompanyDetailSchema = z
       .string()
       .nonempty({ message: formatString(MSG_REQUIRED, '建物名') })
       .max(128, formatString(MSG_MAX, '建物名', '128')),
-    /** 提供場所 */
-    location: z
-      .string()
-      .nonempty({ message: formatString(MSG_REQUIRED, '提供場所') })
-      .max(128, formatString(MSG_MAX, '提供場所', '128')),
     /** メールアドレス */
     email: z
       .string()
@@ -108,14 +101,28 @@ export const CompanyDetailSchema = z
         delete_flag: z.boolean(),
       })
       .array(),
-    /** 任意項目1(項目名) */
-    optional_item_title_1: z.string().optional(),
-    /** 任意項目1(注釈) */
-    optional_item_notes_1: z.string().optional(),
-    /** 任意項目1(項目名) */
-    optional_item_title_2: z.string().optional(),
-    /** 任意項目1(注釈) */
-    optional_item_notes_2: z.string().optional(),
+    /** ドメイン(Array) */
+    domain: z
+      .object({
+        /** ドメイン */
+        id: z.string(),
+        /** ドメイン */
+        name: z
+          .string()
+          .nonempty({ message: formatString(MSG_REQUIRED, 'ドメイン') })
+          .regex(new RegExp(REG_DOMAIN), formatString(MSG_DOMAIN)),
+        /** 編集不可 ※true:編集不可(非活性)/false:編集可能(活性) */
+        disabled: z.boolean(),
+        /** 削除フラグ ※true:削除/false:有効 */
+        delete_flag: z.boolean(),
+      })
+      .array(),
+    /** 提供場所 */
+    location: z
+      .string()
+      .nonempty({ message: formatString(MSG_REQUIRED, '提供場所') })
+      .max(128, formatString(MSG_MAX, '提供場所', '128')),
+
     /** 提供時間(FROM) */
     offer_time_from: z.date({
       errorMap: (issue, {}) => ({
@@ -150,21 +157,19 @@ export const CompanyDetailSchema = z
         message: issue.code === 'invalid_date' ? formatString(MSG_INVALID, '時間') : formatString(MSG_REQUIRED, '時間'),
       }),
     }),
+    /** 任意項目1(項目名) */
+    optional_item_title_1: z.string().optional(),
+    /** 任意項目1(注釈) */
+    optional_item_notes_1: z.string().optional(),
+    /** 任意項目1(項目名) */
+    optional_item_title_2: z.string().optional(),
+    /** 任意項目1(注釈) */
+    optional_item_notes_2: z.string().optional(),
     /** 利用ステータス */
     usage_status: z.nativeEnum(UsageStatus),
   })
   /** カスタムバリデーション
   ------------------------------------------------------------------ */
-  /** 任意項目1 注釈のみの入力はOUT */
-  .refine((data) => !(data.optional_item_title_1 === '' && data.optional_item_notes_1 !== ''), {
-    path: ['optional_item_title_1'],
-    message: '項目名を入力してください。',
-  })
-  /** 任意項目2 注釈のみの入力はOUT */
-  .refine((data) => !(data.optional_item_title_2 === '' && data.optional_item_notes_2 !== ''), {
-    path: ['optional_item_title_2'],
-    message: '項目名を入力してください。',
-  })
   /** 部署情報 部署名の重複 */
   .superRefine((data, ctx) => {
     data.departmentInfo.forEach((item, index) => {
@@ -236,6 +241,19 @@ export const CompanyDetailSchema = z
       }
     });
   })
+  /** ドメイン ドメインの重複 */
+  .superRefine((data, ctx) => {
+    data.domain.forEach((item, index) => {
+      const filterLength = data.domain.filter((f) => f.name === item.name).length;
+      if (filterLength > 1) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [`domain.${index}.name`],
+          message: 'ドメインが重複しています。',
+        });
+      }
+    });
+  })
   /** 提供時間 FROM<TOではない */
   .superRefine((data, ctx) => {
     if (data.offer_time_from && data.offer_time_to) {
@@ -252,6 +270,16 @@ export const CompanyDetailSchema = z
         });
       }
     }
+  })
+  /** 任意項目1 注釈のみの入力はOUT */
+  .refine((data) => !(data.optional_item_title_1 === '' && data.optional_item_notes_1 !== ''), {
+    path: ['optional_item_title_1'],
+    message: '項目名を入力してください。',
+  })
+  /** 任意項目2 注釈のみの入力はOUT */
+  .refine((data) => !(data.optional_item_title_2 === '' && data.optional_item_notes_2 !== ''), {
+    path: ['optional_item_title_2'],
+    message: '項目名を入力してください。',
   });
 
 /**

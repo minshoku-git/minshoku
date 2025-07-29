@@ -1,7 +1,7 @@
 import { PostgrestSingleResponse } from '@supabase/supabase-js';
 
 import { DepartmentData, EmploymentData } from '@/app/_lib/createMockData';
-import { getNow, getTimeString, getTodayZeroHour } from '@/app/_lib/getDateTime';
+import { getNow, getTimeString, getTodayXHour } from '@/app/_lib/getDateTime';
 import { createClient, createPgClient } from '@/app/_lib/supabase/server';
 import { t_companies, t_companies_department, t_companies_employment_status } from '@/app/_lib/supabase/tableTypes';
 import { checkTempId, convertTimeToDate, getPostgreSqlItems } from '@/app/_lib/utill';
@@ -10,6 +10,12 @@ import { UsageStatus } from '@/app/_types/enum';
 import { ApiRequest, ApiResponse } from '@/app/_types/types';
 
 import { CompanyDetailFormValues } from './types';
+
+export type usageData = {
+  id: number;
+  usage: boolean;
+  error: boolean;
+};
 
 /**
  * _searchComponyDetail
@@ -33,7 +39,7 @@ export const _searchCompanyDetail = async (
       return { error: '会社情報の取得' + ERROR_MESSAGE.TEMPLATE };
     }
 
-    // 2.部署情報取得
+    // 2-1.部署情報取得
     const queryDep = supabase
       .from('t_companies_department')
       .select('*')
@@ -47,7 +53,38 @@ export const _searchCompanyDetail = async (
       return { error: '部署情報の取得' + ERROR_MESSAGE.TEMPLATE };
     }
 
-    // 3.雇用種別情報取得
+    // 3-2.雇用種別情報 使用状況取得
+    const departmentId = dataDep.map((m) => m.id!);
+    const usageDepartment: usageData[] = await Promise.all(
+      departmentId.map(async (id) => {
+        const { data, error } = await supabase
+          .from('t_user')
+          .select('id')
+          .eq('t_companies_id', values.request)
+          .eq('t_companies_department_id', id)
+          .limit(1);
+
+        if (error) {
+          console.error(`Error checking department ${id}:`, error);
+          return {
+            id: id,
+            usage: false,
+            error: true,
+          };
+        }
+        return {
+          id: id,
+          usage: data.length > 0,
+          error: false,
+        };
+      })
+    );
+
+    if (usageDepartment.find((f) => f.error)) {
+      return { error: '部署情報(利用状況)の取得' + ERROR_MESSAGE.TEMPLATE };
+    }
+
+    // 3-1.雇用種別情報取得
     const queryEmp = supabase
       .from('t_companies_employment_status')
       .select('*')
@@ -63,13 +100,44 @@ export const _searchCompanyDetail = async (
       return { error: '雇用種別情報の取得' + ERROR_MESSAGE.TEMPLATE };
     }
 
+    // 3-2.雇用種別情報 使用状況取得
+    const employmentId = dataEmp.map((m) => m.id!);
+    const usageEmployment: usageData[] = await Promise.all(
+      employmentId.map(async (id) => {
+        const { data, error } = await supabase
+          .from('t_user')
+          .select('id')
+          .eq('t_companies_id', values.request)
+          .eq('t_companies_employment_status_id', id)
+          .limit(1);
+
+        if (error) {
+          console.error(`Error checking employment ${id}:`, error);
+          return {
+            id: id,
+            usage: false,
+            error: true,
+          };
+        }
+        return {
+          id: id,
+          usage: data.length > 0,
+          error: false,
+        };
+      })
+    );
+
+    if (usageEmployment.find((f) => f.error)) {
+      return { error: '雇用種別情報(利用状況)の取得' + ERROR_MESSAGE.TEMPLATE };
+    }
+
     // Response set
     const depInit: DepartmentData[] = dataDep
       ? dataDep.map((m) => {
           return {
             id: m.id!.toString(),
             name: m.department_name ?? '',
-            disabled: false,
+            disabled: usageDepartment.find((d) => d.id === m.id && d.usage) ? true : false,
             delete_flag: false,
           };
         })
@@ -81,7 +149,7 @@ export const _searchCompanyDetail = async (
             id: m.id!.toString(),
             t_companies_id: m.t_companies_id,
             employment_status_name: m.employment_status_name ?? '',
-            disabled: true,
+            disabled: usageEmployment.find((d) => d.id === m.id && d.usage) ? true : false,
             deduction_flag: m.deduction_flag === 0 ? false : true,
             credit_flag: m.credit_flag === 0 ? false : true,
             paypay_flag: m.paypay_flag === 0 ? false : true,
@@ -91,8 +159,19 @@ export const _searchCompanyDetail = async (
         })
       : [];
 
+    const domainInit: DepartmentData[] = data.domain
+      ? data.domain.map((m, index) => {
+          return {
+            id: index.toString(),
+            name: m ?? '',
+            disabled: false,
+            delete_flag: false,
+          };
+        })
+      : [];
+
     console.log(data.usage_status);
-    const defalutDate = getTodayZeroHour();
+    const defalutDate = getTodayXHour();
 
     const res: CompanyDetailFormValues = {
       id: data.id?.toString(),
@@ -100,27 +179,26 @@ export const _searchCompanyDetail = async (
       branch_name: data.branch_name ?? '',
       postal_code_prefix: data.postal_code ? data.postal_code.slice(0, 3) : '',
       postal_code_suffix: data.postal_code ? data.postal_code.slice(3, 7) : '',
-      prefectures: data.prefectures ?? '',
-      municipalities: data.municipalities ?? '',
-      town_area: data.town_area ?? '',
+      address: data.address ?? '',
       area_block_number: data.area_block_number ?? '',
       building_name: data.building_name ?? '',
       restaurant_name: data.restaurant_name ?? '',
-      location: data.location ?? '',
       email: data.email ?? '',
       memo: data.memo ?? '',
-      optional_item_title_1: data.optional_item_title_1 ?? '',
-      optional_item_title_2: data.optional_item_title_2 ?? '',
-      optional_item_notes_1: data.optional_item_notes_1 ?? '',
-      optional_item_notes_2: data.optional_item_notes_2 ?? '',
+      location: data.location ?? '',
       offer_time_from: data.offer_time_from ? convertTimeToDate(data.offer_time_from) : defalutDate,
       offer_time_to: data.offer_time_to ? convertTimeToDate(data.offer_time_to) : defalutDate,
       order_period_day: data.order_period_day?.toString() ?? '',
       order_period_time: data.order_period_time ? convertTimeToDate(data.order_period_time) : defalutDate,
       cancel_period_day: data.cancel_period_day?.toString() ?? '',
       cancel_period_time: data.cancel_period_time ? convertTimeToDate(data.cancel_period_time) : defalutDate,
+      optional_item_title_1: data.optional_item_title_1 ?? '',
+      optional_item_title_2: data.optional_item_title_2 ?? '',
+      optional_item_notes_1: data.optional_item_notes_1 ?? '',
+      optional_item_notes_2: data.optional_item_notes_2 ?? '',
       departmentInfo: depInit,
       employmentStatusInfo: empInit,
+      domain: domainInit ?? [],
       usage_status:
         data.usage_status.toString() === UsageStatus.AVAILABLE ? UsageStatus.AVAILABLE : UsageStatus.DEACTIVATION,
     };
@@ -159,21 +237,20 @@ export const _insertComponyDetail = async (
     const insertValues: Omit<t_companies, 'id' | 'created_at' | 'updated_at'> = {
       company_name: req.company_name,
       branch_name: req.branch_name,
-      postal_code: req.postal_code_prefix,
-      prefectures: req.prefectures,
-      municipalities: req.municipalities,
-      town_area: req.town_area,
+      postal_code: req.postal_code_prefix + req.postal_code_suffix,
+      address: req.address,
       area_block_number: req.area_block_number,
       building_name: req.building_name,
       restaurant_name: req.restaurant_name,
       location: req.location,
       email: req.email,
       memo: req.memo,
+      domain: req.domain.map((m) => m.name),
       optional_item_title_1: req.optional_item_title_1,
       optional_item_title_2: req.optional_item_title_2,
       optional_item_notes_1: req.optional_item_notes_1,
       optional_item_notes_2: req.optional_item_notes_2,
-      url_key: '', // TODO:仕様確定待ち
+      url_key: '', // TODO: 仕様確定待ち
       offer_time_from: getTimeString(req.offer_time_from!),
       offer_time_to: getTimeString(req.offer_time_to!),
       order_period_day: Number(req.order_period_day),
@@ -264,12 +341,10 @@ export const _insertComponyDetail = async (
  * @param {ApiRequest<CompanyDetailFormValues>} values - 入力内容
  * @returns {Promise<ApiResponse<number>>} 企業ID
  */
-export const _updateComponyDetail = async (
-  values: ApiRequest<CompanyDetailFormValues>
-): Promise<ApiResponse<number>> => {
+export const _updateComponyDetail = async (values: CompanyDetailFormValues): Promise<ApiResponse<number>> => {
   const client = createPgClient();
 
-  const req = values.request;
+  const req = values;
   const timestamp = getNow();
 
   try {
@@ -286,16 +361,15 @@ export const _updateComponyDetail = async (
     const updateValues: Omit<t_companies, 'id' | 'url_key' | 'created_at'> = {
       company_name: req.company_name,
       branch_name: req.branch_name,
-      postal_code: req.postal_code_prefix,
-      prefectures: req.prefectures,
-      municipalities: req.municipalities,
-      town_area: req.town_area,
+      postal_code: req.postal_code_prefix + req.postal_code_suffix,
+      address: req.address,
       area_block_number: req.area_block_number,
       building_name: req.building_name,
       restaurant_name: req.restaurant_name,
       location: req.location,
       email: req.email,
       memo: req.memo,
+      domain: req.domain.map((m) => m.name),
       optional_item_title_1: req.optional_item_title_1,
       optional_item_title_2: req.optional_item_title_2,
       optional_item_notes_1: req.optional_item_notes_1,

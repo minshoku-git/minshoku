@@ -3,7 +3,7 @@ import { PostgrestSingleResponse } from '@supabase/supabase-js';
 import { getDateString, getDatetimeString, getNow } from '@/app/_lib/getDateTime';
 import { createClient, createPgClient } from '@/app/_lib/supabase/server';
 import { getPagenationsItems, getRange } from '@/app/_lib/utill';
-import { ERROR_MESSAGE, ERROR_MSG_UNEXPECTED } from '@/app/_types/constants';
+import { ERROR_MESSAGE } from '@/app/_types/constants';
 import { OrderStatus } from '@/app/_types/enum';
 import { ApiRequest, ApiResponse, SortItems } from '@/app/_types/types';
 
@@ -192,11 +192,14 @@ export const _searchOrderDetail = async (values: ApiRequest<number>): Promise<Ap
         `id,
         delivery_day,
         count,
-        unit_price,
+        list_price,
         amount,
+        companies_burden_amount,
+        user_burden_amount,
         payment_type,
         order_status,
         order_datetime,
+        cancel_datetime,
         t_menu_schedule!inner(
           menu_name
         ),
@@ -204,19 +207,19 @@ export const _searchOrderDetail = async (values: ApiRequest<number>): Promise<Ap
           shop_name
         ),
         t_user!inner(
+          id,
           user_name,
           user_name_kana,
-          user_email
+          user_email,
+          optional_item_answer_1,
+          optional_item_answer_2
         ),
         t_companies!inner(
+          id,
           company_name,
           branch_name,
-          postal_code,
-          prefectures,
-          municipalities,
-          town_area,
-          area_block_number,
-          building_name
+          optional_item_title_1,
+          optional_item_title_2
         ),
         t_companies_department!inner(
           department_name
@@ -235,41 +238,84 @@ export const _searchOrderDetail = async (values: ApiRequest<number>): Promise<Ap
       return { error: error.message };
     }
 
+    /* 累計注文数
+    ------------------------------------------------------------------ */
+    const queryTotalOrderCount = supabase
+      .from('t_order')
+      .select('*', { count: 'exact', head: true })
+      .eq('order_status', OrderStatus.VALID);
+
+    const { count: totalOrderCount, error: errorTotalOrderCount } =
+      (await queryTotalOrderCount) as PostgrestSingleResponse<orderDeteilResponseData>;
+
+    if (errorTotalOrderCount) {
+      console.log(errorTotalOrderCount);
+      return { error: 'オーダー情報(累計注文数)の取得' + ERROR_MESSAGE.TEMPLATE };
+    }
+
+    /* 前回注文日
+    ------------------------------------------------------------------ */
+    const queryLastOrderDateTime = supabase
+      .from('t_order')
+      .select('order_datetime')
+      .eq('order_status', OrderStatus.VALID)
+      .eq('t_user_id', data.t_user.id)
+      .order('order_datetime', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    const { data: lastOrderDateTime, error: errorLastOrderDateTime } =
+      (await queryLastOrderDateTime) as PostgrestSingleResponse<orderDeteilResponseData>;
+
+    if (errorLastOrderDateTime) {
+      console.log(errorLastOrderDateTime);
+      return { error: 'オーダー情報(前回注文日)の取得' + ERROR_MESSAGE.TEMPLATE };
+    }
+
+    /* 返却
+    ------------------------------------------------------------------ */
     const res: orderDeteilResponseData = {
       id: data.id?.toString() ?? '',
       delivery_day: data.delivery_day ? getDateString(data.delivery_day as Date) : '',
       count: data.count ?? 0,
-      unit_price: data.unit_price ?? 0,
+      list_price: data.list_price ?? 0,
       amount: data.amount ?? 0,
+      companies_burden_amount: data.companies_burden_amount,
+      user_burden_amount: data.user_burden_amount,
       payment_type: data.payment_type ?? 0,
       order_status: data.order_status ?? 0,
       order_datetime: data.order_datetime ? getDatetimeString(data.order_datetime as Date) : '',
+      cancel_datetime: data.cancel_datetime ? getDatetimeString(data.cancel_datetime as Date) : '',
+      totalOrderCount: totalOrderCount ?? 0,
+      lastOrderDateTime: lastOrderDateTime?.order_datetime
+        ? getDatetimeString(lastOrderDateTime.order_datetime as Date)
+        : '',
       t_menu_schedule: {
-        menu_name: data.t_menu_schedule.menu_name ?? '',
+        menu_name: data.t_menu_schedule.menu_name,
       },
       t_shops: {
-        shop_name: data.t_shops.shop_name ?? '',
+        shop_name: data.t_shops.shop_name,
       },
       t_user: {
-        user_name: data.t_user.user_name ?? '',
-        user_name_kana: data.t_user.user_name_kana ?? '',
-        user_email: data.t_user.user_email ?? '',
+        id: data.t_user.id,
+        user_name: data.t_user.user_name,
+        user_name_kana: data.t_user.user_name_kana,
+        user_email: data.t_user.user_email,
+        optional_item_answer_1: data.t_user.optional_item_answer_1 ?? '',
+        optional_item_answer_2: data.t_user.optional_item_answer_2 ?? '',
       },
       t_companies: {
-        company_name: data.t_companies.company_name ?? '',
-        branch_name: data.t_companies.branch_name ?? '',
-        postal_code: data.t_companies.postal_code ?? '',
-        prefectures: data.t_companies.prefectures ?? '',
-        municipalities: data.t_companies.municipalities ?? '',
-        town_area: data.t_companies.town_area ?? '',
-        area_block_number: data.t_companies.area_block_number ?? '',
-        building_name: data.t_companies.building_name ?? '',
+        id: data.t_companies.id,
+        company_name: data.t_companies.company_name,
+        branch_name: data.t_companies.branch_name,
+        optional_item_title_1: data.t_companies.optional_item_title_1,
+        optional_item_title_2: data.t_companies.optional_item_title_2,
       },
       t_companies_department: {
-        department_name: data.t_companies_department.department_name ?? '',
+        department_name: data.t_companies_department.department_name,
       },
       t_companies_employment_status: {
-        employment_status_name: data.t_companies_employment_status.employment_status_name ?? '',
+        employment_status_name: data.t_companies_employment_status.employment_status_name,
       },
     };
 
@@ -311,17 +357,17 @@ export const _orderCancel = async (values: ApiRequest<number>): Promise<ApiRespo
     const resultSelect = await client.query(selectSql, [id, OrderStatus.VALID]);
 
     if (resultSelect.rowCount === 0) {
-      return { error: 'オーダー情報が更新されています。画面を更新してご確認ください。' };
+      throw new Error('オーダー情報が更新されています。画面を更新してご確認ください。');
     }
 
     /* Update - t_order
   　------------------------------------------------------------------ */
     // UpdateData setting
-    const updateSql = `UPDATE t_order SET order_status = $1, updated_at = $2 WHERE id = $3 AND order_status = $4;`;
+    const updateSql = `UPDATE t_order SET order_status = $1, updated_at = $2, cancel_datetime = $3 WHERE id = $4 AND order_status = $5;`;
     // Update
-    const result = await client.query(updateSql, [OrderStatus.CANCEL, timestamp, id, OrderStatus.VALID]);
+    const result = await client.query(updateSql, [OrderStatus.CANCEL, timestamp, timestamp, id, OrderStatus.VALID]);
     if (result.rowCount === 0) {
-      return { error: 'オーダー情報の更新' + ERROR_MESSAGE.TEMPLATE };
+      throw new Error('オーダー情報の更新' + ERROR_MESSAGE.TEMPLATE);
     }
     const updatedId = result.rows[0]?.id;
 

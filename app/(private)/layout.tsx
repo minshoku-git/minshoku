@@ -18,6 +18,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import * as React from 'react';
 
+import { WaitingApprovalBadge } from '../_ui/_shared/waitingApprovalBadge';
 import ConfirmDialog from '../_ui/dirty/conformDialog';
 import { useDirty } from '../_ui/dirty/dartyContext';
 import DirtyCheck from '../_ui/dirty/dirty';
@@ -126,7 +127,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     if (!res.error) {
       router.refresh();
     } else {
-      console.log('あうと！');
+      console.log('logout Error');
     }
   };
 
@@ -140,11 +141,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   /* functions - のちすてゾーン
   ------------------------------------------------------------------ */
-  // const linkHandler = (e: React.MouseEvent<HTMLButtonElement>) => {
-  //   const url = e.currentTarget.getAttribute('data-url');
-  //   router.push(url!);
-  // };
-
   console.log('layout*isDirty:' + isDirty);
 
   /* JSX
@@ -180,7 +176,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <MenuIcon />
                 </IconButton>
                 <Image
-                  src="/logo.png"
+                  src="/logo.svg"
                   alt="みんなの社食"
                   width="200"
                   height="52"
@@ -216,7 +212,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </IconButton>
               </DrawerHeader>
               <Divider />
-              <List subheader={<ListSubheader>提供スケジュール</ListSubheader>}>
+              <List disablePadding subheader={<ListSubheader>提供スケジュール</ListSubheader>}>
                 <ListItem disablePadding>
                   <ListItemButton
                     component="button"
@@ -240,7 +236,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   </ListItemButton>
                 </ListItem>
               </List>
-              <List subheader={<ListSubheader>店舗情報</ListSubheader>}>
+              <List disablePadding subheader={<ListSubheader>店舗情報</ListSubheader>}>
                 <ListItem disablePadding>
                   <ListItemButton
                     component="button"
@@ -264,7 +260,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   </ListItemButton>
                 </ListItem>
               </List>
-              <List subheader={<ListSubheader>会社情報</ListSubheader>}>
+              <List disablePadding subheader={<ListSubheader>会社情報</ListSubheader>}>
                 <ListItem disablePadding>
                   <ListItemButton
                     component="button"
@@ -288,7 +284,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   </ListItemButton>
                 </ListItem>
               </List>
-              <List subheader={<ListSubheader>ユーザー情報</ListSubheader>}>
+              <List disablePadding subheader={<ListSubheader>ユーザー情報</ListSubheader>}>
                 <ListItem disablePadding>
                   <ListItemButton
                     component="button"
@@ -298,10 +294,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     disabled={disabledTitle('/user')}
                   >
                     <ListItemText primary={'ユーザー一覧'} />
+                    <WaitingApprovalBadge />
                   </ListItemButton>
                 </ListItem>
               </List>
-              <List subheader={<ListSubheader>オーダー情報</ListSubheader>}>
+              <List disablePadding subheader={<ListSubheader>オーダー情報</ListSubheader>}>
                 <ListItem disablePadding>
                   <ListItemButton
                     component="button"

@@ -5,7 +5,7 @@ import Image from 'next/image';
 
 import hum_close from '../../_ui/styles/images/hum-close.svg';
 import hum_show from '../../_ui/styles/images/hum-show.svg';
-import item_image_curry from "../../_ui/styles/images/item-image-curry.jpg"
+import item_image_curry from '../../_ui/styles/images/item-image-curry.jpg';
 
 const page: React.FC = () => {
   return (
