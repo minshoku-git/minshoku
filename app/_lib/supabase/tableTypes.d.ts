@@ -24,12 +24,10 @@ export type t_user = {
   usage_status?: number;
   /** メールアドレス */
   user_email?: string;
-  /** パスワードフラグ */
-  password_flag?: number;
   /** パスワード */
-  password?: string;
-  /** 支払い方法ステータス */
-  method_payment_state?: number;
+  signup_password?: string;
+  /** 支払種別 */
+  payment_type?: number;
   /** メモ（マスタ） */
   master_memo?: string;
   /** マスター利用ステータス */

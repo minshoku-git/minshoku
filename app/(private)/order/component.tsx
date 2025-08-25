@@ -167,7 +167,7 @@ export const OrderComponent = (): JSX.Element => {
     if (!data) {
       return;
     }
-    if (data?.success) {
+    if (!data?.success) {
       openSnackbar(AlertType.ERROR, '検索時にエラーが発生しました。再度発生する場合は、管理者にお問い合わせください。');
       setResult(null);
       setIsSearch(false);

@@ -136,3 +136,17 @@ export const hasDuplicate = <T>(arr: T[], key: keyof T): boolean => {
     return false;
   });
 };
+
+/**
+ * ドメイン取得
+ * @param {string} email
+ * @returns {string} - domain
+ */
+export const getDomain = (email: string): string => {
+  const arr = email.split('@');
+  if (arr.length === 2) {
+    return arr[1];
+  } else {
+    return '';
+  }
+};

@@ -222,8 +222,7 @@ export const _searchCompanyDetail = async (
       departmentInfo: depInit,
       employmentStatusInfo: empInit,
       domain: domainInit ?? [],
-      usage_status:
-        data.usage_status.toString() === UsageStatus.AVAILABLE ? UsageStatus.AVAILABLE : UsageStatus.DEACTIVATION,
+      usage_status: data.usage_status === UsageStatus.AVAILABLE ? UsageStatus.AVAILABLE : UsageStatus.DEACTIVATION,
     };
 
     return { success: true, data: res };

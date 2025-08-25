@@ -88,7 +88,7 @@ export const signIn = async (req: ApiRequest<LoginFormValues>): Promise<ApiRespo
       console.error('Error signing in:', signInError);
       throw new CustomError(
         ErrorCodes.NOT_FOUND.code,
-        'ログイン処理' + ErrorCodes.NOT_FOUND.message,
+        'ログイン' + ErrorCodes.NOT_FOUND.message,
         ErrorCodes.NOT_FOUND.status
       );
     }
@@ -149,7 +149,7 @@ export const getUser = async (): Promise<ApiResponse<string>> => {
       console.error('Error signing out:', getUserError);
       throw new CustomError(
         ErrorCodes.NOT_FOUND.code,
-        'ログイン処理' + ErrorCodes.NOT_FOUND.message,
+        'ログイン' + ErrorCodes.NOT_FOUND.message,
         ErrorCodes.NOT_FOUND.status
       );
     }

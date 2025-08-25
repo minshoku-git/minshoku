@@ -19,8 +19,8 @@ import { useDirty } from '@/app/_ui/dirty/dartyContext';
 import { useProcessing } from '@/app/_ui/processing/processingContext';
 import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
 
-import { searchUserDetail, updateUserDetail } from './_lib/fetcher';
-import { UserDataDetailResult, UserDetailFormValues, UserDetailSchema } from './_lib/types';
+import { approval, disapproval, searchUserDetail, updateUserDetail } from './_lib/fetcher';
+import { UpdateUserData, UserDataDetailResult, UserDetailFormValues, UserDetailSchema } from './_lib/types';
 
 /** ページ名 */
 const pageName = 'ユーザー詳細';
@@ -51,13 +51,12 @@ export const UserDetailComponent = (): JSX.Element => {
   const [userRegistrationStatus, setUserRegistrationStatus] = useState<UserRegistrationStatus>(
     UserRegistrationStatus.WAITING_APPROVAL
   );
-  const [showNini, setShowNini] = useState<boolean>(true);
   const [dataLoaded, setDataLoaded] = useState(false);
 
   // ステータス変更確認ダイアログ
   const [openDialog, setOpenDialog] = useState<boolean>(false);
   const [dialogMessage, setDialogMessage] = useState<string>('');
-  const [userData, setUserData] = useState<UserDataDetailResult | undefined>();
+  const [userData, setUserData] = useState<UserDataDetailResult | null>();
   const [dialogActionHandler, setDialogActionHandler] = useState<() => void>(() => {
     return () => { };
   });
@@ -89,7 +88,6 @@ export const UserDetailComponent = (): JSX.Element => {
   const {
     data: result,
     isLoading,
-    isError,
     refetch,
   } = useQuery<ApiResponse<UserDataDetailResult>>({
     queryKey: [QUERY_KEYS.USER_DETAIL_INIT],
@@ -164,7 +162,7 @@ export const UserDetailComponent = (): JSX.Element => {
   });
 
   /* functions - UpdateStatus
------------------------------------------------------------------- */
+  ------------------------------------------------------------------ */
   const updateStatusHandler: SubmitHandler<UserDetailFormValues> = async (data) => {
     updateStatusMutate.mutate(data);
   };
@@ -194,6 +192,70 @@ export const UserDetailComponent = (): JSX.Element => {
     },
   });
 
+  /* functions - 否認
+  ------------------------------------------------------------------ */
+  const disapprovalMutateHandler = async () => {
+    disapprovalMutate.mutate();
+  };
+
+  const disapprovalMutate = useMutation({
+    mutationFn: async () => {
+      openProcessing();
+      const req: ApiRequest<UpdateUserData> = { request: { id } }
+      return disapproval(req) as unknown as ApiResponse<number>;
+    },
+    onSuccess: (res: ApiResponse<number>) => {
+      if (res.success) {
+        refetch();
+        openSnackbar(AlertType.INFO, 'ユーザー情報を否認しました。');
+      } else {
+        openSnackbar(AlertType.ERROR, res.error.message);
+      }
+    },
+    onError: (e) => {
+      console.error(e.message);
+      openSnackbar(AlertType.ERROR, 'ユーザー情報の否認に失敗しました。再度お試しください。');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.WAITING_APPROVAL_SEARCH_RESULT],
+      });
+      closeProcessing();
+    },
+  });
+
+  /* functions - 承認
+  ------------------------------------------------------------------ */
+  const approvalMutateHandler = async () => {
+    approvalMutate.mutate();
+  };
+
+  const approvalMutate = useMutation({
+    mutationFn: async () => {
+      openProcessing();
+      const req: ApiRequest<UpdateUserData> = { request: { id } }
+      return approval(req) as unknown as ApiResponse<number>;
+    },
+    onSuccess: (res: ApiResponse<number>) => {
+      if (res.success) {
+        refetch();
+        openSnackbar(AlertType.INFO, 'ユーザー情報を承認しました。');
+      } else {
+        openSnackbar(AlertType.ERROR, res.error.message);
+      }
+    },
+    onError: (e) => {
+      console.error(e.message);
+      openSnackbar(AlertType.ERROR, 'ユーザー情報の承認に失敗しました。再度お試しください。');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: [QUERY_KEYS.WAITING_APPROVAL_SEARCH_RESULT],
+      });
+      closeProcessing();
+    },
+  });
+
   /* functions
   ------------------------------------------------------------------ */
 
@@ -201,7 +263,7 @@ export const UserDetailComponent = (): JSX.Element => {
   const disapprovalHandler = () => {
     // dialog setting
     setDialogMessage(`ユーザー情報を"否認"します。\nよろしいですか？`);
-    setDialogActionHandler(() => updateStatusHandler);
+    setDialogActionHandler(() => disapprovalMutateHandler);
     setOpenDialog(true);
   };
 
@@ -209,14 +271,14 @@ export const UserDetailComponent = (): JSX.Element => {
   const approvalHandler = () => {
     // dialog setting
     setDialogMessage(`ユーザー情報を"承認"します。\n変更後、引き戻しはできませんがよろしいですか？`);
-    setDialogActionHandler(() => updateStatusHandler);
+    setDialogActionHandler(() => approvalMutateHandler);
     setOpenDialog(true);
   };
 
-  /** 引き戻し */
+  /** 引き戻し承認 */
   const pullBackHandler = () => {
     // dialog setting
-    setDialogMessage(`ユーザー情報のステータスを"否認"から"承認待ち"に引き戻します。\nよろしいですか？`);
+    setDialogMessage(`ユーザー情報のステータスを"否認"から"承認"に引き戻します。\nよろしいですか？`);
     setDialogActionHandler(() => updateStatusHandler);
     setOpenDialog(true);
   };
@@ -446,7 +508,7 @@ export const UserDetailComponent = (): JSX.Element => {
                         pullBackHandler();
                       }}
                     >
-                      引き戻し
+                      引き戻し承認
                     </Button>
                   </>
                 )}

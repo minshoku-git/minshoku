@@ -8,7 +8,7 @@ import { createClient, createPgClient } from '@/app/_lib/supabase/server';
 import { t_shops } from '@/app/_lib/supabase/tableTypes';
 import { rollbackWithLog } from '@/app/_lib/supabase/transaction';
 import { getPostgreSqlItems } from '@/app/_lib/utill';
-import { BUCKET_SHOP_IMAGES, ERROR_MESSAGE } from '@/app/_types/constants';
+import { BUCKET_SHOP_IMAGES } from '@/app/_types/constants';
 import { UsageStatus } from '@/app/_types/enum';
 import { ApiRequest, ApiResponse } from '@/app/_types/types';
 import { CustomError } from '@/app/errors/customError';

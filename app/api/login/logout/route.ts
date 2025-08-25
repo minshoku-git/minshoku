@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 
 import { createClient } from '@/app/_lib/supabase/server';
+import { ApiResponse } from '@/app/_types/types';
+import { ErrorCodes } from '@/app/errors/ErrorCodes';
 
 export async function POST() {
   const supabase = await createClient();
@@ -8,8 +10,14 @@ export async function POST() {
   const { error } = await supabase.auth.signOut();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const result: ApiResponse<null> = { success: true, data: null };
+    return NextResponse.json(result);
   } else {
-    return NextResponse.json({ status: 200 });
+    console.error(error);
+    const result: ApiResponse<null> = {
+      success: false,
+      error: { code: ErrorCodes.LOGOUT_FAILED.code, message: ErrorCodes.LOGOUT_FAILED.message },
+    };
+    return NextResponse.json(result);
   }
 }

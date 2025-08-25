@@ -116,7 +116,7 @@ export const CompanyComponent = (): JSX.Element => {
       const req: ApiRequest<CompanySearchFormValues> = JSON.parse(searchCondition);
       setCondition(req);
       setValue('company_name', req.request.company_name);
-      setValue('branch_name', req.request.usage_status);
+      setValue('branch_name', req.request.branch_name);
       setValue('address', req.request.address);
       setValue('usage_status', req.request.usage_status);
     }

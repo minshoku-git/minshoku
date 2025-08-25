@@ -7,14 +7,14 @@ import { MSG_EMAIL, MSG_MAX, MSG_REQUIRED } from '@/app/_types/constants';
  * ログイン Schema
  */
 export const LoginSchema = z.object({
-  /** ステータス */
-  password: z.string().nonempty({ message: formatString(MSG_REQUIRED, 'パスワード') }),
-  /** メモ */
+  /** メールアドレス */
   email: z
     .string()
     .nonempty({ message: formatString(MSG_REQUIRED, 'メールアドレス') })
     .email(formatString(MSG_EMAIL, 'メールアドレス'))
     .max(256, formatString(MSG_MAX, 'メールアドレス', '256')),
+  /** パスワード */
+  password: z.string().nonempty({ message: formatString(MSG_REQUIRED, 'パスワード') }),
 });
 
 /**

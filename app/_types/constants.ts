@@ -53,10 +53,12 @@ export const BUCKET_SHOP_IMAGES: string = 'shop-images';
 export const MSG_REQUIRED = '{0}は必須入力です。';
 export const MSG_INVALID = '{0}を正しく入力してください。';
 export const MSG_MAX = '{0}は{1}文字以内で入力してください。';
+export const MSG_MIN_TO_MAX = '{0}は{1}文字から{2}文字以内で入力してください。';
 export const MSG_EMAIL = '{0}は正しく入力してください。';
 export const MSG_POSTALCODE = '{0}は半角数字{1}桁を入力してください。';
 export const MSG_HANKAKU_NUM = '{0}は半角数字を入力してください。';
 export const MSG_DOMAIN = '有効なドメイン名を入力してください。';
+export const MSG_PASSWORD = 'パスワードは8文字以上の半角英数字の組み合わせで入力してください。';
 
 /* 正規表現集
 ------------------------------------------------------------------ */
@@ -65,6 +67,7 @@ export const REG_HANKAKU_EISU = '/^[a-zA-Z0-9]+$/u';
 export const REG_HANKAKU_NUM = '^\\d+$';
 export const REG_ZENKAKU_KANA = '^[\u30A0-\u30FF]+$';
 export const REG_DOMAIN = /^(?=.{1,253}$)(?!\-)(?:[a-zA-Z0-9](?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,63}$/;
+export const REG_PASSWORD = /^(?=.*[a-zA-Z])(?=.*\d)[a-zA-Z0-9]{8,}$/;
 
 export const MAX_IMAGE_SIZE = 5; // 5MB
 

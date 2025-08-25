@@ -5,13 +5,12 @@ import { createClient, createPgClient } from '@/app/_lib/supabase/server';
 import { t_user } from '@/app/_lib/supabase/tableTypes';
 import { rollbackWithLog } from '@/app/_lib/supabase/transaction';
 import { getPostgreSqlItems } from '@/app/_lib/utill';
-import { ERROR_MESSAGE } from '@/app/_types/constants';
 import { UsageStatus, UserRegistrationStatus } from '@/app/_types/enum';
 import { ApiRequest, ApiResponse } from '@/app/_types/types';
 import { CustomError } from '@/app/errors/customError';
 import { ErrorCodes } from '@/app/errors/ErrorCodes';
 
-import { UserDataDetailResult, UserDetailFormValues } from './types';
+import { UpdateUserData, UserDataDetailResult, UserDetailFormValues } from './types';
 
 /* ユーザー詳細
 ------------------------------------------------------------------ */
@@ -23,7 +22,7 @@ import { UserDataDetailResult, UserDetailFormValues } from './types';
  * @param {ApiRequest<number>} values - 検索条件
  * @returns {Promise<UserDetailFormValues>} 検索結果
  */
-export const _searchUserDetail = async (values: ApiRequest<number>): Promise<ApiResponse<UserDataDetailResult>> => {
+export const searchUserDetail = async (values: ApiRequest<number>): Promise<ApiResponse<UserDataDetailResult>> => {
   const supabase = await createClient();
 
   try {
@@ -72,7 +71,7 @@ export const _searchUserDetail = async (values: ApiRequest<number>): Promise<Api
       data: {
         ...data,
         usage_status: data.usage_status as UsageStatus,
-        user_registration_status: data.user_registration_status.toString() as UserRegistrationStatus,
+        user_registration_status: data.user_registration_status as UserRegistrationStatus,
       },
     };
   } catch (e: unknown) {
@@ -100,7 +99,7 @@ export const _searchUserDetail = async (values: ApiRequest<number>): Promise<Api
  * @param {ApiRequest<UserDetailFormValues>} values - 検索条件
  * @returns {Promise<ApiResponse<number>>} 検索結果
  */
-export const _updateUserDetail = async (values: ApiRequest<UserDetailFormValues>): Promise<ApiResponse<number>> => {
+export const updateUserDetail = async (values: ApiRequest<UserDetailFormValues>): Promise<ApiResponse<number>> => {
   const supabase = await createClient();
   const req = values.request;
   const timestamp = getNow();
@@ -153,25 +152,25 @@ export const _updateUserDetail = async (values: ApiRequest<UserDetailFormValues>
  * _disapprovalUserRegistrationStatus
  * IDに一致するユーザー情報を否認する。
  *
- * @param {ApiRequest<UserDetailFormValues>} values - 検索条件
+ * @param {ApiRequest<UpdateUserData>} values - 検索条件
  * @returns {Promise<UserDetailFormValues>} 検索結果
  */
-export const _disapprovalUserRegistrationStatus = async (
-  values: ApiRequest<UserDetailFormValues>
+export const disapprovalUserRegistrationStatus = async (
+  values: ApiRequest<UpdateUserData>
 ): Promise<ApiResponse<number>> => {
   const supabase = await createClient();
 
-  const req = values.request;
+  const id = values.request.id;
   const timestamp = getNow();
 
   try {
     const query = supabase
       .from('t_user')
       .update<t_user>({
-        usage_status: Number(UserRegistrationStatus.DISAPPROVAL),
+        user_registration_status: Number(UserRegistrationStatus.DISAPPROVAL),
         updated_at: timestamp,
       })
-      .eq('id', req.id)
+      .eq('id', id)
       .eq('user_registration_status', Number(UserRegistrationStatus.WAITING_APPROVAL))
       .eq('usage_status', Number(UsageStatus.DEACTIVATION))
       .select('id')
@@ -214,71 +213,11 @@ export const _disapprovalUserRegistrationStatus = async (
  * @param {ApiRequest<UserDetailFormValues>} values - 検索条件
  * @returns {Promise<UserDetailFormValues>} 検索結果
  */
-export const _pullBackUserRegistrationStatus = async (
-  values: ApiRequest<UserDetailFormValues>
-): Promise<ApiResponse<number>> => {
-  const supabase = await createClient();
-
-  const req = values.request;
-  const timestamp = getNow();
-
-  try {
-    const query = supabase
-      .from('t_user')
-      .update<t_user>({
-        usage_status: Number(UserRegistrationStatus.WAITING_EMAIL_VERIFICATION),
-        updated_at: timestamp,
-      })
-      .eq('id', req.id)
-      .eq('user_registration_status', Number(UserRegistrationStatus.WAITING_APPROVAL))
-      .eq('usage_status', Number(UsageStatus.DEACTIVATION))
-      .select('id')
-      .single();
-
-    const { error, data } = (await query) as PostgrestSingleResponse<t_user>;
-
-    // サインアップ処理を記述する。
-
-    if (error) {
-      console.error(error);
-      throw new CustomError(
-        ErrorCodes.NOT_FOUND.code,
-        'ユーザー情報の引き戻し承認' + ErrorCodes.NOT_FOUND.message,
-        ErrorCodes.NOT_FOUND.status
-      );
-    }
-
-    return { success: true, data: Number(data.id) };
-  } catch (e: unknown) {
-    console.error(e);
-    if (e instanceof CustomError) {
-      return {
-        success: false,
-        error: {
-          code: e.code,
-          message: e.message,
-        },
-      };
-    }
-    return {
-      success: false,
-      error: { code: ErrorCodes.INTERNAL_SERVER_ERROR.code, message: ErrorCodes.INTERNAL_SERVER_ERROR.message },
-    };
-  }
-};
-
-/**
- * _disapprovalUserRegistrationStatus
- * IDに一致する店舗情報を承認する。
- *
- * @param {ApiRequest<UserDetailFormValues>} values - 検索条件
- * @returns {Promise<UserDetailFormValues>} 検索結果
- */
-export const _approvalUserRegistrationStatus = async (
+export const pullBackUserRegistrationStatus = async (
   values: ApiRequest<UserDetailFormValues>
 ): Promise<ApiResponse<number>> => {
   const pgClient = createPgClient();
-  const supabase = await createClient();
+  const supabase = await createClient(); //signUp用
   const req = values.request;
   const timestamp = getNow();
 
@@ -290,11 +229,28 @@ export const _approvalUserRegistrationStatus = async (
     // Transaction Start
     await pgClient.query('BEGIN');
 
+    /* Select - t_user
+  　------------------------------------------------------------------ */
+    const selectSql = `
+      SELECT
+        user_email,
+        signup_password
+      From
+        t_user
+      Where
+        id = ${req.id};`;
+
+    // Insert
+    const emailAndPassword = await pgClient.query(selectSql);
+    const email: string = emailAndPassword.rows[0]?.user_email;
+    const password: string = emailAndPassword.rows[0]?.signup_password;
+
     /* Update - t_user
   　------------------------------------------------------------------ */
     // UpdateData setting
-    const updateValues: Pick<t_user, 'usage_status' | 'updated_at'> = {
-      usage_status: Number(UserRegistrationStatus.WAITING_EMAIL_VERIFICATION),
+    const updateValues: Pick<t_user, 'user_registration_status' | 'signup_password' | 'updated_at'> = {
+      user_registration_status: Number(UserRegistrationStatus.WAITING_EMAIL_VERIFICATION),
+      signup_password: '',
       updated_at: timestamp,
     };
     const { columns, values } = getPostgreSqlItems(updateValues);
@@ -302,32 +258,152 @@ export const _approvalUserRegistrationStatus = async (
       UPDATE t_user
         SET ${columns.map((col, index) => `${col} = $${index + 1}`).join(', ')}
         WHERE id = ${req.id}
-        AND usage_state = ${UserRegistrationStatus.WAITING_APPROVAL} 
-        RETURNING id, user_email;`;
+        AND usage_status = ${UsageStatus.DEACTIVATION} 
+        AND user_registration_status = ${UserRegistrationStatus.DISAPPROVAL} 
+        RETURNING id;`;
 
     // Insert
     const result = await pgClient.query(updateSql, values);
     if (result.rowCount === 0) {
-      throw new Error('ユーザー情報の承認' + ERROR_MESSAGE.TEMPLATE);
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        'ユーザー情報の引き戻し承認' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
     }
 
     const updateId: number = result.rows[0]?.id;
-    const email: string = result.rows[0]?.user_email;
-    const password: string = result.rows[0]?.password;
 
     // TODO: パスワードの復号化を行う
 
     /* signUp
   　------------------------------------------------------------------ */
-    const { error: signUpError } = await supabase.auth.signUp({
-      email,
-      password: '',
-    });
+    // const { error: signUpError } = await supabase.auth.signUp({
+    //   email,
+    //   password,
+    // });
 
-    if (signUpError) {
-      console.error('Error signing up:', signUpError);
-      throw new Error('ユーザー情報のサインアップ' + ERROR_MESSAGE.TEMPLATE);
+    // if (signUpError) {
+    //   console.error('Error signing up:', signUpError);
+    //   throw new Error('ユーザー情報のサインアップ' + ERROR_MESSAGE.TEMPLATE);
+    // }
+
+    /* --------------------------------------------------------------- */
+    // throw new Error('疑似エラー:ロールバックを確認しました。');
+
+    // Commit
+    await pgClient.query('COMMIT');
+    console.log('Transaction completed, new company ID:', updateId);
+
+    return { success: true, data: updateId };
+  } catch (e: unknown) {
+    console.error('Transaction failed:', e);
+    // Rollback
+    await rollbackWithLog(pgClient);
+
+    if (e instanceof CustomError) {
+      return {
+        success: false,
+        error: {
+          code: e.code,
+          message: e.message,
+        },
+      };
     }
+    return {
+      success: false,
+      error: {
+        code: ErrorCodes.INTERNAL_SERVER_ERROR.code,
+        message: ErrorCodes.INTERNAL_SERVER_ERROR.message,
+      },
+    };
+  } finally {
+    // Transaction End
+    await pgClient.end();
+  }
+};
+
+/**
+ * _disapprovalUserRegistrationStatus
+ * IDに一致する店舗情報を承認する。
+ *
+ * @param {ApiRequest<UserDetailFormValues>} values - 検索条件
+ * @returns {Promise<UserDetailFormValues>} 検索結果
+ */
+export const approvalUserRegistrationStatus = async (
+  values: ApiRequest<UserDetailFormValues>
+): Promise<ApiResponse<number>> => {
+  const pgClient = createPgClient();
+  const supabase = await createClient(); //signUp用
+  const req = values.request;
+  const timestamp = getNow();
+
+  try {
+    // connection Start
+    await pgClient.connect();
+    console.log('Connected to the database successfully');
+
+    // Transaction Start
+    await pgClient.query('BEGIN');
+
+    /* Select - t_user
+  　------------------------------------------------------------------ */
+    const selectSql = `
+      SELECT
+        user_email,
+        signup_password
+      From
+        t_user
+      Where
+        id = ${req.id};`;
+
+    // Insert
+    const emailAndPassword = await pgClient.query(selectSql);
+    const email: string = emailAndPassword.rows[0]?.user_email;
+    const password: string = emailAndPassword.rows[0]?.signup_password;
+
+    /* Update - t_user
+  　------------------------------------------------------------------ */
+    // UpdateData setting
+    const updateValues: Pick<t_user, 'user_registration_status' | 'signup_password' | 'updated_at'> = {
+      user_registration_status: Number(UserRegistrationStatus.WAITING_EMAIL_VERIFICATION),
+      signup_password: '',
+      updated_at: timestamp,
+    };
+    const { columns, values } = getPostgreSqlItems(updateValues);
+    const updateSql = `
+      UPDATE t_user
+        SET ${columns.map((col, index) => `${col} = $${index + 1}`).join(', ')}
+        WHERE id = ${req.id}
+        AND usage_status = ${UsageStatus.DEACTIVATION} 
+        AND user_registration_status = ${UserRegistrationStatus.WAITING_APPROVAL} 
+        RETURNING id;`;
+
+    // Insert
+    const result = await pgClient.query(updateSql, values);
+    if (result.rowCount === 0) {
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        'ユーザー情報の承認' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
+    }
+
+    const updateId: number = result.rows[0]?.id;
+
+    // TODO: パスワードの復号化を行う
+
+    /* signUp
+  　------------------------------------------------------------------ */
+    // const { error: signUpError } = await supabase.auth.signUp({
+    //   email,
+    //   password,
+    // });
+
+    // if (signUpError) {
+    //   console.error('Error signing up:', signUpError);
+    //   throw new Error('ユーザー情報のサインアップ' + ERROR_MESSAGE.TEMPLATE);
+    // }
 
     /* --------------------------------------------------------------- */
     // throw new Error('疑似エラー:ロールバックを確認しました。');

@@ -1,7 +1,7 @@
 import { fetcher } from '@/app/_lib/fetcher';
 import { ApiRequest, ApiResponse } from '@/app/_types/types';
 
-import { UserDetailFormValues } from './types';
+import { UpdateUserData, UserDetailFormValues } from './types';
 
 /**
  * searchUserDetail
@@ -41,6 +41,36 @@ export const updateUserDetail = (req: UserDetailFormValues): Promise<ApiResponse
  */
 export const updateUserUsageStatus = (req: UserDetailFormValues): Promise<ApiResponse<number>> => {
   return fetcher<ApiResponse<number>>('/api/userDetail/updateUserUsageStatus', {
+    method: 'POST',
+    body: JSON.stringify(req),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+};
+
+/**
+ * updateUserDetail
+ * @param {ApiRequest<UpdateUserData>} req
+ * @returns {Promise<ApiResponse<number>>}
+ */
+export const disapproval = (req: ApiRequest<UpdateUserData>): Promise<ApiResponse<number>> => {
+  return fetcher<ApiResponse<number>>('/api/userDetail/disapproval', {
+    method: 'POST',
+    body: JSON.stringify(req),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+};
+
+/**
+ * updateUserDetail
+ * @param {ApiRequest<UpdateUserData>} req
+ * @returns {Promise<ApiResponse<number>>}
+ */
+export const approval = (req: ApiRequest<UpdateUserData>): Promise<ApiResponse<number>> => {
+  return fetcher<ApiResponse<number>>('/api/userDetail/approval', {
     method: 'POST',
     body: JSON.stringify(req),
     headers: {

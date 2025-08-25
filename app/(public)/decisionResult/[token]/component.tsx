@@ -1,32 +1,71 @@
 'use client';
 import { Box, Button, Divider, Grid2 as Grid, Paper, Typography } from '@mui/material';
-import { useRouter } from 'next/navigation';
-import { JSX } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import Image from 'next/image';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { JSX, useEffect } from 'react';
 
-import { UserApprovalType } from '@/app/_types/enum';
-import { ApiResponse } from '@/app/_types/types';
+import { AlertType, UserApprovalType } from '@/app/_types/enum';
+import { QUERY_KEYS } from '@/app/_types/queryKeys';
+import { ApiRequest, ApiResponse } from '@/app/_types/types';
+import { useProcessing } from '@/app/_ui/processing/processingContext';
+import { useSnackBar } from '@/app/_ui/snackBar/snackBar';
 
-import { DecisionResult } from './page';
-
-type props = {
-  result?: ApiResponse<DecisionResult>;
-};
+import { decision } from './_lib/fetcher';
+import { DecisionData, DecisionResult } from './_lib/types';
 
 /**
  * 処理結果Component
  * @returns {JSX.Element} JSX
  */
-export const DecisionResultComponent = (props: props): JSX.Element => {
+export const DecisiondataComponent = (): JSX.Element => {
   /* initialize
   ------------------------------------------------------------------ */
   const router = useRouter();
-  const result: DecisionResult | null = props.result?.success ? props.result.data : null;
+  const { openSnackbar } = useSnackBar();
+  const { openProcessing, closeProcessing } = useProcessing();
+  const token = (useParams().token as string) ?? '-';
 
   /* useState
   ------------------------------------------------------------------ */
 
-  /* useForm
+  /* useQuery
   ------------------------------------------------------------------ */
+  const decisionFetch = async () => {
+    const req: ApiRequest<DecisionData> = { request: { token } }
+    return decision(req);
+  };
+
+  const {
+    data: result,
+    isLoading,
+  } = useQuery<ApiResponse<DecisionResult>>({
+    queryKey: [QUERY_KEYS.DECISION_INIT],
+    queryFn: decisionFetch,
+    enabled: false,
+  });
+
+  /* useEffect
+  ------------------------------------------------------------------ */
+  useEffect(() => {
+    if (!result) {
+      return;
+    }
+    if (!result.success) {
+      openSnackbar(AlertType.ERROR, result.error.message);
+      // router.push('/');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result]);
+
+  useEffect(() => {
+    if (isLoading) {
+      openProcessing();
+    } else {
+      closeProcessing();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading]);
 
   /* functions 
   ------------------------------------------------------------------ */
@@ -45,29 +84,43 @@ export const DecisionResultComponent = (props: props): JSX.Element => {
           sx={{
             display: 'flex',
             flexDirection: 'column',
-            margin: '5%',
+            width: '400px',
+            mx: 'auto',
+            my: '40px'
           }}
         >
+          <Box sx={{ mx: 'auto', mt: 3 }}>
+            <Image
+              src="/logo.svg"
+              alt="みんなの社食"
+              width="200"
+              height="52"
+              // Largest Contentful Paint (LCP) 要素として検出された画像だと警告がでるので、以下のように設定した
+              priority={true}
+              fetchPriority={'auto'}
+            />
+          </Box>
           <Grid container alignItems="center">
-            <Typography component="h2" variant="h6" color="primary" gutterBottom sx={{ px: 3, py: 2, mb: 0 }}>
+            <Typography component="h2" variant="h6" color="primary" gutterBottom sx={{ px: 3, py: 2, mx: 'auto', mb: 0 }}>
               {`処理結果 - 承認完了`}
             </Typography>
           </Grid>
-          <Divider />
-          <Box sx={{ m: 3 }}>
-            {result && (
+          {/* <Divider /> */}
+          <Box sx={{ mx: 'auto' }}>
+            <Typography>ユーザーの承認処理が完了しました。</Typography>
+            {result?.success && (
               <>
-                {UserApprovalType.APPROVAL === result.userApprovalType && (
+                {UserApprovalType.APPROVAL === result.data.userApprovalType && (
                   <>
                     <Typography>ユーザーの承認処理が完了しました。</Typography>
                   </>
                 )}
-                {UserApprovalType.DISAPPROVAL === result.userApprovalType && (
+                {UserApprovalType.DISAPPROVAL === result.data.userApprovalType && (
                   <>
                     <Typography>ユーザーの否認処理が完了しました。</Typography>
                   </>
                 )}
-                {UserApprovalType.PROCESSED === result.userApprovalType && (
+                {UserApprovalType.PROCESSED === result.data.userApprovalType && (
                   <>
                     <Typography>このユーザーの承認フローはすでに完了しています。</Typography>
                   </>
@@ -75,8 +128,8 @@ export const DecisionResultComponent = (props: props): JSX.Element => {
               </>
             )}
           </Box>
-          <Box sx={{ m: 3 }}>
-            <Button variant="contained" onClick={() => goToLoginPage()} sx={{ display: 'flex', mb: 1.5, width: 240 }}>
+          <Box sx={{ m: 3, mt: 5 }}>
+            <Button variant="contained" onClick={() => goToLoginPage()} sx={{ display: 'flex', mx: 'auto', mb: 1.5, width: 240 }}>
               <Typography variant="button">ログイン画面</Typography>
             </Button>
           </Box>

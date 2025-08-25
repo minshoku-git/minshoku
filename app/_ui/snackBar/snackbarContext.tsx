@@ -12,8 +12,8 @@ interface SnackBarContextType {
 }
 
 const SnackBarContext = createContext<SnackBarContextType | null>({
-  openSnackbar: () => {},
-  closeSnackbar: () => {},
+  openSnackbar: () => { },
+  closeSnackbar: () => { },
   snackbarState: {
     open: false,
     alertType: AlertType.INFO,
@@ -45,6 +45,7 @@ export const SnackBarProvider = ({ children }: { children: ReactNode }) => {
 
 export const useSnackBar = (): SnackBarContextType => {
   const context = useContext(SnackBarContext);
+  console.log(context)
   if (!context) {
     throw new Error('useSnackBar must be used within a SnackBarProvider');
   }

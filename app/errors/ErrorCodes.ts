@@ -13,4 +13,9 @@ export const ErrorCodes = {
     message: 'メールの送信に失敗しました。時間をおいて再度お試しください。',
     status: 500,
   },
+  LOGOUT_FAILED: {
+    code: 'E1003',
+    message: 'ログアウトに失敗しました。再度お試しください。',
+    status: 500,
+  },
 } as const;

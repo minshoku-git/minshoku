@@ -72,3 +72,9 @@ export type UserDataDetailResult = {
     employment_status_name?: string;
   };
 };
+
+/** ユーザーID情報 */
+export type UpdateUserData = {
+  /** ID */
+  id: string;
+};

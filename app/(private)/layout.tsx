@@ -18,13 +18,15 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import * as React from 'react';
 
+import { AlertType } from '../_types/enum';
+import { ApiResponse } from '../_types/types';
 import { WaitingApprovalBadge } from '../_ui/_shared/waitingApprovalBadge';
 import ConfirmDialog from '../_ui/dirty/conformDialog';
 import { useDirty } from '../_ui/dirty/dartyContext';
 import DirtyCheck from '../_ui/dirty/dirty';
 import { OpenProcessing } from '../_ui/processing/processing';
 import { ProcessingProvider } from '../_ui/processing/processingContext';
-import { OpenSnackBar } from '../_ui/snackBar/snackBar';
+import { OpenSnackBar, useSnackBar } from '../_ui/snackBar/snackBar';
 import { SnackBarProvider } from '../_ui/snackBar/snackbarContext';
 
 const drawerWidth = 240;
@@ -102,6 +104,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const [open, setOpen] = useState(true);
   const { isDirty, setDirty, openConfirmDialog, closeConform, url } = useDirty();
   const { confirmNavigation } = DirtyCheck();
+  const { openSnackbar } = useSnackBar();
 
   /* functions - Header 
   ------------------------------------------------------------------ */
@@ -123,11 +126,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     const response = await fetch('/api/login/logout', {
       method: 'POST',
     });
-    const res = await response.json();
-    if (!res.error) {
+    const res = await response.json() as ApiResponse<null>;
+    if (res.success) {
       router.refresh();
     } else {
-      console.log('logout Error');
+      openSnackbar(AlertType.ERROR, res.error.message)
     }
   };
 
@@ -138,10 +141,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     setDirty(false);
     router.push(url!);
   };
-
-  /* functions - のちすてゾーン
-  ------------------------------------------------------------------ */
-  console.log('layout*isDirty:' + isDirty);
 
   /* JSX
   ------------------------------------------------------------------ */

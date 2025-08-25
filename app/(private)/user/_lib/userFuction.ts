@@ -23,7 +23,7 @@ import { UserListSearchResult, UserSearchFormValues } from './types';
  * @param {ApiRequest<UserSearchFormValues>} values - 検索条件
  * @returns {Promise<ApiResponse<UserListSearchResult[]>>} - 検索結果
  */
-export const _searchUserList = async (
+export const searchUserList = async (
   values: ApiRequest<UserSearchFormValues>
 ): Promise<ApiResponse<UserListSearchResult[]>> => {
   const supabase = await createClient();
@@ -116,9 +116,9 @@ export const _searchUserList = async (
         return {
           ...m,
           user_registration_status: convertUserRegistrationStatusName(
-            m.user_registration_status.toString() as UserRegistrationStatus
+            m.user_registration_status as UserRegistrationStatus
           ),
-          usage_status: convertUsageStatusName(m.usage_status?.toString() as UsageStatus),
+          usage_status: convertUsageStatusName(m.usage_status as UsageStatus),
         };
       }),
       paginate: {

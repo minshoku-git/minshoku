@@ -53,3 +53,13 @@ export type ApiError = {
 };
 
 export type ApiResponse<T> = ApiSuccess<T> | ApiError;
+
+/* Mui 専用型定義
+------------------------------------------------------------------ */
+/** SelectOption */
+export type SelectOption = {
+  /** ID */
+  id: string;
+  /** ラベル */
+  label: string;
+};

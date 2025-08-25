@@ -2,7 +2,7 @@ import { Close } from '@mui/icons-material';
 import { Box, Fade, IconButton, Slide, Typography } from '@mui/material';
 import Alert, { AlertColor } from '@mui/material/Alert';
 import Snackbar from '@mui/material/Snackbar';
-import { useEffect } from 'react';
+import { JSX, useEffect } from 'react';
 
 import { AlertType } from '../../_types/enum';
 import { useSnackBar } from './snackbarContext';
@@ -16,10 +16,9 @@ export type SnackBarType = {
 /**
  * OpenSnackBar
  * SnackBarの表示です。
- * @param {CompanySearchResultProps} props - プロパティ
  * @returns {JSX.Element} JSX
  */
-export const OpenSnackBar = () => {
+export const OpenSnackBar = (): JSX.Element => {
   const { snackbarState, closeSnackbar } = useSnackBar();
 
   useEffect(() => {

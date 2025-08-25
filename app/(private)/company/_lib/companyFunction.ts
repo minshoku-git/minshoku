@@ -79,7 +79,7 @@ export const _searchComponyList = async (
       return {
         ...m,
         postal_code: getPostCodeAddHyphen(m.postal_code),
-        usage_status: convertUsageStatusName(m.usage_status.toString() as UsageStatus),
+        usage_status: convertUsageStatusName(m.usage_status as UsageStatus),
       };
     });
 
