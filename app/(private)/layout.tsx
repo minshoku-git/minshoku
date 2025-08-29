@@ -20,6 +20,7 @@ import * as React from 'react';
 
 import { AlertType } from '../_types/enum';
 import { ApiResponse } from '../_types/types';
+import { LogoutButton } from '../_ui/_shared/logoutButton';
 import { WaitingApprovalBadge } from '../_ui/_shared/waitingApprovalBadge';
 import ConfirmDialog from '../_ui/dirty/conformDialog';
 import { useDirty } from '../_ui/dirty/dartyContext';
@@ -128,7 +129,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     });
     const res = await response.json() as ApiResponse<null>;
     if (res.success) {
-      router.refresh();
+      console.log('ログアウトしましたわ！')
+      router.push('/login')
     } else {
       openSnackbar(AlertType.ERROR, res.error.message)
     }
@@ -184,11 +186,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   fetchPriority={'auto'}
                 />
                 <Box sx={{ flexGrow: 1 }} />
-                <Link href="/login">
-                  <Button className="underline" color="inherit" onClick={() => logoutHandler()}>
-                    ログアウト
-                  </Button>
-                </Link>
+                <LogoutButton router={router} openSnackbar={openSnackbar} />
               </Toolbar>
             </AppBar>
             {/* サイドメニュー */}

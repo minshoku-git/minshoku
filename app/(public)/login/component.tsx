@@ -34,7 +34,7 @@ export const LoginComponent = () => {
     resolver: zodResolver(LoginSchema),
     defaultValues: {
       email: 's.abe@refact.co.jp', // TODO:実際は空、モック中は値有りで
-      password: 'example-password',
+      password: 'password1',
     },
   });
 

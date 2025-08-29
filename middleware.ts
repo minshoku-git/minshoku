@@ -9,15 +9,18 @@ export const config = {
   // 認証時、閲覧可能なページ
   matcher: [
     '/company',
-    '/company-detail/:path*',
+    '/company-detail/:id*',
     '/order',
     '/schedule',
     '/schedule-registration',
     '/shop',
-    '/shop-detail/:path*',
+    '/shop-detail/:id*',
     '/user',
-    '/shop-detail/:path*',
-    '/userDetailMock/:path*',
+    '/shop-detail/:id*',
+    '/userDetailMock/:id*',
     '/decision-result',
+    // ログインページにもミドルウェアを適用するため、'/login' を追加
+    '/login',
+    '/',
   ],
 };

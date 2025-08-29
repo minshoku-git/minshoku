@@ -56,30 +56,6 @@ export const signUp = async (req: ApiRequest<LoginFormValues>): Promise<ApiRespo
 };
 
 /**
- * ログアウト
- * @returns {Promise<ApiResponse<string>>}
- */
-export const signOut = async (): Promise<NextResponse> => {
-  const supabase = await createClient();
-
-  const { error: signOutError } = await supabase.auth.signOut();
-
-  const response: NextResponse = NextResponse.json(signOutError ? { error: signOutError.message } : { success: true });
-
-  // ✅ クッキーを強制削除
-  response.cookies.set('sb-access-token', '', {
-    maxAge: 0,
-    path: '/',
-  });
-  response.cookies.set('sb-refresh-token', '', {
-    maxAge: 0,
-    path: '/',
-  });
-
-  return response;
-};
-
-/**
  * ユーザー取得
  * @returns {Promise<ApiResponse<string>>}
  */

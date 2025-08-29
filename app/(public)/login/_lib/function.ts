@@ -21,11 +21,15 @@ export const signIn = async (req: ApiRequest<LoginFormValues>): Promise<ApiRespo
   try {
     // 1.ユーザー情報取得
     const query = supabase.from('t_administrator').select('*').eq('email', email).single();
-    const { data, error } = (await query) as PostgrestSingleResponse<t_administrator>;
+    const { error } = (await query) as PostgrestSingleResponse<t_administrator>;
 
-    if (error && !data) {
-      console.error('Error signing in:', error);
-      throw new CustomError(ErrorCodes.EMAIL_NOT_REGISTERED);
+    if (error) {
+      // MEMO: メールアドレスの特定を避けるためにサインインエラーと同じエラーを出力
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        'ログイン' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
     }
 
     // 2.サインイン

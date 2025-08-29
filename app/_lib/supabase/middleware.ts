@@ -14,9 +14,6 @@ export async function updateSession(request: NextRequest) {
         return request.cookies.getAll();
       },
       setAll(cookiesToSet) {
-        // request.cookies.setは存在しないため削除
-
-        // クッキーはレスポンスにセットする
         cookiesToSet.forEach(({ name, value, options }) => {
           if (options) {
             supabaseResponse.cookies.set(name, value, options);
@@ -30,25 +27,23 @@ export async function updateSession(request: NextRequest) {
 
   // ユーザー情報とセッション情報を取得
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const {
     data: { session },
   } = await supabase.auth.getSession();
 
+  const currentPath = request.nextUrl.pathname;
   const publicPaths = ['/', '/login', '/error'];
+  const isProtectedPath = !publicPaths.some((path) => currentPath === path);
 
-  console.log('sessionだよー');
-  console.log(session);
-
-  // 認証チェック
-  if (!user && !publicPaths.some((path) => request.nextUrl.pathname.startsWith(path))) {
+  // 認証済みユーザーが公開パスにアクセスした場合、/orderにリダイレクト
+  if (session && (currentPath === '/' || currentPath === '/login')) {
     const url = request.nextUrl.clone();
-    url.pathname = '/login';
+    url.pathname = '/schedule';
     return NextResponse.redirect(url);
   }
-  if (!session) {
+
+  // 認証チェック
+  // セッションが存在しない、かつ保護されたパスにアクセスしている場合のみ/loginにリダイレクト
+  if (!session && isProtectedPath) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     return NextResponse.redirect(url);

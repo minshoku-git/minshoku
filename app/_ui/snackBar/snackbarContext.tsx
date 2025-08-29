@@ -45,7 +45,6 @@ export const SnackBarProvider = ({ children }: { children: ReactNode }) => {
 
 export const useSnackBar = (): SnackBarContextType => {
   const context = useContext(SnackBarContext);
-  console.log(context)
   if (!context) {
     throw new Error('useSnackBar must be used within a SnackBarProvider');
   }

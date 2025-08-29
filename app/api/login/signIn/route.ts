@@ -1,10 +1,74 @@
+import { createServerClient } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
 
-import { signIn } from '@/app/(public)/login/_lib/function';
+import { ApiRequest, ApiResponse } from '@/app/_types/types';
+import { LoginFormValues } from '@/app/(public)/login/_lib/types';
+import { ErrorCodes } from '@/app/errors/ErrorCodes';
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
-  console.log(body);
-  const result = await signIn(body);
-  return NextResponse.json(result);
+  // ログインフォームのデータ（メールアドレスとパスワード）を取得
+  const {
+    request: { email, password },
+  } = (await req.json()) as ApiRequest<LoginFormValues>;
+
+  // Supabaseが生成するクッキーを一時的に保存するための配列
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const cookiesToSet: { name: string; value: string; options?: any }[] = [];
+
+  // Supabaseクライアントを作成
+  // cookies.setAllでクッキーをtempCookies配列に格納
+  const supabase = createServerClient(process.env.SUPABASE_URL_DEV!, process.env.SUPABASE_ANON_DEV!, {
+    cookies: {
+      getAll() {
+        return req.cookies.getAll();
+      },
+      setAll(cookies) {
+        cookies.forEach((cookie) => {
+          cookiesToSet.push(cookie);
+        });
+      },
+    },
+  });
+
+  try {
+    // Supabaseでサインインを実行
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (signInError) {
+      console.error('ログインエラー:', signInError);
+      const result: ApiResponse<null> = {
+        success: false,
+        error: {
+          code: ErrorCodes.CONFLICT.code,
+          message: ErrorCodes.CONFLICT.message,
+        },
+      };
+      // エラー時はJSONレスポンスを返す
+      return NextResponse.json(result, { status: 401 });
+    }
+
+    // サインイン成功
+    const result: ApiResponse<null> = { success: true, data: null };
+    const response = NextResponse.json(result, { status: 200 });
+
+    // サインイン時にSupabaseが生成したクッキーをレスポンスに手動でセットする
+    cookiesToSet.forEach(({ name, value, options }) => {
+      response.cookies.set(name, value, options);
+    });
+
+    return response;
+  } catch (e) {
+    console.error('予期せぬエラー:', e);
+    const result: ApiResponse<null> = {
+      success: false,
+      error: {
+        code: ErrorCodes.INTERNAL_SERVER_ERROR.code,
+        message: ErrorCodes.INTERNAL_SERVER_ERROR.message,
+      },
+    };
+    return NextResponse.json(result, { status: 500 });
+  }
 }
