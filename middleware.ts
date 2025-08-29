@@ -9,15 +9,15 @@ export const config = {
   // 認証時、閲覧可能なページ
   matcher: [
     '/company',
-    '/companyDetail/:path*',
+    '/company-detail/:path*',
     '/order',
     '/schedule',
-    '/scheduleRegistration',
+    '/schedule-registration',
     '/shop',
-    '/shopDetail/:path*',
+    '/shop-detail/:path*',
     '/user',
-    '/userDetail/:path*',
+    '/shop-detail/:path*',
     '/userDetailMock/:path*',
-    '/decisionResult',
+    '/decision-result',
   ],
 };

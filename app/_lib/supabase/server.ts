@@ -4,7 +4,7 @@ import { Client } from 'pg';
 
 export async function createClient() {
   const cookieStore = await cookies();
-  return createServerClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!, {
+  return createServerClient(process.env.SUPABASE_URL_DEV!, process.env.SUPABASE_ANON_DEV!, {
     cookies: {
       getAll() {
         // 現在のリクエストのクッキーをすべて取得（ログイン状態を確認するのに必要）。
@@ -30,5 +30,5 @@ export async function createClient() {
  * @returns {Client} "pg"Client
  */
 export const createPgClient = (): InstanceType<typeof Client> => {
-  return new Client({ connectionString: process.env.SUPABASE_DB_CONNECTION_STRING });
+  return new Client({ connectionString: process.env.SUPABASE_DB_CONNECTION_STRING_DEV });
 };

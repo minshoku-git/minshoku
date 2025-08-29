@@ -227,9 +227,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <ListItemButton
                     component="button"
                     onClick={() => {
-                      confirmNavigation('/scheduleRegistration');
+                      confirmNavigation('/schedule-registration');
                     }}
-                    disabled={disabledTitle('/scheduleRegistration')}
+                    disabled={disabledTitle('/schedule-registration')}
                   >
                     <ListItemText primary={'スケジュール登録'} />
                   </ListItemButton>
@@ -251,9 +251,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <ListItemButton
                     component="button"
                     onClick={() => {
-                      confirmNavigation('/shopDetail/-');
+                      confirmNavigation('/shop-detail/-');
                     }}
-                    disabled={disabledTitle('/shopDetail/-')}
+                    disabled={disabledTitle('/shop-detail/-')}
                   >
                     <ListItemText primary={'店舗新規登録'} />
                   </ListItemButton>
@@ -275,9 +275,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <ListItemButton
                     component="button"
                     onClick={() => {
-                      confirmNavigation('/companyDetail/-');
+                      confirmNavigation('/company-detail/-');
                     }}
-                    disabled={disabledTitle('/companyDetail/-')}
+                    disabled={disabledTitle('/company-detail/-')}
                   >
                     <ListItemText primary={'会社新規登録'} />
                   </ListItemButton>

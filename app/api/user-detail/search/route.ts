@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { signIn } from '@/app/(public)/login/_lib/function';
+import { searchUserDetail } from '@/app/(private)/user-detail/[id]/_lib/userDetailFuction';
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  console.log(body);
-  const result = await signIn(body);
+  const result = await searchUserDetail(body);
   return NextResponse.json(result);
 }

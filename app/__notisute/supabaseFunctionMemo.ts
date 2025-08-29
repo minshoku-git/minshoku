@@ -1,6 +1,6 @@
 // import { createClient } from '../_lib/supabase/server';
 // import { ApiRequest, ApiResponse } from '../_types/types';
-// import { CompanyDetailFormValues } from '../(private)/companyDetail/[id]/_lib/types';
+// import { CompanyDetailFormValues } from '../(private)/company-detail/[id]/_lib/types';
 
 // /* 会社詳細  没内容
 // ------------------------------------------------------------------ */

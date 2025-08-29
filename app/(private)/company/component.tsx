@@ -112,7 +112,7 @@ export const CompanyComponent = (): JSX.Element => {
   useEffect(() => {
     const searchCondition = sessionStorage.getItem(SESSION_STORAGE_KEYS.COMPANY_SEARCH_CONDITION);
     const previousPath = sessionStorage.getItem(SESSION_STORAGE_KEYS.PREVIOUS_PATH);
-    if (searchCondition && previousPath === '/companyDetail') {
+    if (searchCondition && previousPath === '/company-detail') {
       const req: ApiRequest<CompanySearchFormValues> = JSON.parse(searchCondition);
       setCondition(req);
       setValue('company_name', req.request.company_name);
@@ -219,7 +219,7 @@ export const CompanyComponent = (): JSX.Element => {
   const linkHandler = (id: string) => {
     localStorage.setItem('保存', 'あいうえお');
     sessionStorage.setItem(SESSION_STORAGE_KEYS.COMPANY_SEARCH_CONDITION, JSON.stringify(condition));
-    router.push(`/companyDetail/${id}`);
+    router.push(`/company-detail/${id}`);
   };
 
   // リセット

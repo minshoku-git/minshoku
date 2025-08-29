@@ -3,7 +3,7 @@ import { Box, Button, Grid2 as Grid, IconButton, Typography } from '@mui/materia
 import { JSX } from 'react';
 import { Control, FieldArrayWithId, TextFieldElement } from 'react-hook-form-mui';
 
-import { CompanyDetailFormValues } from '@/app/(private)/companyDetail/[id]/_lib/types';
+import { CompanyDetailFormValues } from '@/app/(private)/company-detail/[id]/_lib/types';
 
 type Props = {
   name: string;

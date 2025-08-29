@@ -18,7 +18,7 @@ import { useProcessing } from '@/app/_ui/processing/processingContext';
 import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
 
 import ItemBase from '../../_ui/_shared/itemBase';
-import { UserDataDetailResult } from '../userDetail/[id]/_lib/types';
+import { UserDataDetailResult } from '../user-detail/[id]/_lib/types';
 import { UserListSearchResult, UserSearchFormValues, UserSearchSchema } from './_lib/types';
 
 /* ページ名 */
@@ -113,7 +113,7 @@ export const UserComponent = (): JSX.Element => {
     const searchCondition = sessionStorage.getItem(SESSION_STORAGE_KEYS.USER_SEARCH_CONDITION);
     const previousPath = sessionStorage.getItem(SESSION_STORAGE_KEYS.PREVIOUS_PATH);
     console.log(SESSION_STORAGE_KEYS.USER_SEARCH_CONDITION, searchCondition);
-    if (searchCondition && previousPath === '/userDetail') {
+    if (searchCondition && previousPath === '/shop-detail') {
       const req: ApiRequest<UserSearchFormValues> = JSON.parse(searchCondition);
       setCondition(req);
       setValue('user_name', req.request.user_name);
@@ -208,7 +208,7 @@ export const UserComponent = (): JSX.Element => {
   // 明細行リンクハンドラ
   const linkHandler = (id: string) => {
     sessionStorage.setItem(SESSION_STORAGE_KEYS.USER_SEARCH_CONDITION, JSON.stringify(condition));
-    router.push(`/userDetail/${id}`);
+    router.push(`/shop-detail/${id}`);
   };
 
   /* JSX

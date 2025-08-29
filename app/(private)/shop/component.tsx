@@ -107,7 +107,7 @@ export const ShopComponent = (): JSX.Element => {
     const searchCondition = sessionStorage.getItem(SESSION_STORAGE_KEYS.SHOP_SEARCH_CONDITION);
     const previousPath = sessionStorage.getItem(SESSION_STORAGE_KEYS.PREVIOUS_PATH);
     console.log(SESSION_STORAGE_KEYS.SHOP_SEARCH_CONDITION, searchCondition);
-    if (searchCondition && previousPath === '/shopDetail') {
+    if (searchCondition && previousPath === '/shop-detail') {
       const req: ApiRequest<ShopSearchFormValues> = JSON.parse(searchCondition);
       setCondition(req);
       setValue('shop_name', req.request.shop_name);
@@ -210,7 +210,7 @@ export const ShopComponent = (): JSX.Element => {
   // 明細行リンクハンドラ
   const linkHandler = (id: string) => {
     sessionStorage.setItem(SESSION_STORAGE_KEYS.SHOP_SEARCH_CONDITION, JSON.stringify(condition));
-    router.push(`/shopDetail/${id}`);
+    router.push(`/shop-detail/${id}`);
   };
 
   // リセット

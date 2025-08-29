@@ -291,12 +291,12 @@ export const OrderComponent = (): JSX.Element => {
 
   /** ユーザー詳細画面表示ハンドラ */
   const openUserDetailHandler = (id: number) => {
-    window.open(`/userDetail/${id}`, '_blank', 'noopener,noreferrer');
+    window.open(`/shop-detail/${id}`, '_blank', 'noopener,noreferrer');
   };
 
   /** 会社詳細画面表示ハンドラ */
   const openCompanyDetailHandler = (id: number) => {
-    window.open(`/companyDetail/${id}`, '_blank', 'noopener,noreferrer');
+    window.open(`/company-detail/${id}`, '_blank', 'noopener,noreferrer');
   };
 
   /* functions - daily

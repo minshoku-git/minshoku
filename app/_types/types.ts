@@ -63,3 +63,13 @@ export type SelectOption = {
   /** ラベル */
   label: string;
 };
+
+/* Mui 専用型定義
+------------------------------------------------------------------ */
+/**
+ * 仮登録完了 initRequest
+ */
+export type SignUpEncrypt = {
+  /** ユーザーID */
+  id: number;
+};

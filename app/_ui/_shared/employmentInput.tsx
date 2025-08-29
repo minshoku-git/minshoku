@@ -15,7 +15,7 @@ import {
 import { JSX } from 'react';
 import { CheckboxElement, Control, FieldArrayWithId, TextFieldElement } from 'react-hook-form-mui';
 
-import { CompanyDetailFormValues } from '@/app/(private)/companyDetail/[id]/_lib/types';
+import { CompanyDetailFormValues } from '@/app/(private)/company-detail/[id]/_lib/types';
 
 type Props = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

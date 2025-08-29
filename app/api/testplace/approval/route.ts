@@ -25,6 +25,6 @@ export async function GET(req: NextRequest) {
   if (!res.success) {
     return NextResponse.redirect(new URL('/login', req.url));
   } else {
-    return NextResponse.redirect(new URL('/decisionResult', req.url));
+    return NextResponse.redirect(new URL('/decision-result', req.url));
   }
 }
