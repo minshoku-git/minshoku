@@ -1,4 +1,4 @@
-import { convertJstToUtc, getNow } from '@/app/_lib/getDateTime';
+import { getNow, toUTCDateFromJSTDate } from '@/app/_lib/getDateTime';
 import { createPgClient } from '@/app/_lib/supabase/server';
 import { t_menu_schedule } from '@/app/_lib/supabase/tableTypes';
 import { rollbackWithLog } from '@/app/_lib/supabase/transaction';
@@ -48,7 +48,7 @@ export const RefreshingScheduleData = async (values: ScheduleCsvValues[]): Promi
         LIMIT 1;
       `;
 
-      const delivery_day_utc = convertJstToUtc(item.delivery_day);
+      const delivery_day_utc = toUTCDateFromJSTDate(item.delivery_day);
       const values = [delivery_day_utc, item.t_companies_id, item.t_shops_id];
       const exData = await client.query<t_menu_schedule>(selectSql, values);
       const row = exData.rows[0];

@@ -100,10 +100,9 @@ export function getDatetimeString(date: Date): string {
 /**
  * convertJstToUtc
  * JSTをUTCに変換します
- * @param jstDateString - 日付
+ * @param jstDate - 日付
  * @returns {string} 'yyyy/MM/dd HH:mm'
  */
-export function convertJstToUtc(jstDateString: Date): Date {
-  // JSTの日付をUTCに変換
-  return fromZonedTime(jstDateString, 'Asia/Tokyo');
+export function toUTCDateFromJSTDate(jstDate: Date): Date {
+  return new Date(`${getDateString(jstDate)}T00:00:00+09:00`);
 }
