@@ -288,4 +288,15 @@ export const CompanyDetailSchema = z
 export type CompanyDetailFormValues = z.infer<typeof CompanyDetailSchema>;
 
 /** 取得結果 会社詳細 */
-export type CompanyDataDetailResult = CompanyDetailFormValues;
+export type CompanyDetailResult = {
+  /** ユーザー登録URL */
+  url: string;
+} & CompanyDetailFormValues;
+
+/**
+ * ユーザー基本情報 復号後
+ */
+export type CompanyDetailToken = {
+  /** 会IDD */
+  t_companies_id: number;
+};

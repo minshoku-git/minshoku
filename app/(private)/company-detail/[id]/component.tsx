@@ -30,7 +30,7 @@ import { useProcessing } from '@/app/_ui/processing/processingContext';
 import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
 
 import { insertCompanyDetail, searchCompanyDetail, updateCompanyDetail } from './_lib/fetcher';
-import { CompanyDataDetailResult, CompanyDetailFormValues, CompanyDetailSchema } from './_lib/types';
+import { CompanyDetailFormValues, CompanyDetailResult, CompanyDetailSchema } from './_lib/types';
 
 /** ページ名 */
 const pageName = '会社詳細';
@@ -52,7 +52,8 @@ export const CompanyComponent = (): JSX.Element => {
 
   /* useState
   ------------------------------------------------------------------ */
-  const [dataLoaded, setDataLoaded] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState<boolean>(false);
+  const [url, setUrl] = useState<string>('');
 
   const [tempIdCounterDep, setTempIdCounterDep] = useState<number>(1);
   const [tempIdCounterEmp, setTempIdCounterEmp] = useState<number>(1);
@@ -91,7 +92,7 @@ export const CompanyComponent = (): JSX.Element => {
     data: result,
     isLoading,
     refetch,
-  } = useQuery<ApiResponse<CompanyDataDetailResult>>({
+  } = useQuery<ApiResponse<CompanyDetailResult>>({
     queryKey: [QUERY_KEYS.COMPANY_SEARCH_RESULT],
     queryFn: searchCompanyDetailFetch,
     enabled: editMode,
@@ -121,6 +122,7 @@ export const CompanyComponent = (): JSX.Element => {
         cancel_period_time: new Date(data.cancel_period_time),
       };
       reset(getInitData(conversion));
+      setUrl(result.data.url)
       setDataLoaded(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -292,7 +294,7 @@ export const CompanyComponent = (): JSX.Element => {
   /* 'URLと案内文をコピー'ハンドラー */
   // TODO: メッセージ文連携待ち＋URL設定忘れずに
   const message =
-    'クリップボードのテストメッセージです。\nクリップボードのテストメッセージです。\nクリップボードのテストメッセージです。';
+    `クリップボードのテストメッセージです。\nURL: ${url}`;
   const isBrowser = typeof window !== 'undefined';
   const clickboardHandler = async () => {
     if (!isBrowser) return;
@@ -400,7 +402,7 @@ export const CompanyComponent = (): JSX.Element => {
                         disabled
                         sx={{ backgroundColor: 'lightgray' }}
                         slotProps={{ htmlInput: { maxLength: 64 } }}
-                        value={'https://xxxxxxxxxxxxx/login/refact'}
+                        value={url}
                       />
                     </ItemBase>
                     <ItemBase name={'会社ID'} isRequired={2}>

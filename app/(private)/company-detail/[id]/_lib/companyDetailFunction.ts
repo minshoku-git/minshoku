@@ -1,6 +1,7 @@
 import { PostgrestSingleResponse } from '@supabase/supabase-js';
 
 import { DepartmentData, EmploymentData } from '@/app/_lib/createMockData';
+import { encrypt } from '@/app/_lib/encryption/crypto';
 import { getNow, getTimeString, getTodayXHour } from '@/app/_lib/getDateTime';
 import { createClient, createPgClient } from '@/app/_lib/supabase/server';
 import { t_companies, t_companies_department, t_companies_employment_status } from '@/app/_lib/supabase/tableTypes';
@@ -12,7 +13,7 @@ import { ApiRequest, ApiResponse } from '@/app/_types/types';
 import { CustomError } from '@/app/errors/customError';
 import { ErrorCodes } from '@/app/errors/ErrorCodes';
 
-import { CompanyDetailFormValues } from './types';
+import { CompanyDetailFormValues, CompanyDetailResult, CompanyDetailToken } from './types';
 
 export type usageData = {
   id: number;
@@ -25,16 +26,22 @@ export type usageData = {
  * IDに一致する会社情報を取得する。
  *
  * @param {ApiRequest<number>} values - 検索条件
- * @returns {Promise<ApiResponse<CompanyDetailFormValues>>} 検索結果
+ * @returns {Promise<ApiResponse<CompanyDetailResult>>} 検索結果
  */
-export const _searchCompanyDetail = async (
-  values: ApiRequest<number>
-): Promise<ApiResponse<CompanyDetailFormValues>> => {
+export const _searchCompanyDetail = async (values: ApiRequest<number>): Promise<ApiResponse<CompanyDetailResult>> => {
   const supabase = await createClient();
+  const id = values.request;
 
   try {
-    // 1.会社情報取得
-    const query = supabase.from('t_companies').select('*').eq('id', values.request).single();
+    /* 0.暗号化
+    ------------------------------------------------------------------ */
+    const tokenTarget: CompanyDetailToken = { t_companies_id: id };
+    const token: string = encrypt(JSON.stringify(tokenTarget));
+    const url = process.env.APP_URL_DEV + '/login/' + token;
+
+    /* 1.会社情報取得
+    ------------------------------------------------------------------ */
+    const query = supabase.from('t_companies').select('*').eq('id', id).single();
     const { data, error } = (await query) as PostgrestSingleResponse<t_companies>;
 
     if (error || !data) {
@@ -50,7 +57,7 @@ export const _searchCompanyDetail = async (
     const queryDep = supabase
       .from('t_companies_department')
       .select('*')
-      .eq('t_companies_id', values.request)
+      .eq('t_companies_id', id)
       .eq('delete_flag', 0)
       .order('id', { ascending: true });
     const { data: dataDep, error: errorDep } = (await queryDep) as PostgrestSingleResponse<t_companies_department[]>;
@@ -71,7 +78,7 @@ export const _searchCompanyDetail = async (
         const { data, error } = await supabase
           .from('t_user')
           .select('id')
-          .eq('t_companies_id', values.request)
+          .eq('t_companies_id', id)
           .eq('t_companies_department_id', id)
           .limit(1);
 
@@ -103,7 +110,7 @@ export const _searchCompanyDetail = async (
     const queryEmp = supabase
       .from('t_companies_employment_status')
       .select('*')
-      .eq('t_companies_id', values.request)
+      .eq('t_companies_id', id)
       .eq('delete_flag', 0)
       .order('id', { ascending: true });
     const { data: dataEmp, error: errorEmp } = (await queryEmp) as PostgrestSingleResponse<
@@ -126,7 +133,7 @@ export const _searchCompanyDetail = async (
         const { data, error } = await supabase
           .from('t_user')
           .select('id')
-          .eq('t_companies_id', values.request)
+          .eq('t_companies_id', id)
           .eq('t_companies_employment_status_id', id)
           .limit(1);
 
@@ -193,10 +200,10 @@ export const _searchCompanyDetail = async (
         })
       : [];
 
-    console.log(data.usage_status);
     const defalutDate = getTodayXHour();
 
-    const res: CompanyDetailFormValues = {
+    const res: CompanyDetailResult = {
+      url: url,
       id: data.id?.toString(),
       company_name: data.company_name ?? '',
       branch_name: data.branch_name ?? '',
@@ -254,7 +261,6 @@ export const _insertComponyDetail = async (
   values: ApiRequest<CompanyDetailFormValues>
 ): Promise<ApiResponse<number>> => {
   const client = createPgClient();
-
   const req = values.request;
 
   try {
