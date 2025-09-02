@@ -48,7 +48,8 @@ export const RefreshingScheduleData = async (values: ScheduleCsvValues[]): Promi
         LIMIT 1;
       `;
 
-      const values = [item.delivery_day, item.t_companies_id, item.t_shops_id];
+      const delivery_day_utc = convertJstToUtc(item.delivery_day);
+      const values = [delivery_day_utc, item.t_companies_id, item.t_shops_id];
       const exData = await client.query<t_menu_schedule>(selectSql, values);
       const row = exData.rows[0];
 
