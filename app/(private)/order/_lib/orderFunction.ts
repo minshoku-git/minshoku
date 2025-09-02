@@ -4,7 +4,7 @@ import { getDateString, getDatetimeString, getNow } from '@/app/_lib/getDateTime
 import { createClient, createPgClient } from '@/app/_lib/supabase/server';
 import { rollbackWithLog } from '@/app/_lib/supabase/transaction';
 import { getPagenationsItems, getRange } from '@/app/_lib/utill';
-import { OrderStatus } from '@/app/_types/enum';
+import { OrderStatusType } from '@/app/_types/enum';
 import { ApiRequest, ApiResponse, SortItems } from '@/app/_types/types';
 import { CustomError } from '@/app/errors/customError';
 import { ErrorCodes } from '@/app/errors/ErrorCodes';
@@ -70,7 +70,7 @@ export const _searchOrderList = async (
         delivery_day,
         count,
         payment_type,
-        order_status,
+        order_status_type,
         company_name,
         branch_name,
         user_name,
@@ -159,8 +159,8 @@ const applyFilters = (query: any, req: OrderSearchFormValues) => {
     query = query.lte('delivery_day', req.deliveryTo);
   }
   // 注文ステータス
-  if (req.order_status) {
-    query = query.eq('order_status', req.order_status);
+  if (req.order_status_type !== undefined) {
+    query = query.eq('order_status_type', req.order_status_type);
   }
 
   return query;
@@ -181,7 +181,7 @@ const applySorts = (query: any, sortItems: SortItems | undefined) => {
     'company_name',
     'count',
     'payment_type',
-    'order_status',
+    'order_status_type',
   ];
   // ソート用会社名
   const sortConditionsCompanyName: Array<string> = ['company_name', 'branch_name'];
@@ -236,7 +236,7 @@ export const _searchOrderDetail = async (values: ApiRequest<number>): Promise<Ap
         companies_burden_amount,
         user_burden_amount,
         payment_type,
-        order_status,
+        order_status_type,
         order_datetime,
         cancel_datetime,
         t_menu_schedule!inner(
@@ -286,7 +286,7 @@ export const _searchOrderDetail = async (values: ApiRequest<number>): Promise<Ap
     const queryTotalOrderCount = supabase
       .from('t_order')
       .select('*', { count: 'exact', head: true })
-      .eq('order_status', OrderStatus.VALID);
+      .eq('order_status_type', OrderStatusType.VALID);
 
     const { count: totalOrderCount, error: errorTotalOrderCount } =
       (await queryTotalOrderCount) as PostgrestSingleResponse<orderDeteilResponseData>;
@@ -304,7 +304,7 @@ export const _searchOrderDetail = async (values: ApiRequest<number>): Promise<Ap
     const queryLastOrderDateTime = supabase
       .from('t_order')
       .select('order_datetime')
-      .eq('order_status', OrderStatus.VALID)
+      .eq('order_status_type', OrderStatusType.VALID)
       .eq('t_user_id', data.t_user.id)
       .order('order_datetime', { ascending: true })
       .limit(1)
@@ -332,7 +332,7 @@ export const _searchOrderDetail = async (values: ApiRequest<number>): Promise<Ap
       companies_burden_amount: data.companies_burden_amount,
       user_burden_amount: data.user_burden_amount,
       payment_type: data.payment_type ?? 0,
-      order_status: data.order_status ?? 0,
+      order_status_type: data.order_status_type ?? 0,
       order_datetime: data.order_datetime ? getDatetimeString(data.order_datetime as Date) : '',
       cancel_datetime: data.cancel_datetime ? getDatetimeString(data.cancel_datetime as Date) : '',
       totalOrderCount: totalOrderCount ?? 0,
@@ -412,8 +412,8 @@ export const _orderCancel = async (values: ApiRequest<number>): Promise<ApiRespo
     await client.query('BEGIN');
 
     // 楽観排他処理
-    const selectSql = `SELECT id FROM t_order WHERE id = $1 AND order_status = $2`;
-    const resultSelect = await client.query(selectSql, [id, OrderStatus.VALID]);
+    const selectSql = `SELECT id FROM t_order WHERE id = $1 AND order_status_type = $2`;
+    const resultSelect = await client.query(selectSql, [id, OrderStatusType.VALID]);
 
     if (resultSelect.rowCount === 0) {
       throw new CustomError(ErrorCodes.CONFLICT);
@@ -422,9 +422,15 @@ export const _orderCancel = async (values: ApiRequest<number>): Promise<ApiRespo
     /* Update - t_order
   　------------------------------------------------------------------ */
     // UpdateData setting
-    const updateSql = `UPDATE t_order SET order_status = $1, updated_at = $2, cancel_datetime = $3 WHERE id = $4 AND order_status = $5;`;
+    const updateSql = `UPDATE t_order SET order_status_type = $1, updated_at = $2, cancel_datetime = $3 WHERE id = $4 AND order_status_type = $5;`;
     // Update
-    const result = await client.query(updateSql, [OrderStatus.CANCEL, timestamp, timestamp, id, OrderStatus.VALID]);
+    const result = await client.query(updateSql, [
+      OrderStatusType.SYSTEM_CANCEL,
+      timestamp,
+      timestamp,
+      id,
+      OrderStatusType.VALID,
+    ]);
     if (result.rowCount === 0) {
       throw new CustomError({
         ...ErrorCodes.NOT_FOUND,

@@ -17,8 +17,8 @@ import { ResultsCounter } from '@/app/_ui/_shared/resultsCounter';
 import { useProcessing } from '@/app/_ui/processing/processingContext';
 import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
 
-import { state as stateMockData } from '../../../public/state.json';
 import ItemBase from '../../_ui/_shared/itemBase';
+import { searchShopListFetcher } from './_lib/fetcher';
 import { ShopListSearchResult, ShopSearchFormValues, ShopSearchSchema } from './_lib/types';
 
 /** ページ名 */
@@ -82,22 +82,9 @@ export const ShopComponent = (): JSX.Element => {
 
   /* useQuery
   ------------------------------------------------------------------ */
-  const fetchData = async () => {
-    const response = await fetch('/api/shop/search', {
-      method: 'POST',
-      body: JSON.stringify(condition),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    const res: ApiResponse<ShopListSearchResult[]> = await response.json();
-    return res;
-  };
-
   const { data, isFetching, refetch } = useQuery<ApiResponse<ShopListSearchResult[]>>({
     queryKey: [QUERY_KEYS.SHOP_SEARCH_RESULT, condition],
-    queryFn: fetchData,
+    queryFn: () => searchShopListFetcher(condition),
     enabled: false,
   });
 
@@ -217,15 +204,6 @@ export const ShopComponent = (): JSX.Element => {
   const onResetClick = () => {
     reset();
   };
-
-  /* mockData ※のちすて
-  ------------------------------------------------------------------ */
-  const stateData = [
-    { id: '', label: '未選択' },
-    ...stateMockData.map((d: string, index: number) => {
-      return { id: index.toString(), label: d };
-    }),
-  ];
 
   /* JSX
   ------------------------------------------------------------------ */

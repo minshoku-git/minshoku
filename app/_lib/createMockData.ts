@@ -44,7 +44,7 @@ export function MockDataCreate_OrderResult() {
       branch_name: i % 2 ? '本郷事業所' : i % 3 ? 'XXXX支店' : 'OOOO支店',
       count: i,
       payment_type: i % 2 ? 0 : i % 3 ? 1 : 2,
-      order_status: i % 2 ? 0 : i % 3 ? 1 : 2,
+      order_status_type: i % 2 ? 0 : i % 3 ? 1 : 2,
     });
   }
   return result;
@@ -66,7 +66,7 @@ export function MockDataCreate_ScheduleResult() {
       branch_name: i % 2 ? '本郷事業所' : i % 3 ? 'XXXX支店' : 'OOOO支店',
       shop_name: i % 2 ? 'COCO壱' : 'XXXXXXXXXX',
       menu_name: i % 2 ? 'チキンカレー' : i % 3 ? 'マッサマンカレー' : 'ビーフカレー',
-      order_count: i,
+      stock_count: i,
     });
   }
 

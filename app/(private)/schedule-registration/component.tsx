@@ -2,12 +2,16 @@
 import { CloudUpload, Delete } from '@mui/icons-material';
 import { Box, Button, Divider, IconButton, Paper, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2';
+import { useMutation } from '@tanstack/react-query';
 import { ChangeEvent, JSX, useRef, useState } from 'react';
 
 import { AlertType } from '@/app/_types/enum';
+import { ApiResponse } from '@/app/_types/types';
 import ItemBase from '@/app/_ui/_shared/itemBase';
 import { useProcessing } from '@/app/_ui/processing/processingContext';
 import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
+
+import { upsertScheduleFetcher } from './_lib/fetcher';
 
 /** ページ名 */
 const pageName = 'スケジュール登録';
@@ -28,39 +32,36 @@ export const ScheduleRegistrationComponent = (): JSX.Element => {
   const [file, setFile] = useState<File>();
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  /* functions
+  /* functions - Insert
   ------------------------------------------------------------------ */
-  const registerHandler = async () => {
+  const upsertHandler = async () => {
     if (!file) return;
-
-    openProcessing();
-
-    const formData = new FormData();
-    formData.append('csvFile', file);
-
-    try {
-      const res = await fetch('/api/schedule-registration/insert', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const json = await res.json();
-
-      if (!res.ok) {
-        console.error('サーバーエラー:', json.message);
-        alert(`エラー: ${json.message}`);
-        return;
-      }
-
-      setFile(undefined);
-      openSnackbar(AlertType.SUCCESS, 'スケジュールを登録しました。');
-    } catch (err) {
-      alert(`通信エラー: ${(err as Error).message}`);
-      openSnackbar(AlertType.ERROR, 'スケジュールの登録に失敗しました。');
-    } finally {
-      closeProcessing();
-    }
+    upsertMutate.mutate();
   };
+
+  const upsertMutate = useMutation({
+    mutationFn: async () => {
+      openProcessing();
+      const formData = new FormData();
+      formData.append('csvFile', file!);
+      return upsertScheduleFetcher(formData) as unknown as ApiResponse<number>;
+    },
+    onSuccess: (res: ApiResponse<number>) => {
+      setFile(undefined);
+      if (res.success) {
+        openSnackbar(AlertType.SUCCESS, 'スケジュールを登録しました。');
+      } else {
+        openSnackbar(AlertType.ERROR, res.error.message);
+      }
+    },
+    onError: (e) => {
+      console.log(e.message);
+      openSnackbar(AlertType.ERROR, 'スケジュールの登録に失敗しました。再度お試しください。');
+    },
+    onSettled: () => {
+      closeProcessing();
+    },
+  });
 
   /* functions - 添付ファイル
   ------------------------------------------------------------------ */
@@ -71,16 +72,14 @@ export const ScheduleRegistrationComponent = (): JSX.Element => {
 
   const onFileInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     console.log('onFileInputChange click!');
-    // // TODO:バリデーション(ファイルサイズ・拡張子)
-    // const IMAGE_TYPES = ['text/csv']
-    // if (!event.target.files) {
-    //   return
-    // }
-    // if (!IMAGE_TYPES.includes(event.target.files?.[0].type)) {
-    //   openSnackbar(AlertType.WARNING, 'アップロードできないファイルです。※アップロード可能な拡張子：.csv')
-    //   // TODO:alart or errorMessage
-    //   return
-    // }
+    const IMAGE_TYPES = ['text/csv']
+    if (!event.target.files) {
+      return
+    }
+    if (!IMAGE_TYPES.includes(event.target.files?.[0].type)) {
+      openSnackbar(AlertType.WARNING, 'アップロードできないファイルです。※アップロード可能な拡張子：.csv')
+      return
+    }
     setFile(event.target.files?.[0]);
   };
   const fileDelete = () => {
@@ -145,7 +144,7 @@ export const ScheduleRegistrationComponent = (): JSX.Element => {
             </ItemBase>
           </Grid>
           <Grid sx={{ mt: 2 }} size={{ xs: 12 }}>
-            <Button fullWidth variant="contained" disabled={file ? false : true} onClick={registerHandler}>
+            <Button fullWidth variant="contained" disabled={file ? false : true} onClick={upsertHandler}>
               登録
             </Button>
           </Grid>

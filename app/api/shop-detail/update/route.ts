@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { _updateShopDetail } from '@/app/(private)/shop-detail/[id]/_lib/shopDetailFunction';
+import { updateShopDetail } from '@/app/(private)/shop-detail/[id]/_lib/shopDetailFunction';
 import { ShopDetailFormValues, shopDeteilRequestData } from '@/app/(private)/shop-detail/[id]/_lib/types';
 
 export async function PUT(req: NextRequest) {
@@ -20,7 +20,7 @@ export async function PUT(req: NextRequest) {
     shop_image_file_bytesize: shop_image_file_bytesize ?? 0,
   };
 
-  const result = await _updateShopDetail(request);
+  const result = await updateShopDetail(request);
 
   return NextResponse.json(result);
 }

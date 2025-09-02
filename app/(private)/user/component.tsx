@@ -18,7 +18,7 @@ import { useProcessing } from '@/app/_ui/processing/processingContext';
 import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
 
 import ItemBase from '../../_ui/_shared/itemBase';
-import { UserDataDetailResult } from '../user-detail/[id]/_lib/types';
+import { searchUserListFetcher } from './_lib/fetcher';
 import { UserListSearchResult, UserSearchFormValues, UserSearchSchema } from './_lib/types';
 
 /* ページ名 */
@@ -37,6 +37,7 @@ const initConditionValues: ApiRequest<UserSearchFormValues> = {
     user_name: '',
     company_name: '',
     branch_name: '',
+    usage_status: undefined,
     user_registration_status: undefined,
   },
   sortItems: {
@@ -82,28 +83,16 @@ export const UserComponent = (): JSX.Element => {
       user_name: '',
       company_name: '',
       branch_name: '',
+      usage_status: undefined,
       user_registration_status: undefined,
     },
   });
 
   /* useQuery
   ------------------------------------------------------------------ */
-  const fetchData = async () => {
-    const response = await fetch('/api/user/search', {
-      method: 'POST',
-      body: JSON.stringify(condition),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    const res: ApiResponse<UserListSearchResult[]> = await response.json();
-    return res;
-  };
-
   const { data, isFetching, refetch } = useQuery<ApiResponse<UserListSearchResult[]>>({
     queryKey: [QUERY_KEYS.USER_SEARCH_RESULT, condition],
-    queryFn: fetchData,
+    queryFn: () => searchUserListFetcher(condition),
     enabled: false,
   });
 
@@ -208,7 +197,7 @@ export const UserComponent = (): JSX.Element => {
   // 明細行リンクハンドラ
   const linkHandler = (id: string) => {
     sessionStorage.setItem(SESSION_STORAGE_KEYS.USER_SEARCH_CONDITION, JSON.stringify(condition));
-    router.push(`/shop-detail/${id}`);
+    router.push(`/user-detail/${id}`);
   };
 
   /* JSX

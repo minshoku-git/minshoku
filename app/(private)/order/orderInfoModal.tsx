@@ -16,7 +16,7 @@ import {
 import Grid from '@mui/material/Grid2';
 import * as React from 'react';
 
-import { OrderStatus, PaymentType } from '@/app/_types/enum';
+import { OrderStatusType, PaymentType } from '@/app/_types/enum';
 import { ApiResponse } from '@/app/_types/types';
 import CustomModal from '@/app/_ui/_shared/customModal';
 
@@ -203,12 +203,12 @@ const OrderInfoModal = (props: OrderInfoModalProps): React.JSX.Element => {
                         <TableCell
                           sx={{
                             ...styles.tableCell,
-                            width: data.order_status === OrderStatus.CANCEL ? '20%' : '40%',
+                            width: data.order_status_type !== OrderStatusType.VALID ? '20%' : '40%',
                           }}
                         >
                           注文ステータス
                         </TableCell>
-                        {data.order_status === OrderStatus.CANCEL && (
+                        {data.order_status_type !== OrderStatusType.VALID && (
                           <TableCell sx={{ ...styles.tableCell, width: '20%' }}>キャンセル日時</TableCell>
                         )}
                       </TableRow>
@@ -226,9 +226,13 @@ const OrderInfoModal = (props: OrderInfoModalProps): React.JSX.Element => {
                         </TableCell>
                         <TableCell sx={{ ...styles.tableCell }}>
                           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            {data.order_status === OrderStatus.VALID ? '有効' : 'キャンセル'}
+                            {data.order_status_type === OrderStatusType.VALID
+                              ? '有効'
+                              : data.order_status_type === OrderStatusType.USER_CANCEL
+                                ? 'キャンセル(ユーザー)'
+                                : 'キャンセル(システム)'}
                             <Box sx={{ flexGrow: 1 }} />
-                            {data.order_status === OrderStatus.VALID && (
+                            {data.order_status_type === OrderStatusType.VALID && (
                               <Button
                                 variant="contained"
                                 type="submit"
@@ -240,7 +244,7 @@ const OrderInfoModal = (props: OrderInfoModalProps): React.JSX.Element => {
                             )}
                           </Box>
                         </TableCell>
-                        {data.order_status === OrderStatus.CANCEL && (
+                        {data.order_status_type !== OrderStatusType.VALID && (
                           <TableCell>{data.cancel_datetime as string}</TableCell>
                         )}
                       </TableRow>

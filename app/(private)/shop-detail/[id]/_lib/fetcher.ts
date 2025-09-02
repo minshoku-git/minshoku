@@ -1,5 +1,3 @@
-import { NextRequest } from 'next/server';
-
 import { fetcher } from '@/app/_lib/fetcher';
 import { ApiRequest, ApiResponse } from '@/app/_types/types';
 
@@ -9,8 +7,8 @@ import { ApiRequest, ApiResponse } from '@/app/_types/types';
  * @returns {Promise<any>}
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const searchShopDetail = (req: ApiRequest<number>): Promise<any> => {
-  return fetcher<ApiResponse<number>>('/api/shopDetail/search', {
+export const searchShopDetailFetcher = (req: ApiRequest<number>): Promise<any> => {
+  return fetcher<ApiResponse<number>>('/api/shop-detail/search', {
     method: 'POST',
     body: JSON.stringify(req),
     headers: {
@@ -24,9 +22,9 @@ export const searchShopDetail = (req: ApiRequest<number>): Promise<any> => {
  * @param {FormData} formData
  * @returns {Promise<ApiResponse<number>>}
  */
-export const insertShopDetail = (formData: FormData): Promise<ApiResponse<number>> => {
-  return fetcher<ApiResponse<number>>('/api/shopDetail/insert', {
-    method: 'POST',
+export const insertShopDetailFetcher = (formData: FormData): Promise<ApiResponse<number>> => {
+  return fetcher<ApiResponse<number>>('/api/shop-detail/insert', {
+    method: 'PUT',
     body: formData,
     //  headers.Content-Typeは指定しない。
   });
@@ -37,8 +35,8 @@ export const insertShopDetail = (formData: FormData): Promise<ApiResponse<number
  * @param {FormData} formData
  * @returns {Promise<ApiResponse<number>>}
  */
-export const updateShopDetail = (formData: FormData): Promise<ApiResponse<number>> => {
-  return fetcher<ApiResponse<number>>('/api/shopDetail/update', {
+export const updateShopDetailFetcher = (formData: FormData): Promise<ApiResponse<number>> => {
+  return fetcher<ApiResponse<number>>('/api/shop-detail/update', {
     method: 'PUT',
     body: formData,
     //  headers.Content-Typeは指定しない。

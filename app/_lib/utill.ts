@@ -1,3 +1,5 @@
+import { v4 as uuidv4 } from 'uuid';
+
 import { HYPHEN, PAGE_MAX_COUNT, TEMP_HYPHEN } from '../_types/constants';
 /**
  * getFile.ts
@@ -149,4 +151,17 @@ export const getDomain = (email: string): string => {
   } else {
     return '';
   }
+};
+
+/**
+ * セーフファイル名生成
+ * supabaseStorageには以外の文字や、一部の記号、特殊文字が使えない。
+ * そのため、保存する際にはファイル名を変換する必要があるので、
+ * UUIDで重複しないファイル名を生成している。
+ * @param {string} fileName
+ * @returns {string} - セーフファイル名
+ */
+export const getSafeFileName = (fileName: string): string => {
+  const extension = fileName.split('.').pop()?.toLowerCase() ?? '';
+  return extension ? uuidv4() + '.' + extension : '';
 };

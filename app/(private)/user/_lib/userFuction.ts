@@ -171,11 +171,11 @@ const applyFilters = (query: any, req: UserSearchFormValues) => {
     query = query.ilike('t_companies.branch_name', `%${req.branch_name}%`);
   }
   // 利用ステータス
-  if (req.usage_status) {
+  if (req.usage_status !== undefined) {
     query = query.eq('usage_status', req.usage_status);
   }
   // 登録ステータス
-  if (req.user_registration_status) {
+  if (req.user_registration_status !== undefined) {
     query = query.eq('user_registration_status', req.user_registration_status);
   }
 

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { formatString } from '@/app/_lib/utill';
 import {
   MSG_EMAIL,
+  MSG_INVALID,
   MSG_MAX,
   MSG_POSTALCODE,
   MSG_REQUIRED,
@@ -58,11 +59,11 @@ export const ShopDetailSchema = z.object({
   /** メールアドレス */
   email: z
     .string()
-    .nonempty({ message: formatString(MSG_REQUIRED, 'メールアドレス') })
+    .nonempty({ message: formatString(MSG_INVALID, 'メールアドレス') })
     .email(formatString(MSG_EMAIL, 'メールアドレス'))
     .max(256, formatString(MSG_MAX, '電話番号', '11')),
   /** 店舗URL */
-  shop_url: z.string().url(formatString(MSG_EMAIL, '店舗URL')).optional(),
+  tabelog_url: z.string().url('URL形式ではありません').or(z.literal('')),
   /** 店舗紹介文 */
   shop_description: z.string().optional(),
   /** 特定商取引法に基づく表記 */

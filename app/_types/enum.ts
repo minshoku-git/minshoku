@@ -84,12 +84,14 @@ export enum PaymentType {
   PAYPAY = 2,
 }
 
-/** オーダーステータス */
-export enum OrderStatus {
+/** オーダーステータス種別 */
+export enum OrderStatusType {
   /** 0:有効 */
   VALID = 0,
-  /** 1:キャンセル */
-  CANCEL = 1,
+  /** 1:ユーザーキャンセル */
+  USER_CANCEL = 1,
+  /** 2:システムキャンセル */
+  SYSTEM_CANCEL = 2,
 }
 
 /** ユーザー承認種別 */

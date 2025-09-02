@@ -187,8 +187,9 @@ export const CompanyComponent = (): JSX.Element => {
     setTempIdCounterEmp((x) => x + 1);
   };
 
-  const removeField_emp = () => {
+  const removeField_emp = (id: string) => {
     const delIndex = fields_emp.findIndex((f) => f.id === id);
+
     if (!checkTempId(id)) {
       const data = getValues('employmentStatusInfo') as EmploymentData[];
       const target = data[delIndex];
@@ -237,7 +238,8 @@ export const CompanyComponent = (): JSX.Element => {
   const insertMutate = useMutation({
     mutationFn: async (data: CompanyDetailFormValues) => {
       openProcessing();
-      return insertCompanyDetail(data) as unknown as ApiResponse<number>;
+      const req: ApiRequest<CompanyDetailFormValues> = { request: data }
+      return insertCompanyDetail(req) as unknown as ApiResponse<number>;
     },
     onSuccess: (res) => {
       if (res.success) {

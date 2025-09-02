@@ -19,7 +19,7 @@ export const searchCompanyDetail = (req: ApiRequest<number>): Promise<any> => {
   });
 };
 
-export const insertCompanyDetail = (data: CompanyDetailFormValues) => {
+export const insertCompanyDetail = (data: ApiRequest<CompanyDetailFormValues>) => {
   return fetcher('/api/company-detail/insert', {
     method: 'POST',
     body: JSON.stringify(data),

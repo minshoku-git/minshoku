@@ -1,5 +1,5 @@
 import { format, startOfMonth, subDays, subMonths } from 'date-fns';
-import { toZonedTime } from 'date-fns-tz';
+import { fromZonedTime } from 'date-fns-tz';
 
 /**
  * getDateTime.tsx
@@ -11,8 +11,7 @@ import { toZonedTime } from 'date-fns-tz';
  * @returns {date} 現在日時
  */
 export function getNow(): Date {
-  const utfDate = new Date();
-  return toZonedTime(utfDate, 'Asia/Tokyo');
+  return new Date();
 }
 
 /**
@@ -30,7 +29,7 @@ export function getTodayXHour(H: number = 0): Date {
  */
 export function getTomorrow(): Date {
   const today = getNow();
-  return new Date(today.getFullYear(), today.getMonth(), parseInt(('00' + today.getDate()).slice(-2)) + 1);
+  return new Date(today.getFullYear(), today.getMonth(), parseInt(('00' + today.getDate()).slice(-2)) + 1, 0, 0);
 }
 
 /**
@@ -39,7 +38,7 @@ export function getTomorrow(): Date {
  */
 export function getYesterday(): Date {
   const today = getNow();
-  return new Date(today.getFullYear(), today.getMonth(), parseInt(('00' + today.getDate()).slice(-2)) - 1);
+  return new Date(today.getFullYear(), today.getMonth(), parseInt(('00' + today.getDate()).slice(-2)) - 1, 0, 0);
 }
 
 /**
@@ -47,7 +46,7 @@ export function getYesterday(): Date {
  * @returns {date} 日付(今月1日)
  */
 export function getThisMonthStartDay(): Date {
-  return startOfMonth(new Date());
+  return startOfMonth(getNow());
 }
 
 /**
@@ -96,4 +95,15 @@ export function getDateString(date: Date): string {
  */
 export function getDatetimeString(date: Date): string {
   return format(date, 'yyyy/MM/dd HH:mm');
+}
+
+/**
+ * convertJstToUtc
+ * JSTをUTCに変換します
+ * @param jstDateString - 日付
+ * @returns {string} 'yyyy/MM/dd HH:mm'
+ */
+export function convertJstToUtc(jstDateString: Date): Date {
+  // JSTの日付をUTCに変換
+  return fromZonedTime(jstDateString, 'Asia/Tokyo');
 }

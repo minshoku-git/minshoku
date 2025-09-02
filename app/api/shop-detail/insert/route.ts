@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { _insertShopDetail } from '@/app/(private)/shop-detail/[id]/_lib/shopDetailFunction';
 import { ShopDetailFormValues, shopDeteilRequestData } from '@/app/(private)/shop-detail/[id]/_lib/types';
 
-export async function POST(req: NextRequest) {
+export async function PUT(req: NextRequest) {
   const formData = await req.formData();
 
   const formValues = formData.get('formValues') as string;

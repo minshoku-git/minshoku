@@ -17,7 +17,7 @@ import { ErrorCodes } from '@/app/errors/ErrorCodes';
  * @param {ApiRequest<CompanySearchFormValues>} values - 検索条件
  * @returns {Promise<ApiResponse<CompanyListSearchResult[]>>} 検索結果
  */
-export const _searchComponyList = async (
+export const searchComponyList = async (
   values: ApiRequest<CompanySearchFormValues>
 ): Promise<ApiResponse<CompanyListSearchResult[]>> => {
   const supabase = await createClient();
@@ -141,8 +141,8 @@ const applyFilters = (query: any, req: CompanySearchFormValues): any => {
     console.log(query);
   }
   // 利用ステータス
-  if (req.usage_status) {
-    query = query.eq('usage_status', Number(req.usage_status));
+  if (req.usage_status !== undefined) {
+    query = query.eq('usage_status', req.usage_status);
   }
   return query;
 };

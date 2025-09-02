@@ -21,9 +21,14 @@ export const CompanySearchSchema = z.object({
   /** 住所 */
   address: z.string().optional(),
   /** 利用ステータス */
-  usage_status: z.union([z.string().optional(), z.nativeEnum(UsageStatus)]),
+  usage_status: z.union([z.literal('0'), z.string().optional(), z.nativeEnum(UsageStatus)]).transform((value) => {
+    // 空文字列をundefinedに変換し、'0'はそのまま残す
+    if (value === '') {
+      return undefined;
+    }
+    return value;
+  }),
 });
-
 /**
  * 会社一覧 検索条件 FormValues
  */

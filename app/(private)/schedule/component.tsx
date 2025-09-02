@@ -11,10 +11,9 @@ import { SubmitHandler, useForm } from 'react-hook-form';
 import { TextFieldElement } from 'react-hook-form-mui';
 import { DatePickerElement } from 'react-hook-form-mui/date-pickers';
 
-import { getNow, getTomorrow, getYesterday } from '@/app/_lib/getDateTime';
+import { getTodayXHour, getTomorrow, getYesterday } from '@/app/_lib/getDateTime';
 import { AlertType, SearchType, SortType } from '@/app/_types/enum';
 import { QUERY_KEYS } from '@/app/_types/queryKeys';
-import { SESSION_STORAGE_KEYS } from '@/app/_types/sessionStorageKeys';
 import { ApiRequest, ApiResponse, HeaderStatus } from '@/app/_types/types';
 import { CustomTable } from '@/app/_ui/_shared/costomTable/customTable';
 import ItemBase from '@/app/_ui/_shared/itemBase';
@@ -22,6 +21,7 @@ import { ResultsCounter } from '@/app/_ui/_shared/resultsCounter';
 import { useProcessing } from '@/app/_ui/processing/processingContext';
 import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
 
+import { searchScheduleListFetcher } from './_lib/fetcher';
 import { ScheduleListSearchResult, ScheduleSearchFormValues, ScheduleSearchSchema } from './_lib/types';
 
 /** ページ名 */
@@ -67,8 +67,8 @@ export const ScheduleComponent = (): JSX.Element => {
     reValidateMode: 'onSubmit',
     resolver: zodResolver(ScheduleSearchSchema),
     defaultValues: {
-      deliveryFrom: getNow(),
-      deliveryTo: getNow(),
+      deliveryFrom: getTodayXHour(),
+      deliveryTo: getTodayXHour(),
       company_name: '',
       shop_name: '',
     },
@@ -78,14 +78,14 @@ export const ScheduleComponent = (): JSX.Element => {
   ------------------------------------------------------------------ */
   /** 日付設定（本日以降）ハンドラ */
   const onAfterTodayClick = () => {
-    setValue('deliveryFrom', getNow());
+    setValue('deliveryFrom', getTodayXHour());
     setValue('deliveryTo', null);
   };
 
   /** 日付設定（本日）ハンドラ */
   const onTodayClick = () => {
-    setValue('deliveryFrom', getNow());
-    setValue('deliveryTo', getNow());
+    setValue('deliveryFrom', getTodayXHour());
+    setValue('deliveryTo', getTodayXHour());
   };
 
   /** 日付設定（明日）ハンドラ */
@@ -103,28 +103,15 @@ export const ScheduleComponent = (): JSX.Element => {
   /** 検索条件リセットハンドラ */
   const onResetClick = () => {
     reset();
-    setValue('deliveryFrom', getNow());
-    setValue('deliveryTo', getNow());
+    setValue('deliveryFrom', getTodayXHour());
+    setValue('deliveryTo', getTodayXHour());
   };
 
   /* useQuery
------------------------------------------------------------------- */
-  const fetchData = async () => {
-    const response = await fetch('/api/schedule', {
-      method: 'POST',
-      body: JSON.stringify(condition),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    const res: ApiResponse<ScheduleListSearchResult> = await response.json();
-    return res;
-  };
-
+  ------------------------------------------------------------------ */
   const { data, isFetching, refetch, isError } = useQuery<ApiResponse<ScheduleListSearchResult>>({
     queryKey: [QUERY_KEYS.SCHEDULE_SEARCH_RESULT, condition],
-    queryFn: fetchData,
+    queryFn: () => searchScheduleListFetcher(condition),
     enabled: false,
   });
 
@@ -425,7 +412,7 @@ export const ScheduleComponent = (): JSX.Element => {
                       <TableCell>{row.shop_name}</TableCell>
                       <TableCell>{row.menu_name}</TableCell>
                       <TableCell sx={{ width: '20px' }} align="right">
-                        {row.order_count}
+                        {row.stock_count}
                       </TableCell>
                     </TableRow>
                   ))
@@ -441,8 +428,8 @@ export const ScheduleComponent = (): JSX.Element => {
 
 const initConditionValues: ApiRequest<ScheduleSearchFormValues> = {
   request: {
-    deliveryFrom: getNow(),
-    deliveryTo: getNow(),
+    deliveryFrom: getTodayXHour(),
+    deliveryTo: getTodayXHour(),
     company_name: '',
     shop_name: '',
   },

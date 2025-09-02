@@ -24,8 +24,7 @@ import { useProcessing } from '@/app/_ui/processing/processingContext';
 import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
 
 import { state as stateMockData } from '../../../../public/state.json';
-import { insertShopDetail, searchShopDetail, updateShopDetail } from './_lib/fetcher';
-import { _insertShopDetail, _searchShopDetail, _updateShopDetail } from './_lib/shopDetailFunction';
+import { insertShopDetailFetcher, searchShopDetailFetcher, updateShopDetailFetcher } from './_lib/fetcher';
 import { ShopDetailFormValues, ShopDetailSchema, shopDeteilResponseData } from './_lib/types';
 /** ページ名 */
 const pageName = '店舗詳細';
@@ -48,6 +47,7 @@ export const ShopComponent = (): JSX.Element => {
   /* useState
   ------------------------------------------------------------------ */
   const [file, setFile] = useState<File>();
+  const [fileName, setFileName] = useState<string>('');
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const [addressLoading, setAddressLoading] = useState<boolean>(false);
@@ -72,13 +72,12 @@ export const ShopComponent = (): JSX.Element => {
   ------------------------------------------------------------------ */
   const searchShopDetailFetch = async () => {
     const req: ApiRequest<number> = { request: Number(id) };
-    return searchShopDetail(req);
+    return searchShopDetailFetcher(req);
   };
 
   const {
     data: result,
     isLoading,
-    isError,
     refetch,
   } = useQuery<ApiResponse<t_shops>>({
     queryKey: [QUERY_KEYS.SHOP_DETAIL_INIT],
@@ -109,7 +108,7 @@ export const ShopComponent = (): JSX.Element => {
         usage_status: data?.usage_status,
       };
       if (data.shop_image_file_name) {
-        setFile(new File([], data.shop_image_file_name));
+        setFileName(data.shop_image_file_name);
       }
       reset(initData);
     }
@@ -144,12 +143,12 @@ export const ShopComponent = (): JSX.Element => {
         formData.append('shop_image_file_data', file);
       }
 
-      return insertShopDetail(formData) as unknown as ApiResponse<number>;
+      return insertShopDetailFetcher(formData) as unknown as ApiResponse<number>;
     },
     onSuccess: (res) => {
       if (res.success) {
         openSnackbar(AlertType.SUCCESS, '店舗情報の登録が完了しました。');
-        router.push(`/company-detail/${res.data}`);
+        router.push(`/shop-detail/${res.data}`);
       } else {
         openSnackbar(AlertType.ERROR, res.error.message);
       }
@@ -166,27 +165,32 @@ export const ShopComponent = (): JSX.Element => {
   /* functions - Update
   ------------------------------------------------------------------ */
   const updateHandler: SubmitHandler<ShopDetailFormValues> = async (data) => {
+    openProcessing();
     updateMutate.mutate(data);
   };
 
   const updateMutate = useMutation({
     mutationFn: async (data: ShopDetailFormValues) => {
-      openProcessing();
 
       const formData = new FormData();
       formData.append('formValues', JSON.stringify(data));
 
-      formData.append('shop_image_file_name', file?.name ?? '');
       if (file) {
+        formData.append('shop_image_file_name', file?.name ?? '');
         formData.append('shop_image_file_bytesize', file.size.toString());
         formData.append('shop_image_file_data', file);
       }
 
-      return updateShopDetail(formData);
+      return updateShopDetailFetcher(formData);
     },
-    onSuccess: (_res: ApiResponse<number>) => {
-      refetch();
-      openSnackbar(AlertType.SUCCESS, '店舗情報の更新が完了しました。');
+    onSuccess: (res) => {
+      if (res.success) {
+        refetch();
+        setFile(undefined);
+        openSnackbar(AlertType.SUCCESS, '店舗情報の更新が完了しました。');
+      } else {
+        openSnackbar(AlertType.ERROR, res.error.message);
+      }
     },
     onError: (e) => {
       console.error(e.message);
@@ -228,21 +232,21 @@ export const ShopComponent = (): JSX.Element => {
     }
     closeSnackbar();
     setFile(file);
+    setFileName(file.name)
   };
 
   /** ファイル削除 */
   const fileDelete = () => {
     console.log('fileDelete click!');
     setFile(undefined);
+    setFileName('')
   };
 
   // 住所取得
   const getAddressHandler = async () => {
     setAddressLoading(true);
-    const { prefecture, suburb, city, errorMessage } = await getAddress(
-      getValues('shop_postal_code_prefix') + getValues('shop_postal_code_suffix')
-    );
-
+    const postalCode = getValues('shop_postal_code_prefix') + getValues('shop_postal_code_suffix');
+    const { prefecture, suburb, city, errorMessage } = await getAddress(postalCode);
     if (errorMessage) {
       setValue('shop_address', '');
       openSnackbar(AlertType.WARNING, errorMessage);
@@ -250,8 +254,8 @@ export const ShopComponent = (): JSX.Element => {
       setValue('shop_address', prefecture + city + suburb);
     }
     setAddressLoading(false);
-    return;
   };
+
 
   /** 検索画面に戻る */
   const pageBack = async () => {
@@ -308,7 +312,7 @@ export const ShopComponent = (): JSX.Element => {
         </Grid>
         <Divider />
         <Box sx={{ m: 3 }}>
-          <form onSubmit={handleSubmit(editMode ? updateHandler : insertHandler)}>
+          <form onSubmit={handleSubmit(editMode ? updateHandler : insertHandler)} noValidate>
             <Grid container rowSpacing={2} columnSpacing={{ xs: 1, sm: 2, md: 3 }} direction="column">
               {editMode && (
                 <ItemBase name={'店舗ID'} isRequired={2}>
@@ -390,7 +394,6 @@ export const ShopComponent = (): JSX.Element => {
                   color="primary"
                   name="shop_address"
                   fullWidth
-                // slotProps={{ htmlInput: { maxLength: 128 } }}
                 />
               </ItemBase>
               <ItemBase name={'番地'} isRequired={0}>
@@ -436,7 +439,7 @@ export const ShopComponent = (): JSX.Element => {
               </ItemBase>
               <ItemBase name={'店舗イメージ'} isRequired={1}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  {!file ? (
+                  {!fileName ? (
                     <Button
                       component="label"
                       variant="contained"
@@ -463,7 +466,7 @@ export const ShopComponent = (): JSX.Element => {
                     </Button>
                   ) : (
                     <>
-                      <Typography>{file?.name}</Typography>
+                      <Typography>{fileName}</Typography>
                       <IconButton onClick={fileDelete}>
                         <Delete />
                       </IconButton>
@@ -471,12 +474,14 @@ export const ShopComponent = (): JSX.Element => {
                   )}
                 </Box>
               </ItemBase>
-              <ItemBase name={'店舗URL'} isRequired={1}>
+              <ItemBase name={'食べログURL'} isRequired={1}>
                 <TextFieldElement
                   control={control}
                   size="small"
+                  type="url"
                   color={'primary'}
-                  name="shop_url"
+                  name="tabelog_url"
+                  placeholder='https://tabelog.com/prefectures/...'
                   fullWidth
                   slotProps={{ htmlInput: { maxLength: 256 } }}
                 />
@@ -551,7 +556,7 @@ const defalutData: ShopDetailFormValues = {
   shop_building_name: '',
   tel_no: '',
   email: '',
-  shop_url: '',
+  tabelog_url: '',
   shop_description: '',
   specified_commercial_transaction_act: '',
   usage_status: UsageStatus.AVAILABLE,

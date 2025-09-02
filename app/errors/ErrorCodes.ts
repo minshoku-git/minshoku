@@ -43,4 +43,9 @@ export const ErrorCodes = {
     message: 'このメールアドレスは既に登録されています。',
     status: 409, // CONFLICT（競合）
   },
+  CSV_VALIDATION_FAILED: {
+    code: 'E2001',
+    message: 'CSVファイルに不正なデータが含まれています。内容を確認してください。',
+    status: 400,
+  },
 } as const;

@@ -9,6 +9,9 @@ import { SupabaseClient } from '@supabase/supabase-js';
  */
 export const uploadFile = async (client: SupabaseClient, bucketName: string, filePath: string, file: File) => {
   try {
+    console.log('bucketName', bucketName);
+    console.log('filePath', filePath);
+    console.log('file', file);
     // ファイルを指定したバケットにアップロード
     const { data, error } = await client.storage.from(bucketName).upload(filePath, file);
 

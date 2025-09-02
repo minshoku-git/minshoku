@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { formatString } from '@/app/_lib/utill';
 import { MSG_INVALID, MSG_MAX, MSG_REQUIRED } from '@/app/_types/constants';
-import { OrderStatus } from '@/app/_types/enum';
+import { OrderStatusType } from '@/app/_types/enum';
 
 /**
  * オーダー一覧 検索条件 Schema
@@ -41,7 +41,15 @@ export const OrderSearchSchema = z
       .max(64, formatString(MSG_MAX, '会社名', '64'))
       .optional(),
     /** 注文ステータス */
-    order_status: z.union([z.string().optional(), z.nativeEnum(OrderStatus)]),
+    order_status_type: z
+      .union([z.literal('0'), z.string().optional(), z.nativeEnum(OrderStatusType)])
+      .transform((value) => {
+        // 空文字列をundefinedに変換し、'0'はそのまま残す
+        if (value === '') {
+          return undefined;
+        }
+        return value;
+      }),
   })
   /** 提供時間 FROM<TOではない */
   .superRefine((data, ctx) => {
@@ -95,7 +103,7 @@ export type OrderListSearchResult = {
   /** 支払いステータス */
   payment_type: number;
   /** 注文ステータス */
-  order_status: number;
+  order_status_type: number;
 };
 
 /** 取得結果 オーダー詳細 */
@@ -117,7 +125,7 @@ export type orderDeteilResponseData = {
   /** 支払い種別 */
   payment_type?: number;
   /** オーダーステータス */
-  order_status?: number;
+  order_status_type?: number;
   /** 注文日時 */
   order_datetime?: string | Date;
   /** キャンセル日時 */

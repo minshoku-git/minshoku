@@ -5,7 +5,7 @@ import { orderDeteilResponseData, OrderListSearchResult, OrderSearchFormValues }
 
 /**
  * searchOrderList
- * @param {ApiRequest<OrderSearchFormValues>} condition
+ * @param {ApiRequest<ApiRequest<OrderSearchFormValues> | null>} condition
  * @returns {Promise<ApiResponse<OrderListSearchResult[]>>}
  */
 export const searchOrderList = async (

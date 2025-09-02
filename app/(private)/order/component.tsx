@@ -13,8 +13,8 @@ import { SubmitHandler, useForm } from 'react-hook-form';
 import { SelectElement, TextFieldElement } from 'react-hook-form-mui';
 import { DatePickerElement } from 'react-hook-form-mui/date-pickers';
 
-import { getLastMonthEndDay, getLastMonthStartDay, getNow, getTomorrow, getYesterday } from '@/app/_lib/getDateTime';
-import { AlertType, OrderStatus, PaymentType, SearchType, SortType } from '@/app/_types/enum';
+import { getLastMonthEndDay, getLastMonthStartDay, getNow, getTodayXHour, getTomorrow, getYesterday } from '@/app/_lib/getDateTime';
+import { AlertType, OrderStatusType, PaymentType, SearchType, SortType } from '@/app/_types/enum';
 import { QUERY_KEYS } from '@/app/_types/queryKeys';
 import { SESSION_STORAGE_KEYS } from '@/app/_types/sessionStorageKeys';
 import { ApiRequest, ApiResponse, HeaderStatus } from '@/app/_types/types';
@@ -39,7 +39,7 @@ const resultHeader: Array<HeaderStatus> = [
   { name: '会社名 / 支店名', variableName: 'company_name', sort: SortType.ASC },
   { name: '食数', variableName: 'count', sort: SortType.ASC },
   { name: '決済方法', variableName: 'payment_type', sort: SortType.ASC },
-  { name: '注文ステータス', variableName: 'order_status', sort: SortType.ASC },
+  { name: '注文ステータス', variableName: 'order_status_type', sort: SortType.ASC },
 ];
 
 const initConditionValues: ApiRequest<OrderSearchFormValues> = {
@@ -48,7 +48,7 @@ const initConditionValues: ApiRequest<OrderSearchFormValues> = {
     deliveryTo: null,
     user_name: '',
     company_name: '',
-    order_status: '0',
+    order_status_type: '0',
   },
   sortItems: {
     nextPage: 1,
@@ -104,7 +104,7 @@ export const OrderComponent = (): JSX.Element => {
       deliveryTo: getNow(),
       user_name: '',
       company_name: '',
-      order_status: '',
+      order_status_type: '',
     },
   });
 
@@ -139,7 +139,7 @@ export const OrderComponent = (): JSX.Element => {
       setValue('deliveryTo', req.request.deliveryTo);
       setValue('user_name', req.request.user_name);
       setValue('company_name', req.request.company_name);
-      setValue('order_status', req.request.order_status);
+      setValue('order_status_type', req.request.order_status_type);
     }
     sessionStorage.clear();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -291,7 +291,7 @@ export const OrderComponent = (): JSX.Element => {
 
   /** ユーザー詳細画面表示ハンドラ */
   const openUserDetailHandler = (id: number) => {
-    window.open(`/shop-detail/${id}`, '_blank', 'noopener,noreferrer');
+    window.open(`/user-detail/${id}`, '_blank', 'noopener,noreferrer');
   };
 
   /** 会社詳細画面表示ハンドラ */
@@ -309,8 +309,8 @@ export const OrderComponent = (): JSX.Element => {
 
   /** 日付設定（本日）ハンドラ */
   const onTodayClick = () => {
-    setValue('deliveryFrom', getNow());
-    setValue('deliveryTo', getNow());
+    setValue('deliveryFrom', getTodayXHour());
+    setValue('deliveryTo', getTodayXHour());
   };
 
   /** 日付設定（明日）ハンドラ */
@@ -328,8 +328,8 @@ export const OrderComponent = (): JSX.Element => {
   /** 検索条件リセットハンドラ */
   const onResetClick = () => {
     reset();
-    setValue('deliveryFrom', getNow());
-    setValue('deliveryTo', getNow());
+    setValue('deliveryFrom', getTodayXHour());
+    setValue('deliveryTo', getTodayXHour());
   };
 
   /* JSX
@@ -487,12 +487,13 @@ export const OrderComponent = (): JSX.Element => {
                   <SelectElement
                     control={control}
                     size="small"
-                    name="order_status"
+                    name="order_status_type"
                     fullWidth
                     options={[
                       { id: '', label: '未選択' },
-                      { id: '10', label: '有効' },
-                      { id: '20', label: 'キャンセル' },
+                      { id: OrderStatusType.VALID, label: '有効' },
+                      { id: OrderStatusType.USER_CANCEL, label: 'キャンセル(ユーザー)' },
+                      { id: OrderStatusType.SYSTEM_CANCEL, label: 'キャンセル(システム)' },
                     ]}
                   ></SelectElement>
                 </Box>
@@ -569,7 +570,12 @@ export const OrderComponent = (): JSX.Element => {
                               ? 'クレジットカード'
                               : 'PayPay'}
                         </TableCell>
-                        <TableCell>{OrderStatus.VALID === row.order_status ? '有効' : 'キャンセル'}</TableCell>
+                        <TableCell>
+                          {OrderStatusType.VALID === row.order_status_type
+                            ? '有効'
+                            : OrderStatusType.USER_CANCEL === row.order_status_type
+                              ? 'キャンセル(ユーザー)'
+                              : 'キャンセル(システム)'}</TableCell>
                       </TableRow>
                     ))
                   }

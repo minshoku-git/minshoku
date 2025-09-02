@@ -34,7 +34,7 @@
 //       location: req.location,
 //       email: req.email,
 //       memo: req.memo,
-//       usage_state: 0,
+//       usage_status: 0,
 //       optional_item_title_1: req.optional_item_title_1,
 //       optional_item_title_2: req.optional_item_title_2,
 //       optional_item_notes_1: req.optional_item_notes_1,
@@ -64,7 +64,7 @@
 //   //     restaurant_name: req.restaurant_name,
 //   //     email: req.email,
 //   //     memo: req.memo,
-//   //     usage_state: 0, // TODO: 企業新規登録時、何を設定したらいいのか要確認。
+//   //     usage_status: 0, // TODO: 企業新規登録時、何を設定したらいいのか要確認。
 //   //     optional_item_title_1: req.optional_item_title_1,
 //   //     optional_item_title_2: req.optional_item_title_2,
 //   //     optional_item_notes_1: req.optional_item_notes_1,

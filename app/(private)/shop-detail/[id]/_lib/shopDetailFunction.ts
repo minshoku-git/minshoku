@@ -7,7 +7,7 @@ import { uploadFile } from '@/app/_lib/subabaseStorage/uploadFile';
 import { createClient, createPgClient } from '@/app/_lib/supabase/server';
 import { t_shops } from '@/app/_lib/supabase/tableTypes';
 import { rollbackWithLog } from '@/app/_lib/supabase/transaction';
-import { getPostgreSqlItems } from '@/app/_lib/utill';
+import { getPostgreSqlItems, getSafeFileName } from '@/app/_lib/utill';
 import { BUCKET_SHOP_IMAGES } from '@/app/_types/constants';
 import { UsageStatus } from '@/app/_types/enum';
 import { ApiRequest, ApiResponse } from '@/app/_types/types';
@@ -26,7 +26,7 @@ import { shopDeteilRequestData, shopDeteilResponseData } from './types';
  * @param {ApiRequest<number>} values - 検索条件
  * @returns {Promise<ApiResponse<shopDeteilResponseData>>} 検索結果
  */
-export const _searchShopDetail = async (values: ApiRequest<number>): Promise<ApiResponse<shopDeteilResponseData>> => {
+export const searchShopDetail = async (values: ApiRequest<number>): Promise<ApiResponse<shopDeteilResponseData>> => {
   const supabase = await createClient();
   const id = values.request;
 
@@ -45,8 +45,8 @@ export const _searchShopDetail = async (values: ApiRequest<number>): Promise<Api
 
     // 画像URLを取得
     let imageUrl: string = '';
-    if (data.shop_image_file_name) {
-      const filepath = BUCKET_SHOP_IMAGES + '/' + id + '/' + data.shop_image_file_name;
+    if (data.shop_image_safe_file_name) {
+      const filepath = BUCKET_SHOP_IMAGES + '/' + id + '/' + data.shop_image_safe_file_name;
       imageUrl = await getImageSignedUrl(supabase, BUCKET_SHOP_IMAGES, filepath);
       if (!imageUrl) {
         console.error(error);
@@ -74,6 +74,8 @@ export const _searchShopDetail = async (values: ApiRequest<number>): Promise<Api
       usage_status: data.usage_status ?? UsageStatus.AVAILABLE,
       shop_image_file_name: data.shop_image_file_name ?? '',
       shop_image_url: imageUrl,
+      tabelog_url: data.tabelog_url ?? '',
+      shop_description: data.shop_description ?? '',
     };
 
     return {
@@ -118,6 +120,8 @@ export const _insertShopDetail = async (values: shopDeteilRequestData): Promise<
     // Transaction Start
     await pgClient.query('BEGIN');
 
+    const safeFileName = getSafeFileName(req.shop_image_file_name ?? '');
+
     /* Insert - t_shops
   　------------------------------------------------------------------ */
     // InsertData setting
@@ -133,6 +137,9 @@ export const _insertShopDetail = async (values: shopDeteilRequestData): Promise<
       specified_commercial_transaction_act: req.specified_commercial_transaction_act,
       shop_image_file_name: req.shop_image_file_name,
       shop_image_file_bytesize: req.shop_image_file_bytesize,
+      shop_image_safe_file_name: safeFileName,
+      tabelog_url: req.tabelog_url,
+      shop_description: req.shop_description,
       memo: req.memo,
       usage_status: req.usage_status,
       gmo_shop_code: '', // TODO: 店舗新規登録時、何を設定したらいいのか要確認。
@@ -156,7 +163,7 @@ export const _insertShopDetail = async (values: shopDeteilRequestData): Promise<
     /* upload - 店舗イメージ画像
   　------------------------------------------------------------------ */
     if (req.shop_image_file_name && req.shop_image_file_data) {
-      const filepath = BUCKET_SHOP_IMAGES + '/' + newShopId + '/' + req.shop_image_file_name;
+      const filepath = BUCKET_SHOP_IMAGES + '/' + newShopId + '/' + safeFileName;
       await uploadFile(supabase, BUCKET_SHOP_IMAGES, filepath, req.shop_image_file_data);
     }
 
@@ -201,7 +208,7 @@ export const _insertShopDetail = async (values: shopDeteilRequestData): Promise<
  * @param {shopDeteilRequestData} values - 入力情報
  * @returns {Promise<ApiResponse<number>>} 更新した店舗情報ID
  */
-export const _updateShopDetail = async (values: shopDeteilRequestData): Promise<ApiResponse<number>> => {
+export const updateShopDetail = async (values: shopDeteilRequestData): Promise<ApiResponse<number>> => {
   const req = values;
   const supabase = await createClient();
   const pgClient = createPgClient();
@@ -217,9 +224,9 @@ export const _updateShopDetail = async (values: shopDeteilRequestData): Promise<
 
     /* Select - t_shops 店舗画像ファイル名取得
   　------------------------------------------------------------------ */
-    const query = supabase.from('t_shops').select('shop_image_file_name').eq('id', req.id).single();
+    const query = supabase.from('t_shops').select('shop_image_safe_file_name').eq('id', req.id).single();
     const { data, error } = (await query) as PostgrestSingleResponse<t_shops>;
-    const ex_shop_image_file_name = data?.shop_image_file_name ?? '';
+    const exSafeFileName = data?.shop_image_safe_file_name ?? '';
 
     if (error) {
       console.error(error);
@@ -243,6 +250,8 @@ export const _updateShopDetail = async (values: shopDeteilRequestData): Promise<
       tel_no: req.tel_no,
       email: req.email,
       specified_commercial_transaction_act: req.specified_commercial_transaction_act,
+      tabelog_url: req.tabelog_url,
+      shop_description: req.shop_description,
       memo: req.memo,
       usage_status: req.usage_status,
       gmo_shop_code: '', // TODO: 店舗新規登録時の値を確認
@@ -251,9 +260,15 @@ export const _updateShopDetail = async (values: shopDeteilRequestData): Promise<
     };
 
     // 新規登録の画像ファイルが存在する場合
-    if (req.shop_image_file_data || (!req.shop_image_file_name && ex_shop_image_file_name)) {
+    const safeFileName = getSafeFileName(req.shop_image_file_name ?? '');
+    if (req.shop_image_file_data) {
       updateValues.shop_image_file_name = req.shop_image_file_name;
       updateValues.shop_image_file_bytesize = req.shop_image_file_bytesize;
+      updateValues.shop_image_safe_file_name = safeFileName;
+    } else if (!req.shop_image_file_data && exSafeFileName) {
+      updateValues.shop_image_file_name = '';
+      updateValues.shop_image_file_bytesize = 0;
+      updateValues.shop_image_safe_file_name = '';
     }
 
     const { columns, values } = getPostgreSqlItems(updateValues);
@@ -277,18 +292,15 @@ export const _updateShopDetail = async (values: shopDeteilRequestData): Promise<
   　------------------------------------------------------------------ */
     // 店舗画像ファイル削除
     // 新規登録の画像ファイルが存在する && 既存ファイル名が値有りの場合
-    if (
-      (req.shop_image_file_data && ex_shop_image_file_name) ||
-      (!req.shop_image_file_name && ex_shop_image_file_name)
-    ) {
-      const filepath = BUCKET_SHOP_IMAGES + '/' + updatedId + '/' + ex_shop_image_file_name;
+    if ((req.shop_image_file_data && exSafeFileName) || (!req.shop_image_file_data && exSafeFileName)) {
+      const filepath = BUCKET_SHOP_IMAGES + '/' + updatedId + '/' + exSafeFileName;
       await deleteFile(supabase, BUCKET_SHOP_IMAGES, filepath);
     }
 
     // 店舗画像ファイル登録
     // 新規登録の画像ファイルが存在する場合
     if (req.shop_image_file_data) {
-      const filepath = BUCKET_SHOP_IMAGES + '/' + updatedId + '/' + req.shop_image_file_name;
+      const filepath = BUCKET_SHOP_IMAGES + '/' + updatedId + '/' + safeFileName;
       await uploadFile(supabase, BUCKET_SHOP_IMAGES, filepath, req.shop_image_file_data);
     }
 

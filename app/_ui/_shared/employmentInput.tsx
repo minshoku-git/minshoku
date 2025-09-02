@@ -21,7 +21,7 @@ type Props = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   control: Control<any>;
   addField: () => void;
-  removeField: (index: string) => void;
+  removeField: (id: string) => void;
   fields?: FieldArrayWithId<CompanyDetailFormValues, 'employmentStatusInfo', 'id'>[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   setValue: any;

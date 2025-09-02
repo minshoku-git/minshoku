@@ -20,7 +20,7 @@ import { ShopListSearchResult, ShopSearchFormValues } from './types';
  * @param {ApiRequest<ShopSearchFormValues>} values - 検索条件
  * @returns {Promise<ApiResponse<ShopListSearchResult[]>>} 検索結果
  */
-export const _searchShopList = async (
+export const searchShopList = async (
   values: ApiRequest<ShopSearchFormValues>
 ): Promise<ApiResponse<ShopListSearchResult[]>> => {
   const supabase = await createClient();
@@ -68,7 +68,7 @@ export const _searchShopList = async (
       console.error('query error', error);
       throw new CustomError(
         ErrorCodes.NOT_FOUND.code,
-        'スケジュール情報の件数取得' + ErrorCodes.NOT_FOUND.message,
+        '店舗情報の件数取得' + ErrorCodes.NOT_FOUND.message,
         ErrorCodes.NOT_FOUND.status
       );
     }
@@ -139,10 +139,9 @@ const applyFilters = (query: any, req: ShopSearchFormValues): any => {
     );
   }
   // 利用ステータス
-  if (req.usage_status) {
+  if (req.usage_status !== undefined) {
     query = query.eq('usage_status', req.usage_status);
   }
-
   return query;
 };
 

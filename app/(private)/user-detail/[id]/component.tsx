@@ -25,10 +25,6 @@ import { UpdateUserData, UserDataDetailRequest, UserDataDetailResult, UserDetail
 /** ページ名 */
 const pageName = 'ユーザー詳細';
 
-type props = {
-  data: UserDataDetailResult | null;
-};
-
 /**
  * ユーザー詳細Component
  * @returns {JSX.Element} JSX

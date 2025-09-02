@@ -100,7 +100,7 @@ export type ScheduleData = {
   /** メニュー名 */
   menu_name: string;
   /** 食数 */
-  order_count: number;
+  stock_count: number;
 };
 
 /** 検索結果 スケジュール一覧 */

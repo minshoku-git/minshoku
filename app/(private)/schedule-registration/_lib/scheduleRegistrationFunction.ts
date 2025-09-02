@@ -1,3 +1,4 @@
+import { convertJstToUtc, getNow } from '@/app/_lib/getDateTime';
 import { createPgClient } from '@/app/_lib/supabase/server';
 import { t_menu_schedule } from '@/app/_lib/supabase/tableTypes';
 import { rollbackWithLog } from '@/app/_lib/supabase/transaction';
@@ -6,7 +7,7 @@ import { ApiResponse } from '@/app/_types/types';
 import { CustomError } from '@/app/errors/customError';
 import { ErrorCodes } from '@/app/errors/ErrorCodes';
 
-import { scheduleCsvValues } from './types';
+import { ScheduleCsvValues } from './types';
 
 /* スケジュール登録
 ------------------------------------------------------------------ */
@@ -15,12 +16,13 @@ import { scheduleCsvValues } from './types';
  * refreshingScheduleData
  * スケジュール情報を洗い替えする。
  *
- * @param {scheduleCsvValues[]} values - 検索条件
+ * @param {ScheduleCsvValues[]} values - 検索条件
  * @returns {Promise<ApiResponse<number>>} 検索結果
  */
-export const _RefreshingScheduleData = async (values: scheduleCsvValues[]): Promise<ApiResponse<number>> => {
+export const RefreshingScheduleData = async (values: ScheduleCsvValues[]): Promise<ApiResponse<number>> => {
   const req = values;
   const client = createPgClient();
+  const now = getNow();
 
   try {
     // connection Start
@@ -30,46 +32,90 @@ export const _RefreshingScheduleData = async (values: scheduleCsvValues[]): Prom
     // Transaction Start
     await client.query('BEGIN');
 
-    /* Dalete - t_menu_schedule
-   　------------------------------------------------------------------ */
-    const deleteCompanyText = 'DELETE FROM t_menu_schedule;';
-    const res = await client.query(deleteCompanyText);
-    if (res.rowCount === 0) {
-      throw new CustomError(
-        ErrorCodes.NOT_FOUND.code,
-        'スケジュール情報の削除処理' + ErrorCodes.NOT_FOUND.message,
-        ErrorCodes.NOT_FOUND.status
-      );
-    }
-    console.log('deleted count:', res.rowCount);
-
     for (const item of req) {
-      /* Insert - t_menu_schedule
-     　------------------------------------------------------------------ */
-      // InsertData setting
-      const insertValues: Omit<t_menu_schedule, 'id' | 'created_at' | 'updated_at'> = {
-        cancel_flag: item.cancel_flag,
-        delivery_day: item.delivery_day,
-        menu_name: item.menu_name,
-        order_count: item.order_count,
-        stock_count: item.stock_count,
-        t_companies_id: item.t_companies_id,
-        t_shops_id: item.t_shops_id,
-        allergen_labelling: item.allergen_labelling,
-        list_price: item.list_price,
-      };
-      const { columns, placeholders, values } = getPostgreSqlItems(insertValues);
-      const insertScheduleText = `INSERT INTO t_menu_schedule (${columns.join(',')}) VALUES (${placeholders}) RETURNING id;`;
+      /* Select - t_menu_schedule
+    　------------------------------------------------------------------ */
+      const selectSql = `
+        SELECT id
+        FROM 
+          t_menu_schedule
+        WHERE
+          delivery_day = $1 AND
+          t_companies_id = $2 AND
+          t_shops_id = $3
+        ORDER BY 
+          updated_at DESC
+        LIMIT 1;
+      `;
 
-      // Update
-      const result = await client.query(insertScheduleText, values);
+      const values = [item.delivery_day, item.t_companies_id, item.t_shops_id];
+      const exData = await client.query<t_menu_schedule>(selectSql, values);
+      const row = exData.rows[0];
 
-      if (result.rowCount === 0) {
-        throw new CustomError(
-          ErrorCodes.NOT_FOUND.code,
-          'スケジュール情報の登録処理' + ErrorCodes.NOT_FOUND.message,
-          ErrorCodes.NOT_FOUND.status
-        );
+      if (row) {
+        /* Update - t_menu_schedule
+        ------------------------------------------------------------------ */
+        const updateValues: Omit<t_menu_schedule, 'id' | 't_companies_id' | 't_shops_id' | 'created_at'> = {
+          delivery_day: item.delivery_day,
+          menu_name: item.menu_name,
+          menu_description: item.menu_description,
+          allergen_labelling: item.allergen_labelling,
+          spice_level: item.spice_level,
+          stock_count: item.stock_count,
+          list_price: item.list_price,
+          sale_price: item.sale_price,
+          cancel_flag: item.cancel_flag,
+          updated_at: now,
+        };
+        const { columns, values } = getPostgreSqlItems(updateValues);
+
+        const updateScheduleSql = `
+          UPDATE 
+            t_menu_schedule
+          SET 
+            ${columns.map((col, index) => `${col} = $${index + 1}`).join(', ')}
+          WHERE 
+            id = ${row.id}
+          RETURNING id;`;
+
+        const result = await client.query(updateScheduleSql, values);
+
+        if (result.rowCount === 0) {
+          throw new CustomError(
+            ErrorCodes.NOT_FOUND.code,
+            'スケジュール情報の登録処理' + ErrorCodes.NOT_FOUND.message,
+            ErrorCodes.NOT_FOUND.status
+          );
+        }
+      } else {
+        /* Insert - t_menu_schedule
+        ------------------------------------------------------------------ */
+        const insertValues: Omit<t_menu_schedule, 'id' | 'created_at' | 'updated_at'> = {
+          delivery_day: item.delivery_day,
+          t_companies_id: item.t_companies_id,
+          t_shops_id: item.t_shops_id,
+          menu_name: item.menu_name,
+          menu_description: item.menu_description,
+          allergen_labelling: item.allergen_labelling,
+          spice_level: item.spice_level,
+          stock_count: item.stock_count,
+          list_price: item.list_price,
+          sale_price: item.sale_price,
+          cancel_flag: item.cancel_flag,
+        };
+        const { columns, placeholders, values } = getPostgreSqlItems(insertValues);
+        const insertScheduleText = `INSERT INTO t_menu_schedule (${columns.join(',')}) VALUES (${placeholders}) RETURNING id;`;
+
+        // Insert
+        const result = await client.query(insertScheduleText, values);
+
+        if (result.rowCount === 0) {
+          throw new CustomError(
+            ErrorCodes.NOT_FOUND.code,
+            'スケジュール情報の登録処理' + ErrorCodes.NOT_FOUND.message,
+            ErrorCodes.NOT_FOUND.status
+          );
+        }
       }
     }
 

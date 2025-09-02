@@ -19,7 +19,7 @@ import { ScheduleData, ScheduleListSearchResult, ScheduleSearchFormValues } from
  * @param {ApiRequest<ScheduleSearchFormValues>} values - 検索条件
  * @returns {Promise<ApiResponse<ScheduleListSearchResult>>} 検索結果
  */
-export const _searchScheduleList = async (
+export const searchScheduleList = async (
   values: ApiRequest<ScheduleSearchFormValues>
 ): Promise<ApiResponse<ScheduleListSearchResult>> => {
   const supabase = await createClient();
@@ -68,7 +68,7 @@ export const _searchScheduleList = async (
       branch_name,
       shop_name,
       menu_name,
-      order_count
+      stock_count
       `
       )
       .range(startRange, endRange);
@@ -89,7 +89,7 @@ export const _searchScheduleList = async (
   ------------------------------------------------------------------ */
     // MEMO:
     // VIEWにはSUM()が使用不可のため、該当レコードの納品数を取得し、合計数を算出する。
-    let orderCountQuery = supabase.from('v_menu_schedule').select('order_count');
+    let orderCountQuery = supabase.from('v_menu_schedule').select('stock_count');
     orderCountQuery = applyFilters(orderCountQuery, req);
     const { data: orderCountData, error: orderCountError } = (await query) as PostgrestSingleResponse<ScheduleData[]>;
 
@@ -102,7 +102,7 @@ export const _searchScheduleList = async (
       );
     }
 
-    const totalOrderCount = orderCountData.reduce((acc, item) => acc + item.order_count, 0);
+    const totalOrderCount = orderCountData.reduce((acc, item) => acc + item.stock_count, 0);
 
     console.log('スケジュール一覧納品数合計:', totalOrderCount);
 
@@ -181,7 +181,7 @@ const applyFilters = (query: any, req: ScheduleSearchFormValues) => {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const applySorts = (query: any, sortItems: SortItems | undefined) => {
   // ソート順序
-  const sortConditions: Array<string> = ['delivery_day', 'company_name', 'shop_name', 'menu_name', 'order_count'];
+  const sortConditions: Array<string> = ['delivery_day', 'company_name', 'shop_name', 'menu_name', 'stock_count'];
   // ソート用会社名
   const sortConditionsCompanyName: Array<string> = ['company_name', 'branch_name'];
 
