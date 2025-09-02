@@ -104,5 +104,6 @@ export function getDatetimeString(date: Date): string {
  * @returns {string} 'yyyy/MM/dd HH:mm'
  */
 export function toUTCDateFromJSTDate(jstDate: Date): Date {
-  return new Date(`${getDateString(jstDate)}T00:00:00+09:00`);
+  const formatString = format(jstDate, 'yyyy-MM-dd');
+  return new Date(`${formatString}T00:00:00+09:00`);
 }
