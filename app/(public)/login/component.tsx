@@ -8,7 +8,6 @@ import { SubmitHandler, useForm } from 'react-hook-form';
 import { TextFieldElement } from 'react-hook-form-mui';
 
 import { ApiRequest, ApiResponse } from '@/app/_types/types';
-import { useProcessing } from '@/app/_ui/processing/processingContext';
 
 import { AlertType } from '../../_types/enum';
 import RequiredMark from '../../_ui/_shared/requiredMark';
@@ -20,7 +19,6 @@ export const LoginComponent = () => {
   ------------------------------------------------------------------ */
   const router = useRouter();
   const { openSnackbar } = useSnackBar();
-  const { openProcessing, closeProcessing } = useProcessing();
 
   /* useState
   ------------------------------------------------------------------ */
@@ -28,12 +26,12 @@ export const LoginComponent = () => {
 
   /* useForm
   ------------------------------------------------------------------ */
-  const { handleSubmit, control, getValues } = useForm<LoginFormValues>({
+  const { handleSubmit, control } = useForm<LoginFormValues>({
     mode: 'onSubmit',
     reValidateMode: 'onBlur',
     resolver: zodResolver(LoginSchema),
     defaultValues: {
-      email: 's.abe@refact.co.jp', // TODO:実際は空、モック中は値有りで
+      email: 'admin@domain.co.jp', // TODO:実際は空、モック中は値有りで
       password: 'password1',
     },
   });
