@@ -1,24 +1,19 @@
 import { z } from 'zod';
 
-import { formatString } from '@/app/_lib/utill';
-import { MSG_MAX } from '@/app/_types/constants';
-import { UsageStatus, UserRegistrationStatus } from '@/app/_types/enum';
+import { UsageStatus } from '@/app/_types/enum';
 
 /**
- * ユーザー詳細 検索条件 Schema
+ * ユーザー詳細 入力項目 Schema
  */
 export const UserDetailSchema = z.object({
   /** ステータス */
   usage_status: z.nativeEnum(UsageStatus),
   /** メモ */
-  memo: z
-    .string()
-    .max(500, formatString(MSG_MAX, 'メモ', '500'))
-    .optional(),
+  memo: z.string().optional(),
 });
 
 /**
- * ユーザー詳細 検索条件 FormValues
+ * ユーザー詳細 入力項目 FormValues
  */
 export type UserDetailFormValues = z.infer<typeof UserDetailSchema>;
 
@@ -43,9 +38,9 @@ export type UserDataDetailResult = {
   /** メールアドレス */
   user_email?: string;
   /** ユーザー登録ステータス */
-  user_registration_status: string | UserRegistrationStatus;
+  user_registration_status: number;
   /** 利用ステータス */
-  usage_status: string | UsageStatus;
+  usage_status: number;
   /** メモ（マスタ） */
   master_memo?: string;
   /** 会社情報 */
