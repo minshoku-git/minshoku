@@ -9,29 +9,19 @@ import { MSG_INVALID, MSG_MAX, MSG_REQUIRED } from '@/app/_types/constants';
 export const ScheduleSearchSchema = z
   .object({
     /** 配達日(FROM) */
-    deliveryFrom: z.union([
-      z.null({ message: formatString(MSG_INVALID, '配達日(FROM)') }),
-      z.date({
-        errorMap: (issue, {}) => ({
-          message:
-            issue.code === 'invalid_date'
-              ? formatString(MSG_INVALID, '配達日(FROM)')
-              : formatString(MSG_REQUIRED, '配達日(FROM)'),
-        }),
+    deliveryFrom: z
+      .date()
+      .nullable()
+      .refine((val) => val === null || !isNaN(val.getTime()), {
+        message: formatString(MSG_INVALID, '配達日(FROM)'),
       }),
-    ]),
     /** 配達日(TO) */
-    deliveryTo: z.union([
-      z.null({ message: formatString(MSG_INVALID, '配達日(TO)') }),
-      z.date({
-        errorMap: (issue, {}) => ({
-          message:
-            issue.code === 'invalid_date'
-              ? formatString(MSG_INVALID, '配達日(TO)')
-              : formatString(MSG_REQUIRED, '配達日(TO)'),
-        }),
+    deliveryTo: z
+      .date()
+      .nullable()
+      .refine((val) => val === null || !isNaN(val.getTime()), {
+        message: formatString(MSG_INVALID, '配達日(TO)'),
       }),
-    ]),
     /** 会社名 */
     company_name: z
       .string()

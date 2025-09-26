@@ -71,7 +71,7 @@ export const searchShopDetail = async (values: ApiRequest<number>): Promise<ApiR
       email: data.email ?? '',
       specified_commercial_transaction_act: data.specified_commercial_transaction_act,
       memo: data.memo,
-      usage_status: data.usage_status ?? UsageStatus.AVAILABLE,
+      usage_status: (data.usage_status as UsageStatus) ?? UsageStatus.AVAILABLE,
       shop_image_file_name: data.shop_image_file_name ?? '',
       shop_image_url: imageUrl,
       tabelog_url: data.tabelog_url ?? '',

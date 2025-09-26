@@ -21,15 +21,15 @@ export enum SortType {
 /** ユーザー登録ステータス */
 export enum UserRegistrationStatus {
   /** 0:承認待ち */
-  WAITING_APPROVAL = 0,
+  WAITING_APPROVAL = '0',
   /** 1:否認 */
-  DISAPPROVAL = 1,
+  DISAPPROVAL = '1',
   /** 2:メール認証待ち */
-  WAITING_EMAIL_VERIFICATION = 2,
+  WAITING_EMAIL_VERIFICATION = '2',
   /** 3:支払方法登録待ち */
-  WAITING_PAYMENT_SETUP = 3,
+  WAITING_PAYMENT_SETUP = '3',
   /** 4:登録済み */
-  REGISTERED = 4,
+  REGISTERED = '4',
 }
 
 /**
@@ -55,9 +55,9 @@ export const convertUserRegistrationStatusName = (value: UserRegistrationStatus)
 /** 利用ステータス */
 export enum UsageStatus {
   /** 0:利用可能 */
-  AVAILABLE = 0,
+  AVAILABLE = '0',
   /** 1:利用停止 */
-  DEACTIVATION = 1,
+  DEACTIVATION = '1',
 }
 
 /**
@@ -77,21 +77,37 @@ export const convertUsageStatusName = (value: UsageStatus): string => {
 /** 支払い種別 */
 export enum PaymentType {
   /** 0:会社清算 */
-  SALAEY_DEDUCTIONS = 0,
+  SALAEY_DEDUCTIONS = '0',
   /** 1:クレジットカード */
-  CREDITCARD = 1,
+  CREDITCARD = '1',
   /** 2:PayPay */
-  PAYPAY = 2,
+  PAYPAY = '2',
 }
 
-/** オーダーステータス種別 */
+/**
+ * ユーザー登録ステータスの論理名を取得します。
+ * @param {UserRegistrationStatus} value - 締め切り番号
+ * @returns {string} - 論理名
+ */
+export const convertPaymentTypeName = (value: PaymentType): string => {
+  switch (value) {
+    case PaymentType.SALAEY_DEDUCTIONS:
+      return '会社清算';
+    case PaymentType.CREDITCARD:
+      return 'クレジットカード';
+    case PaymentType.PAYPAY:
+      return 'PayPay';
+  }
+};
+
+/** オーダーステータス */
 export enum OrderStatusType {
   /** 0:有効 */
-  VALID = 0,
-  /** 1:ユーザーキャンセル */
-  USER_CANCEL = 1,
+  VALID = '0',
+  /** 1:キャンセル */
+  USER_CANCEL = '1',
   /** 2:システムキャンセル */
-  SYSTEM_CANCEL = 2,
+  SYSTEM_CANCEL = '2',
 }
 
 /** ユーザー承認種別 */
@@ -114,12 +130,17 @@ export enum SearchType {
   PAGENATION = '2',
 }
 
-/** 方向区分 */
-export enum DirectionType {
-  /** -1:前ページ */
-  BACKWARD = -1,
-  /** 0:現在ページ */
-  CURRENT = 0,
-  /** +1:次ページ */
-  FORWARD = 1,
+/** 選択種別 */
+export enum SelectType {
+  /** 0:未選択 */
+  UNSELECTED = '0',
+  /** 1:選択 */
+  SELECTED = '1',
+}
+
+export enum DeletionStatus {
+  /** 0: 有効（未削除） */
+  ACTIVE = '0',
+  /** 1: 削除済み */
+  DELETED = '1',
 }

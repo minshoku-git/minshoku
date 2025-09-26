@@ -64,12 +64,48 @@ export type SelectOption = {
   label: string;
 };
 
-/* 暗号化
+/* 汎用型定義
 ------------------------------------------------------------------ */
 /**
- * 仮登録完了 initRequest
+ * 仮登録完了
  */
 export type SignUpEncrypt = {
   /** ユーザーID */
   id: number;
+};
+
+/**
+ * 部署情報 DepartmentData
+ */
+export type DepartmentData = {
+  // 部署ID
+  id: string;
+  // 部署名
+  name: string;
+  // 編集不可 ※true:編集不可(非活性),false:編集可能(活性)
+  disabled: boolean;
+  // 削除フラグ ※true:削除/false:有効
+  delete_flag: boolean;
+};
+
+/**
+ * 雇用種別情報 DepartmentData
+ */
+export type EmploymentData = {
+  // 雇用種別ID
+  id: string;
+  // 雇用種別名
+  employment_status_name: string;
+  // 決済方法(控除)
+  deduction_flag: boolean;
+  // 決済方法(クレジットカード)
+  credit_flag: boolean;
+  // 決済方法(PayPay)
+  paypay_flag: boolean;
+  // 会社負担
+  set_meal_burden: string;
+  // 編集不可 ※true:編集不可(非活性),false:編集可能(活性)
+  disabled: boolean;
+  // 削除フラグ ※true:削除/false:有効
+  delete_flag: boolean;
 };

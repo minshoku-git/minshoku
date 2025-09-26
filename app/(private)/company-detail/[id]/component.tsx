@@ -13,7 +13,6 @@ import { SubmitHandler, useFieldArray, useForm } from 'react-hook-form';
 import { SelectElement, TextareaAutosizeElement, TextFieldElement } from 'react-hook-form-mui';
 import { TimePickerElement } from 'react-hook-form-mui/date-pickers';
 
-import { DepartmentData, EmploymentData } from '@/app/_lib/createMockData';
 import { getAddress } from '@/app/_lib/getAddress';
 import { getTodayXHour } from '@/app/_lib/getDateTime';
 import { checkTempId, getEditFlag } from '@/app/_lib/utill';
@@ -21,7 +20,7 @@ import { TEMP_HYPHEN } from '@/app/_types/constants';
 import { AlertType, UsageStatus } from '@/app/_types/enum';
 import { QUERY_KEYS } from '@/app/_types/queryKeys';
 import { SESSION_STORAGE_KEYS } from '@/app/_types/sessionStorageKeys';
-import { ApiRequest, ApiResponse } from '@/app/_types/types';
+import { ApiRequest, ApiResponse, DepartmentData, EmploymentData } from '@/app/_types/types';
 import { DepartmentInput } from '@/app/_ui/_shared/departmentInput';
 import { EmploymentInput } from '@/app/_ui/_shared/employmentInput';
 import ItemBase from '@/app/_ui/_shared/itemBase';

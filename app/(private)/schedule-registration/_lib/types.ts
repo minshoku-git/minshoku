@@ -27,7 +27,7 @@ export const ScheduleCsvSchema = z.object({
   /** 売価 */
   sale_price: z.coerce.number(),
   /** キャンセルフラグ */
-  cancel_flag: z.coerce.number(),
+  cancel_flag: z.coerce.string(),
 });
 
 export type ScheduleCsvValues = z.infer<typeof ScheduleCsvSchema>;

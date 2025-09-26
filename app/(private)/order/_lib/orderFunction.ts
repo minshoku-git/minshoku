@@ -4,7 +4,7 @@ import { getDateString, getDatetimeString, getNow } from '@/app/_lib/getDateTime
 import { createClient, createPgClient } from '@/app/_lib/supabase/server';
 import { rollbackWithLog } from '@/app/_lib/supabase/transaction';
 import { getPagenationsItems, getRange } from '@/app/_lib/utill';
-import { OrderStatusType } from '@/app/_types/enum';
+import { OrderStatusType, PaymentType } from '@/app/_types/enum';
 import { ApiRequest, ApiResponse, SortItems } from '@/app/_types/types';
 import { CustomError } from '@/app/errors/customError';
 import { ErrorCodes } from '@/app/errors/ErrorCodes';
@@ -331,8 +331,8 @@ export const _searchOrderDetail = async (values: ApiRequest<number>): Promise<Ap
       amount: data.amount ?? 0,
       companies_burden_amount: data.companies_burden_amount,
       user_burden_amount: data.user_burden_amount,
-      payment_type: data.payment_type ?? 0,
-      order_status_type: data.order_status_type ?? 0,
+      payment_type: data.payment_type,
+      order_status_type: data.order_status_type ?? OrderStatusType.VALID,
       order_datetime: data.order_datetime ? getDatetimeString(data.order_datetime as Date) : '',
       cancel_datetime: data.cancel_datetime ? getDatetimeString(data.cancel_datetime as Date) : '',
       totalOrderCount: totalOrderCount ?? 0,
@@ -425,11 +425,11 @@ export const _orderCancel = async (values: ApiRequest<number>): Promise<ApiRespo
     const updateSql = `UPDATE t_order SET order_status_type = $1, updated_at = $2, cancel_datetime = $3 WHERE id = $4 AND order_status_type = $5;`;
     // Update
     const result = await client.query(updateSql, [
-      OrderStatusType.SYSTEM_CANCEL,
+      Number(OrderStatusType.SYSTEM_CANCEL),
       timestamp,
       timestamp,
       id,
-      OrderStatusType.VALID,
+      Number(OrderStatusType.VALID),
     ]);
     if (result.rowCount === 0) {
       throw new CustomError({

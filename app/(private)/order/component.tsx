@@ -121,9 +121,10 @@ export const OrderComponent = (): JSX.Element => {
     isFetching: isFetchingDetail,
     refetch: refetchDetail,
   } = useQuery<ApiResponse<orderDeteilResponseData>>({
-    queryKey: [QUERY_KEYS.ORDER_DETAIL_INIT, condition],
-    queryFn: () => searchOrderDetail(conditionDetail),
-    enabled: false,
+    // queryKeyにIDを含める
+    queryKey: [QUERY_KEYS.ORDER_DETAIL_INIT, conditionDetail],
+    queryFn: () => searchOrderDetail(conditionDetail as ApiRequest<number>),
+    enabled: !!conditionDetail,
   });
 
   /* useEffect
@@ -236,23 +237,26 @@ export const OrderComponent = (): JSX.Element => {
   };
 
   /** モーダル制御 */
-  const openModal = async (id: number) => {
+  const openModal = (id: number) => {
+    console.log('id--------------', id);
+    // IDを更新するだけで、useQueryが自動で再取得を開始する
     setConditionDetail({ request: id });
-
-    // データ取得
-    const result = await refetchDetail();
-    const response = result.data;
-
-    if (!response) {
-      setOpen(false);
-      return;
-    } else if (!response.success) {
-      openSnackbar(AlertType.ERROR, response.error.message);
-      setOpen(false);
-    } else {
-      setOpen(true);
-    }
+    setOpen(true); // モーダルを開く
   };
+
+  useEffect(() => {
+    // データ取得中ではない、かつデータが存在する場合にロジックを実行
+    if (!isFetchingDetail && dataDetail) {
+      // データ取得が成功しなかった場合
+      if (!dataDetail.success) {
+        openSnackbar(AlertType.ERROR, dataDetail.error.message);
+        setOpen(false);
+      }
+      // データ取得が成功した場合
+      // ここに成功時のロジックを追加しても良いでしょう
+      // 例: モーダル内のフォームにデータをセットするなど
+    }
+  }, [isFetchingDetail, dataDetail, openSnackbar, setOpen]);
 
   /* functions - modal
    ------------------------------------------------------------------ */

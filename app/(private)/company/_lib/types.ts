@@ -51,5 +51,5 @@ export type CompanyListSearchResult = {
   /** 建物名 */
   building_name: string;
   /** 利用ステータス */
-  usage_status: string | number;
+  usage_status: string;
 };

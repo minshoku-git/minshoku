@@ -6,7 +6,6 @@ import { createClient, createPgClient } from '@/app/_lib/supabase/server';
 import { t_user } from '@/app/_lib/supabase/tableTypes';
 import { rollbackWithLog } from '@/app/_lib/supabase/transaction';
 import { getPostgreSqlItems } from '@/app/_lib/utill';
-import { ERROR_MESSAGE } from '@/app/_types/constants';
 import { UsageStatus, UserRegistrationStatus } from '@/app/_types/enum';
 import { ApiRequest, ApiResponse, SignUpEncrypt } from '@/app/_types/types';
 import { CustomError } from '@/app/errors/customError';
@@ -72,8 +71,8 @@ export const searchUserDetail = async (values: ApiRequest<number>): Promise<ApiR
       success: true,
       data: {
         ...data,
-        usage_status: data.usage_status as UsageStatus,
-        user_registration_status: data.user_registration_status as UserRegistrationStatus,
+        usage_status: data.usage_status,
+        user_registration_status: data.user_registration_status,
       },
     };
   } catch (e: unknown) {
@@ -170,7 +169,7 @@ export const disapprovalUserRegistrationStatus = async (
     const query = supabase
       .from('t_user')
       .update<t_user>({
-        user_registration_status: Number(UserRegistrationStatus.DISAPPROVAL),
+        user_registration_status: UserRegistrationStatus.DISAPPROVAL,
         updated_at: timestamp,
       })
       .eq('id', id)
@@ -252,7 +251,7 @@ export const pullBackUserRegistrationStatus = async (
   　------------------------------------------------------------------ */
     // UpdateData setting
     const updateValues: Pick<t_user, 'user_registration_status' | 'signup_password' | 'updated_at'> = {
-      user_registration_status: Number(UserRegistrationStatus.WAITING_EMAIL_VERIFICATION),
+      user_registration_status: UserRegistrationStatus.WAITING_EMAIL_VERIFICATION,
       updated_at: timestamp,
     };
     const { columns, values } = getPostgreSqlItems(updateValues);
@@ -376,7 +375,7 @@ export const approvalUserRegistrationStatus = async (
   　------------------------------------------------------------------ */
     // UpdateData setting
     const updateValues: Pick<t_user, 'user_registration_status' | 'signup_password' | 'updated_at'> = {
-      user_registration_status: Number(UserRegistrationStatus.WAITING_EMAIL_VERIFICATION),
+      user_registration_status: UserRegistrationStatus.WAITING_EMAIL_VERIFICATION,
       signup_password: '',
       updated_at: timestamp,
     };

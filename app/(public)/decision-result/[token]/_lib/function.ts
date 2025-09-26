@@ -119,7 +119,7 @@ export const approvalUserRegistrationStatus = async (id: number): Promise<ApiRes
   　------------------------------------------------------------------ */
     // UpdateData setting
     const updateValues: Pick<t_user, 'user_registration_status' | 'signup_password' | 'updated_at'> = {
-      user_registration_status: Number(UserRegistrationStatus.WAITING_EMAIL_VERIFICATION),
+      user_registration_status: UserRegistrationStatus.WAITING_EMAIL_VERIFICATION,
       signup_password: '',
       updated_at: timestamp,
     };

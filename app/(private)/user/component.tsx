@@ -102,7 +102,7 @@ export const UserComponent = (): JSX.Element => {
     const searchCondition = sessionStorage.getItem(SESSION_STORAGE_KEYS.USER_SEARCH_CONDITION);
     const previousPath = sessionStorage.getItem(SESSION_STORAGE_KEYS.PREVIOUS_PATH);
     console.log(SESSION_STORAGE_KEYS.USER_SEARCH_CONDITION, searchCondition);
-    if (searchCondition && previousPath === '/shop-detail') {
+    if (searchCondition && previousPath === '/user-detail') {
       const req: ApiRequest<UserSearchFormValues> = JSON.parse(searchCondition);
       setCondition(req);
       setValue('user_name', req.request.user_name);

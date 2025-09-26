@@ -58,7 +58,10 @@ export const searchComponyList = async (
 
     /* 明細行取得
     ------------------------------------------------------------------ */
-    let query = supabase.from('t_companies').select('*').range(startRange, endRange);
+    let query = supabase
+      .from('t_companies')
+      .select('id, company_name,branch_name,postal_code,address,area_block_number,building_name,usage_status')
+      .range(startRange, endRange);
     query = applyFilters(query, req);
     query = applySorts(query, sortItems);
 

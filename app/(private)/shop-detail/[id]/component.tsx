@@ -105,7 +105,7 @@ export const ShopComponent = (): JSX.Element => {
       const initData: Partial<shopDeteilResponseData> = {
         ...data,
         id: id,
-        usage_status: data?.usage_status,
+        usage_status: data?.usage_status as UsageStatus,
       };
       if (data.shop_image_file_name) {
         setFileName(data.shop_image_file_name);
@@ -259,7 +259,7 @@ export const ShopComponent = (): JSX.Element => {
 
   /** 検索画面に戻る */
   const pageBack = async () => {
-    sessionStorage.setItem(SESSION_STORAGE_KEYS.PREVIOUS_PATH, '/shopDetail');
+    sessionStorage.setItem(SESSION_STORAGE_KEYS.PREVIOUS_PATH, '/shop-detail');
     router.push('/shop');
   };
 

@@ -124,38 +124,24 @@ export const CompanyDetailSchema = z
       .max(128, formatString(MSG_MAX, '提供場所', '128')),
 
     /** 提供時間(FROM) */
-    offer_time_from: z.date({
-      errorMap: (issue, {}) => ({
-        message:
-          issue.code === 'invalid_date'
-            ? formatString(MSG_INVALID, '開始時間')
-            : formatString(MSG_REQUIRED, '開始時間'),
-      }),
+    offer_time_from: z.date().refine((val) => val && !isNaN(val.getTime()), {
+      message: formatString(MSG_INVALID, '開始時間'),
     }),
     /** 提供時間(TO) */
-    offer_time_to: z.date({
-      errorMap: (issue, {}) => ({
-        message:
-          issue.code === 'invalid_date'
-            ? formatString(MSG_INVALID, '終了時間')
-            : formatString(MSG_REQUIRED, '終了時間'),
-      }),
+    offer_time_to: z.date().refine((val) => val && !isNaN(val.getTime()), {
+      message: formatString(MSG_INVALID, '終了時間'),
     }),
     /** 注文期限(日付) */
     order_period_day: z.string().nonempty({ message: formatString(MSG_REQUIRED, '日') }),
     /** 注文期限(時間) */
-    order_period_time: z.date({
-      errorMap: (issue, {}) => ({
-        message: issue.code === 'invalid_date' ? formatString(MSG_INVALID, '時間') : formatString(MSG_REQUIRED, '時間'),
-      }),
+    order_period_time: z.date().refine((val) => val && !isNaN(val.getTime()), {
+      message: formatString(MSG_INVALID, '時間'),
     }),
     /** キャンセル期限(日付) */
     cancel_period_day: z.string().nonempty({ message: formatString(MSG_REQUIRED, '日') }),
     /** キャンセル期限(時間) */
-    cancel_period_time: z.date({
-      errorMap: (issue, {}) => ({
-        message: issue.code === 'invalid_date' ? formatString(MSG_INVALID, '時間') : formatString(MSG_REQUIRED, '時間'),
-      }),
+    cancel_period_time: z.date().refine((val) => val && !isNaN(val.getTime()), {
+      message: formatString(MSG_INVALID, '時間'),
     }),
     /** 任意項目1(項目名) */
     optional_item_title_1: z.string().optional(),

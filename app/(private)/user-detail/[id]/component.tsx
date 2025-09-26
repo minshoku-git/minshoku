@@ -275,7 +275,7 @@ export const UserDetailComponent = (): JSX.Element => {
   ------------------------------------------------------------------ */
   /** 検索画面に戻る */
   const pageBack = async () => {
-    sessionStorage.setItem(SESSION_STORAGE_KEYS.PREVIOUS_PATH, '/userDetail');
+    sessionStorage.setItem(SESSION_STORAGE_KEYS.PREVIOUS_PATH, '/user-detail');
     router.push('/user');
   };
 

@@ -38,9 +38,9 @@ export type UserDataDetailResult = {
   /** メールアドレス */
   user_email?: string;
   /** ユーザー登録ステータス */
-  user_registration_status: number;
+  user_registration_status: string;
   /** 利用ステータス */
-  usage_status: number;
+  usage_status: string;
   /** メモ（マスタ） */
   master_memo?: string;
   /** 会社情報 */

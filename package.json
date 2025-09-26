@@ -48,7 +48,7 @@
     "react-infinite-scroller": "^1.2.6",
     "sass": "^1.89.2",
     "uuid": "^11.1.0",
-    "zod": "^3.24.2"
+    "zod": "4.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

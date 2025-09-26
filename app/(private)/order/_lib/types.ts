@@ -10,29 +10,19 @@ import { OrderStatusType } from '@/app/_types/enum';
 export const OrderSearchSchema = z
   .object({
     /** 配達日(FROM) */
-    deliveryFrom: z.union([
-      z.null({ message: formatString(MSG_INVALID, '配達日(FROM)') }),
-      z.date({
-        errorMap: (issue, {}) => ({
-          message:
-            issue.code === 'invalid_date'
-              ? formatString(MSG_INVALID, '配達日(FROM)')
-              : formatString(MSG_REQUIRED, '配達日(FROM)'),
-        }),
+    deliveryFrom: z
+      .date()
+      .nullable()
+      .refine((val) => val === null || !isNaN(val.getTime()), {
+        message: formatString(MSG_INVALID, '配達日(FROM)'),
       }),
-    ]),
     /** 配達日(TO) */
-    deliveryTo: z.union([
-      z.null({ message: formatString(MSG_INVALID, '配達日(TO)') }),
-      z.date({
-        errorMap: (issue, {}) => ({
-          message:
-            issue.code === 'invalid_date'
-              ? formatString(MSG_INVALID, '配達日(TO)')
-              : formatString(MSG_REQUIRED, '配達日(TO)'),
-        }),
+    deliveryTo: z
+      .date()
+      .nullable()
+      .refine((val) => val === null || !isNaN(val.getTime()), {
+        message: formatString(MSG_INVALID, '配達日(TO)'),
       }),
-    ]),
     /** ユーザー名 */
     user_name: z.string().optional(),
     /** 会社名 */
@@ -101,9 +91,9 @@ export type OrderListSearchResult = {
   /** 個数 */
   count: number;
   /** 支払いステータス */
-  payment_type: number;
+  payment_type: string;
   /** 注文ステータス */
-  order_status_type: number;
+  order_status_type: string;
 };
 
 /** 取得結果 オーダー詳細 */
@@ -123,9 +113,9 @@ export type orderDeteilResponseData = {
   /** 個人負担額 */
   user_burden_amount?: number;
   /** 支払い種別 */
-  payment_type?: number;
+  payment_type?: string | number;
   /** オーダーステータス */
-  order_status_type?: number;
+  order_status_type?: string;
   /** 注文日時 */
   order_datetime?: string | Date;
   /** キャンセル日時 */

@@ -1,6 +1,5 @@
 import { PostgrestSingleResponse } from '@supabase/supabase-js';
 
-import { DepartmentData, EmploymentData } from '@/app/_lib/createMockData';
 import { encrypt } from '@/app/_lib/encryption/crypto';
 import { getNow, getTimeString, getTodayXHour } from '@/app/_lib/getDateTime';
 import { createClient, createPgClient } from '@/app/_lib/supabase/server';
@@ -8,8 +7,8 @@ import { t_companies, t_companies_department, t_companies_employment_status } fr
 import { rollbackWithLog } from '@/app/_lib/supabase/transaction';
 import { checkTempId, convertTimeToDate, getPostgreSqlItems } from '@/app/_lib/utill';
 import { ERROR_MESSAGE } from '@/app/_types/constants';
-import { UsageStatus } from '@/app/_types/enum';
-import { ApiRequest, ApiResponse } from '@/app/_types/types';
+import { DeletionStatus, SelectType, UsageStatus } from '@/app/_types/enum';
+import { ApiRequest, ApiResponse, DepartmentData, EmploymentData } from '@/app/_types/types';
 import { CustomError } from '@/app/errors/customError';
 import { ErrorCodes } from '@/app/errors/ErrorCodes';
 
@@ -58,7 +57,7 @@ export const _searchCompanyDetail = async (values: ApiRequest<number>): Promise<
       .from('t_companies_department')
       .select('*')
       .eq('t_companies_id', id)
-      .eq('delete_flag', 0)
+      .eq('delete_flag', DeletionStatus.ACTIVE)
       .order('id', { ascending: true });
     const { data: dataDep, error: errorDep } = (await queryDep) as PostgrestSingleResponse<t_companies_department[]>;
 
@@ -111,7 +110,7 @@ export const _searchCompanyDetail = async (values: ApiRequest<number>): Promise<
       .from('t_companies_employment_status')
       .select('*')
       .eq('t_companies_id', id)
-      .eq('delete_flag', 0)
+      .eq('delete_flag', DeletionStatus.ACTIVE)
       .order('id', { ascending: true });
     const { data: dataEmp, error: errorEmp } = (await queryEmp) as PostgrestSingleResponse<
       t_companies_employment_status[]
@@ -180,9 +179,9 @@ export const _searchCompanyDetail = async (values: ApiRequest<number>): Promise<
             t_companies_id: m.t_companies_id,
             employment_status_name: m.employment_status_name ?? '',
             disabled: usageEmployment.find((d) => d.id === m.id && d.usage) ? true : false,
-            deduction_flag: m.deduction_flag === 0 ? false : true,
-            credit_flag: m.credit_flag === 0 ? false : true,
-            paypay_flag: m.paypay_flag === 0 ? false : true,
+            deduction_flag: m.deduction_flag === SelectType.UNSELECTED ? false : true,
+            credit_flag: m.credit_flag === SelectType.UNSELECTED ? false : true,
+            paypay_flag: m.paypay_flag === SelectType.UNSELECTED ? false : true,
             set_meal_burden: m.set_meal_burden ? m.set_meal_burden.toString() : '0',
             delete_flag: false,
           };
@@ -297,7 +296,7 @@ export const _insertComponyDetail = async (
       order_period_time: getTimeString(req.order_period_time!),
       cancel_period_day: Number(req.cancel_period_day),
       cancel_period_time: getTimeString(req.cancel_period_time!),
-      usage_status: Number(req.usage_status),
+      usage_status: req.usage_status,
     };
     const { columns, placeholders, values } = getPostgreSqlItems(insertValues);
     const insertCompanyText = `INSERT INTO t_companies (${columns.join(',')}) VALUES (${placeholders}) RETURNING id;`;
@@ -314,7 +313,7 @@ export const _insertComponyDetail = async (
         const insertValuesDep: Omit<t_companies_department, 'id' | 'created_at' | 'updated_at'> = {
           t_companies_id: newCompanyId,
           department_name: item.name,
-          delete_flag: 0,
+          delete_flag: DeletionStatus.ACTIVE,
         };
         const {
           columns: columnsDep,
@@ -336,10 +335,10 @@ export const _insertComponyDetail = async (
         const insertValuesEmp: Omit<t_companies_employment_status, 'id' | 'created_at' | 'updated_at'> = {
           t_companies_id: newCompanyId,
           employment_status_name: item.employment_status_name,
-          delete_flag: 0,
-          deduction_flag: item.deduction_flag ? 1 : 0,
-          credit_flag: item.credit_flag ? 1 : 0,
-          paypay_flag: item.paypay_flag ? 1 : 0,
+          delete_flag: DeletionStatus.ACTIVE,
+          deduction_flag: item.deduction_flag ? SelectType.SELECTED : SelectType.UNSELECTED,
+          credit_flag: item.credit_flag ? SelectType.SELECTED : SelectType.UNSELECTED,
+          paypay_flag: item.paypay_flag ? SelectType.SELECTED : SelectType.UNSELECTED,
           set_meal_burden: Number(item.set_meal_burden),
         };
 
@@ -435,7 +434,7 @@ export const _updateComponyDetail = async (values: CompanyDetailFormValues): Pro
       order_period_time: getTimeString(req.order_period_time!),
       cancel_period_day: Number(req.cancel_period_day),
       cancel_period_time: getTimeString(req.cancel_period_time!),
-      usage_status: Number(req.usage_status),
+      usage_status: req.usage_status,
       updated_at: timestamp,
     };
     const { columns, values } = getPostgreSqlItems(updateValues);
@@ -493,7 +492,7 @@ export const _updateComponyDetail = async (values: CompanyDetailFormValues): Pro
           const insertValuesDep: Omit<t_companies_department, 'id' | 'created_at' | 'updated_at'> = {
             t_companies_id: updatedId,
             department_name: item.name,
-            delete_flag: 0,
+            delete_flag: DeletionStatus.ACTIVE,
           };
           const {
             columns: columnsDep,
@@ -548,9 +547,9 @@ export const _updateComponyDetail = async (values: CompanyDetailFormValues): Pro
               id = $7;`;
           const res = await client.query(updateCompanyText, [
             item.employment_status_name,
-            item.deduction_flag ? 1 : 0,
-            item.credit_flag ? 1 : 0,
-            item.paypay_flag ? 1 : 0,
+            item.deduction_flag ? SelectType.SELECTED : SelectType.UNSELECTED,
+            item.credit_flag ? SelectType.SELECTED : SelectType.UNSELECTED,
+            item.paypay_flag ? SelectType.SELECTED : SelectType.UNSELECTED,
             item.set_meal_burden,
             timestamp,
             item.id,
@@ -567,10 +566,10 @@ export const _updateComponyDetail = async (values: CompanyDetailFormValues): Pro
           const insertValuesEmp: Omit<t_companies_employment_status, 'id' | 'created_at' | 'updated_at'> = {
             t_companies_id: updatedId,
             employment_status_name: item.employment_status_name,
-            delete_flag: 0,
-            deduction_flag: item.deduction_flag ? 1 : 0,
-            credit_flag: item.credit_flag ? 1 : 0,
-            paypay_flag: item.paypay_flag ? 1 : 0,
+            delete_flag: DeletionStatus.ACTIVE,
+            deduction_flag: item.deduction_flag ? SelectType.SELECTED : SelectType.UNSELECTED,
+            credit_flag: item.credit_flag ? SelectType.SELECTED : SelectType.UNSELECTED,
+            paypay_flag: item.paypay_flag ? SelectType.SELECTED : SelectType.UNSELECTED,
             set_meal_burden: Number(item.set_meal_burden),
           };
           const {
