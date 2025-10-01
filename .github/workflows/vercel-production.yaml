@@ -15,21 +15,31 @@ jobs:
     environment:
       name: prod
       url: ${{ steps.deploy.outputs.url }}
+
     steps:
       - uses: actions/checkout@v3
-      - name: Setup node
+
+      - name: Set Git Author to Admin (override)
+        run: |
+          git config --global user.email "${{ secrets.GIT_USER_EMAIL }}"
+          git config --global user.name "${{ secrets.GIT_USER_NAME }}"
+          git commit --amend --reset-author --no-edit || echo "No changes to amend"
+
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 22
           check-latest: true
+
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
-      - name: Pull Vercel Environment Information
+
+      - name: Pull Vercel Environment Info
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
       - name: Build Project Artifacts
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
-      # - name: Deploy Project Artifacts to Vercel
-      #   run: vercel deploy --prod --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
+
       - name: Deploy Project Artifacts to Vercel
         id: deploy
-        run: echo "url=$(vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }})" >> $GITHUB_OUTPUT
+        run: echo "url=$(vercel deploy --prod --prebuilt --token=${{ secrets.VERCEL_TOKEN }})" >> $GITHUB_OUTPUT
