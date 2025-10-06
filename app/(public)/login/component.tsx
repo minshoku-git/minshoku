@@ -1,6 +1,7 @@
 'use client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Box, Button, Container, Typography } from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { Box, Button, Container, IconButton, InputAdornment, Typography } from '@mui/material';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -23,6 +24,7 @@ export const LoginComponent = () => {
   /* useState
   ------------------------------------------------------------------ */
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   /* useForm
   ------------------------------------------------------------------ */
@@ -104,13 +106,26 @@ export const LoginComponent = () => {
                 <RequiredMark />
               </Box>
               <TextFieldElement
-                control={control}
-                fullWidth
-                size="small"
                 name="password"
-                type="password"
-                autoComplete="current-password"
-                value={'password'}
+                type={showPassword ? 'text' : 'password'}
+                fullWidth
+                required
+                size="small"
+                control={control}
+                slotProps={{
+                  input: {
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={() => setShowPassword((prev) => !prev)}
+                          edge="end"
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    )
+                  }
+                }}
               />
             </Box>
             <Button variant="contained" type={'submit'} sx={{ display: 'flex', mb: 1.5, width: 240 }} loading={loading}>
