@@ -11,6 +11,7 @@ export async function updateSession(request: NextRequest) {
 
   // Supabaseクライアントを作成
   const supabase = createServerClient(process.env.SUPABASE_URL_DEV!, process.env.SUPABASE_ANON_DEV!, {
+    db: { schema: process.env.SUPABASE_DB_SCHEMA },
     cookies: {
       getAll() {
         return request.cookies.getAll();

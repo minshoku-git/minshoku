@@ -5,6 +5,7 @@ import { Client } from 'pg';
 export async function createClient() {
   const cookieStore = await cookies();
   return createServerClient(process.env.SUPABASE_URL_DEV!, process.env.SUPABASE_ANON_DEV!, {
+    db: { schema: process.env.SUPABASE_DB_SCHEMA },
     cookies: {
       getAll() {
         // 現在のリクエストのクッキーをすべて取得（ログイン状態を確認するのに必要）。

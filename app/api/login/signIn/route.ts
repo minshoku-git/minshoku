@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
   // Supabaseクライアントを作成
   // cookies.setAllでクッキーをtempCookies配列に格納
   const supabase = createServerClient(process.env.SUPABASE_URL_DEV!, process.env.SUPABASE_ANON_DEV!, {
+    db: { schema: process.env.SUPABASE_DB_SCHEMA },
     cookies: {
       getAll() {
         return req.cookies.getAll();

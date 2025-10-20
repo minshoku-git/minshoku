@@ -293,7 +293,7 @@ export const CompanyComponent = (): JSX.Element => {
   /* 'URLと案内文をコピー'ハンドラー */
   // TODO: メッセージ文連携待ち＋URL設定忘れずに
   const message =
-    `クリップボードのテストメッセージです。\nURL: ${url}`;
+    `クリップボードのテストメッセージです。\n※案内文提供待ち\nURL: ${url}`;
   const isBrowser = typeof window !== 'undefined';
   const clickboardHandler = async () => {
     if (!isBrowser) return;
