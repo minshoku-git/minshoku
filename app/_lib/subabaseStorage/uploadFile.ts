@@ -2,12 +2,18 @@ import { SupabaseClient } from '@supabase/supabase-js';
 
 /**
  * ファイルアップロード
- * @param {SupabaseClient} client
+ * @param {SupabaseClient<any, string, any>} client
  * @param {string} bucketName
  * @param {string} filePath
  * @param {File} file
  */
-export const uploadFile = async (client: SupabaseClient, bucketName: string, filePath: string, file: File) => {
+export const uploadFile = async (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  client: SupabaseClient<any, string, any>,
+  bucketName: string,
+  filePath: string,
+  file: File
+) => {
   try {
     console.log('bucketName', bucketName);
     console.log('filePath', filePath);

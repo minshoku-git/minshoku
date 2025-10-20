@@ -33,13 +33,14 @@ export const getImageUrl = (client: SupabaseClient, bucketName: string, filePath
  * 認証済みユーザーのみ許可するように設定変更した方がいい
  * 現在は全てのユーザーに対してアクセス許可を出している
  *
- * @param {SupabaseClient} client
+ * @param {SupabaseClient<any, string, any>} client
  * @param {string} bucketName
  * @param {string} filePath
  * @returns {string} - 署名付き画像URL
  */
 export const getImageSignedUrl = async (
-  client: SupabaseClient,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  client: SupabaseClient<any, string, any>,
   bucketName: string,
   filePath: string
 ): Promise<string> => {

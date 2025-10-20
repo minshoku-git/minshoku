@@ -2,12 +2,17 @@ import { SupabaseClient } from '@supabase/supabase-js';
 
 /**
  * ファイル削除
- * @param {SupabaseClient} client
+ * @param {SupabaseClient<any, string, any>} client
  * @param {string} bucketName
  * @param {string} filePath
  * @return {Promise<void>} void
  */
-export const deleteFile = async (client: SupabaseClient, bucketName: string, filePath: string): Promise<void> => {
+export const deleteFile = async (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  client: SupabaseClient<any, string, any>,
+  bucketName: string,
+  filePath: string
+): Promise<void> => {
   try {
     const { data, error } = await client.storage.from(bucketName).remove([filePath]);
 
