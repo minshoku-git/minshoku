@@ -259,20 +259,17 @@ export const _searchCompanyDetail = async (values: ApiRequest<number>): Promise<
 export const _insertComponyDetail = async (
   values: ApiRequest<CompanyDetailFormValues>
 ): Promise<ApiResponse<number>> => {
-  const client = createPgClient();
   const req = values.request;
 
-  try {
-    // connection Start
-    await client.connect();
-    console.log('Connected to the database successfully');
+  // connection Start
+  const client = await createPgClient();
 
+  try {
     // Transaction Start
     await client.query('BEGIN');
 
     /* Insert - t_companies
   　------------------------------------------------------------------ */
-    // InsertData setting
     const insertValues: Omit<t_companies, 'id' | 'created_at' | 'updated_at'> = {
       company_name: req.company_name,
       branch_name: req.branch_name,
@@ -396,16 +393,13 @@ export const _insertComponyDetail = async (
  * @returns {Promise<ApiResponse<number>>} 企業ID
  */
 export const _updateComponyDetail = async (values: CompanyDetailFormValues): Promise<ApiResponse<number>> => {
-  const client = createPgClient();
-
   const req = values;
   const timestamp = getNow();
 
-  try {
-    // connection Start
-    await client.connect();
-    console.log('Connected to the database successfully');
+  // connection Start
+  const client = await createPgClient();
 
+  try {
     // Transaction Start
     await client.query('BEGIN');
 

@@ -218,7 +218,7 @@ export const disapprovalUserRegistrationStatus = async (
 export const pullBackUserRegistrationStatus = async (
   values: ApiRequest<UserDataDetailRequest>
 ): Promise<ApiResponse<null>> => {
-  const pgClient = createPgClient();
+  const pgClient = await createPgClient();
   const supabase = await createClient(); //signUp用
   const req = values.request;
   const timestamp = getNow();
@@ -342,7 +342,7 @@ export const pullBackUserRegistrationStatus = async (
 export const approvalUserRegistrationStatus = async (
   values: ApiRequest<UserDataDetailRequest>
 ): Promise<ApiResponse<number>> => {
-  const pgClient = createPgClient();
+  const pgClient = await createPgClient();
   const supabase = await createClient(); //signUp用
   const req = values.request;
   const timestamp = getNow();

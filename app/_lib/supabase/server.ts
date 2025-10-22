@@ -30,6 +30,9 @@ export async function createClient() {
  * "pg"クライアント初期化
  * @returns {Client} "pg"Client
  */
-export const createPgClient = (): InstanceType<typeof Client> => {
-  return new Client({ connectionString: process.env.SUPABASE_DB_CONNECTION_STRING_DEV });
+export const createPgClient = async (): Promise<InstanceType<typeof Client>> => {
+  const client = new Client({ connectionString: process.env.SUPABASE_DB_CONNECTION_STRING_DEV });
+  await client.connect();
+  await client.query(`SET search_path TO ${process.env.SUPABASE_DB_SCHEMA}`);
+  return client;
 };

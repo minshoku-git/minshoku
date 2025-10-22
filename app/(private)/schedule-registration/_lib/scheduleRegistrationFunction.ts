@@ -21,14 +21,12 @@ import { ScheduleCsvValues } from './types';
  */
 export const RefreshingScheduleData = async (values: ScheduleCsvValues[]): Promise<ApiResponse<number>> => {
   const req = values;
-  const client = createPgClient();
   const now = getNow();
 
-  try {
-    // connection Start
-    await client.connect();
-    console.log('Connected to the database successfully');
+  // connection Start
+  const client = await createPgClient();
 
+  try {
     // Transaction Start
     await client.query('BEGIN');
 

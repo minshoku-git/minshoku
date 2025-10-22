@@ -72,7 +72,7 @@ export const decision = async (values: ApiRequest<DecisionData>): Promise<ApiRes
  * @returns {Promise<ApiResponse<DecisionResult>>} 検索結果
  */
 export const approvalUserRegistrationStatus = async (id: number): Promise<ApiResponse<DecisionResult>> => {
-  const pgClient = createPgClient();
+  const pgClient = await createPgClient();
   const supabase = await createClient(); //signUp用
   const timestamp = getNow();
 
@@ -199,7 +199,7 @@ export const approvalUserRegistrationStatus = async (id: number): Promise<ApiRes
  * @returns {Promise<ApiResponse<DecisionResult>>} 検索結果
  */
 export const disapprovalUserRegistrationStatus = async (id: number): Promise<ApiResponse<DecisionResult>> => {
-  const pgClient = createPgClient();
+  const pgClient = await createPgClient();
   const timestamp = getNow();
 
   try {

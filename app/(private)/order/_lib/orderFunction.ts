@@ -398,16 +398,13 @@ export const _searchOrderDetail = async (values: ApiRequest<number>): Promise<Ap
  * @returns {Promise<ApiResponse<orderDeteilResponseData>>} 検索結果
  */
 export const _orderCancel = async (values: ApiRequest<number>): Promise<ApiResponse<number>> => {
-  const client = createPgClient();
   const timestamp = getNow();
   const id = values.request;
 
-  // ステータスをキャンセルに更新
-  try {
-    // connection Start
-    await client.connect();
-    console.log('Connected to the database successfully');
+  // connection Start
+  const client = await createPgClient();
 
+  try {
     // Transaction Start
     await client.query('BEGIN');
 

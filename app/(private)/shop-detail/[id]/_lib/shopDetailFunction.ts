@@ -110,7 +110,7 @@ export const searchShopDetail = async (values: ApiRequest<number>): Promise<ApiR
 export const _insertShopDetail = async (values: shopDeteilRequestData): Promise<ApiResponse<number>> => {
   const req = values;
   const supabase = await createClient();
-  const pgClient = createPgClient();
+  const pgClient = await createPgClient();
 
   try {
     // connection Start
@@ -211,7 +211,7 @@ export const _insertShopDetail = async (values: shopDeteilRequestData): Promise<
 export const updateShopDetail = async (values: shopDeteilRequestData): Promise<ApiResponse<number>> => {
   const req = values;
   const supabase = await createClient();
-  const pgClient = createPgClient();
+  const pgClient = await createPgClient();
   const timestamp = getNow();
 
   try {
