@@ -157,102 +157,113 @@ export const CompanyDetailSchema = z
   /** カスタムバリデーション
   ------------------------------------------------------------------ */
   /** 部署情報 部署名の重複 */
-  .superRefine((data, ctx) => {
-    data.departmentInfo.forEach((item, index) => {
-      const filterLength = data.departmentInfo.filter((f) => f.name === item.name).length;
+  .check((ctx) => {
+    ctx.value.departmentInfo.forEach((item, index) => {
+      const filterLength = ctx.value.departmentInfo.filter((f) => f.name === item.name).length;
       if (filterLength > 1) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+        ctx.issues.push({
+          code: 'custom',
           path: [`departmentInfo.${index}.name`],
           message: '部署名が重複しています。',
+          input: ctx.value,
         });
       }
     });
   })
   /** 雇用種別情報 雇用形態名の重複 */
-  .superRefine((data, ctx) => {
-    data.employmentStatusInfo.forEach((item, index) => {
-      const filterLength = data.employmentStatusInfo.filter(
+  .check((ctx) => {
+    ctx.value.employmentStatusInfo.forEach((item, index) => {
+      const filterLength = ctx.value.employmentStatusInfo.filter(
         (f) => f.employment_status_name === item.employment_status_name
       ).length;
       if (filterLength > 1) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+        ctx.issues.push({
+          code: 'custom',
           path: [`employmentStatusInfo.${index}.employment_status_name`],
           message: '雇用形態名が重複しています。',
+          input: ctx.value,
         });
       }
     });
   })
   /** 雇用種別情報 チェックボックスがすべてOFFはOUT */
-  .superRefine((data, ctx) => {
-    data.employmentStatusInfo.forEach((e, index) => {
+  .check((ctx) => {
+    ctx.value.employmentStatusInfo.forEach((e, index) => {
       if (!e.employment_status_name && (e.deduction_flag || e.credit_flag || e.paypay_flag)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+        ctx.issues.push({
+          code: 'custom',
           path: [`employmentStatusInfo.${index}.employment_status_name`],
           message: formatString(MSG_REQUIRED, '雇用形態名'),
+          input: ctx.value,
         });
       }
       if (e.employment_status_name && !e.deduction_flag && !e.credit_flag && !e.paypay_flag) {
         // チェックボックスではメッセージが収まらないので、業務形態名で表示
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+        ctx.issues.push({
+          code: 'custom',
           path: [`employmentStatusInfo.${index}.employment_status_name`],
           message: '決済方法を1つ以上選択してください。',
+          input: ctx.value,
         });
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+        ctx.issues.push({
+          code: 'custom',
           path: [`employmentStatusInfo.${index}.deduction_flag`],
           message: '',
+          input: ctx.value,
         });
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+        ctx.issues.push({
+          code: 'custom',
           path: [`employmentStatusInfo.${index}.credit_flag`],
           message: '',
+          input: ctx.value,
         });
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+        ctx.issues.push({
+          code: 'custom',
           path: [`employmentStatusInfo.${index}.paypay_flag`],
           message: '',
+          input: ctx.value,
         });
       }
       const regex1 = new RegExp(REG_HANKAKU_NUM);
       if (!regex1.test(e.set_meal_burden)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+        ctx.issues.push({
+          code: 'custom',
           path: [`employmentStatusInfo.${index}.set_meal_burden`],
           message: formatString(MSG_HANKAKU_NUM, '会社負担額'),
+          input: ctx.value,
         });
       }
     });
   })
   /** ドメイン ドメインの重複 */
-  .superRefine((data, ctx) => {
-    data.domain.forEach((item, index) => {
-      const filterLength = data.domain.filter((f) => f.name === item.name).length;
+  .check((ctx) => {
+    ctx.value.domain.forEach((item, index) => {
+      const filterLength = ctx.value.domain.filter((f) => f.name === item.name).length;
       if (filterLength > 1) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+        ctx.issues.push({
+          code: 'custom',
           path: [`domain.${index}.name`],
           message: 'ドメインが重複しています。',
+          input: ctx.value,
         });
       }
     });
   })
   /** 提供時間 FROM<TOではない */
-  .superRefine((data, ctx) => {
-    if (data.offer_time_from && data.offer_time_to) {
-      if (data.offer_time_from >= data.offer_time_to) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+  .check((ctx) => {
+    if (ctx.value.offer_time_from && ctx.value.offer_time_to) {
+      if (ctx.value.offer_time_from >= ctx.value.offer_time_to) {
+        ctx.issues.push({
+          code: 'custom',
           path: ['offer_time_from'],
           message: '開始時間は終了時間より早い時間を設定してください。',
+          input: ctx.value,
         });
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+        ctx.issues.push({
+          code: 'custom',
           path: ['offer_time_to'],
           message: '終了時間は開始時間より遅い時間を設定してください。',
+          input: ctx.value,
         });
       }
     }

@@ -32,31 +32,36 @@ export const ScheduleSearchSchema = z
       .string()
       .max(64, formatString(MSG_MAX, '店舗名', '64'))
       .optional(),
-  }) /** 提供時間 FROM<TOではない */
-  .superRefine((data, ctx) => {
-    if (!data.deliveryFrom && !data.deliveryTo) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+  })
+  /** 提供時間 FROM<TOではない */
+  .check((ctx) => {
+    if (!ctx.value.deliveryFrom && !ctx.value.deliveryTo) {
+      ctx.issues.push({
+        code: 'custom',
         path: ['deliveryFrom'],
         message: 'いずれかの日を入力してください。',
+        input: ctx.value,
       });
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+      ctx.issues.push({
+        code: 'custom',
         path: ['deliveryTo'],
         message: 'いずれかの日を入力してください。',
+        input: ctx.value,
       });
     }
-    if (data.deliveryFrom && data.deliveryTo) {
-      if (data.deliveryFrom > data.deliveryTo) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+    if (ctx.value.deliveryFrom && ctx.value.deliveryTo) {
+      if (ctx.value.deliveryFrom > ctx.value.deliveryTo) {
+        ctx.issues.push({
+          code: 'custom',
           path: ['deliveryFrom'],
           message: '開始時間は終了時間より早い時間を設定してください。',
+          input: ctx.value,
         });
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+        ctx.issues.push({
+          code: 'custom',
           path: ['deliveryTo'],
           message: '終了時間は開始時間より遅い時間を設定してください。',
+          input: ctx.value,
         });
       }
     }
