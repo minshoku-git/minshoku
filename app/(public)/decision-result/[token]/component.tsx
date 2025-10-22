@@ -1,5 +1,5 @@
 'use client';
-import { Box, Button, Divider, Grid2 as Grid, Paper, Typography } from '@mui/material';
+import { Box, Button, Grid2 as Grid, Paper, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
@@ -11,7 +11,7 @@ import { ApiRequest, ApiResponse } from '@/app/_types/types';
 import { useProcessing } from '@/app/_ui/processing/processingContext';
 import { useSnackBar } from '@/app/_ui/snackBar/snackBar';
 
-import { decision } from './_lib/fetcher';
+import { decisionFetcher } from './_lib/fetcher';
 import { DecisionData, DecisionResult } from './_lib/types';
 
 /**
@@ -24,16 +24,14 @@ export const DecisiondataComponent = (): JSX.Element => {
   const router = useRouter();
   const { openSnackbar } = useSnackBar();
   const { openProcessing, closeProcessing } = useProcessing();
-  const token = (useParams().token as string) ?? '-';
-
-  /* useState
-  ------------------------------------------------------------------ */
+  const userApprovalType = (useParams().token as string) ?? '';
+  const token = useSearchParams().get('token') ?? '';
 
   /* useQuery
   ------------------------------------------------------------------ */
   const decisionFetch = async () => {
-    const req: ApiRequest<DecisionData> = { request: { token } }
-    return decision(req);
+    const req: ApiRequest<DecisionData> = { request: { userApprovalType, token } }
+    return decisionFetcher(req);
   };
 
   const {
@@ -42,7 +40,6 @@ export const DecisiondataComponent = (): JSX.Element => {
   } = useQuery<ApiResponse<DecisionResult>>({
     queryKey: [QUERY_KEYS.DECISION_INIT],
     queryFn: decisionFetch,
-    enabled: false,
   });
 
   /* useEffect
@@ -84,7 +81,7 @@ export const DecisiondataComponent = (): JSX.Element => {
           sx={{
             display: 'flex',
             flexDirection: 'column',
-            width: '400px',
+            width: '440px',
             mx: 'auto',
             my: '40px'
           }}
@@ -102,12 +99,11 @@ export const DecisiondataComponent = (): JSX.Element => {
           </Box>
           <Grid container alignItems="center">
             <Typography component="h2" variant="h6" color="primary" gutterBottom sx={{ px: 3, py: 2, mx: 'auto', mb: 0 }}>
-              {`処理結果 - 承認完了`}
+              {`処理結果`}
             </Typography>
           </Grid>
           {/* <Divider /> */}
           <Box sx={{ mx: 'auto' }}>
-            <Typography>ユーザーの承認処理が完了しました。</Typography>
             {result?.success && (
               <>
                 {UserApprovalType.APPROVAL === result.data.userApprovalType && (

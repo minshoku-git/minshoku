@@ -249,7 +249,6 @@ export const pullBackUserRegistrationStatus = async (
 
     /* Update - t_user
   　------------------------------------------------------------------ */
-    // UpdateData setting
     const updateValues: Pick<t_user, 'user_registration_status' | 'signup_password' | 'updated_at'> = {
       user_registration_status: UserRegistrationStatus.WAITING_EMAIL_VERIFICATION,
       updated_at: timestamp,
@@ -262,7 +261,6 @@ export const pullBackUserRegistrationStatus = async (
         AND usage_status = ${UsageStatus.DEACTIVATION} 
         AND user_registration_status = ${UserRegistrationStatus.DISAPPROVAL}`;
 
-    // Insert
     const result = await pgClient.query(updateSql, values);
     if (result.rowCount === 0) {
       throw new CustomError(
@@ -272,13 +270,15 @@ export const pullBackUserRegistrationStatus = async (
       );
     }
 
+    const updateId: number = result.rows[0]?.id;
+
     /* 復号化
     ------------------------------------------------------------------ */
     const decryptPassword: string = decrypt(password);
 
     /* 暗号化
     ------------------------------------------------------------------ */
-    const signUpEncrypt: SignUpEncrypt = { id: req.id };
+    const signUpEncrypt: SignUpEncrypt = { id: updateId };
     const signUpEncryptReq: string = encrypt(JSON.stringify(signUpEncrypt));
 
     /* signUp
@@ -293,7 +293,7 @@ export const pullBackUserRegistrationStatus = async (
       console.error('Error signing up:', signUpError);
       throw new CustomError(
         ErrorCodes.NOT_FOUND.code,
-        'ユーザー情報のサインアップ' + ErrorCodes.NOT_FOUND.message,
+        '認証メール送信' + ErrorCodes.NOT_FOUND.message,
         ErrorCodes.NOT_FOUND.status
       );
     }
@@ -334,7 +334,7 @@ export const pullBackUserRegistrationStatus = async (
 
 /**
  * _disapprovalUserRegistrationStatus
- * IDに一致する店舗情報を承認する。
+ * IDに一致するユーザー情報を承認する。
  *
  * @param {ApiRequest<UserDataDetailRequest>} values - 検索条件
  * @returns {Promise<UserDetailFormValues>} 検索結果
@@ -388,7 +388,6 @@ export const approvalUserRegistrationStatus = async (
         AND user_registration_status = ${UserRegistrationStatus.WAITING_APPROVAL} 
         RETURNING id;`;
 
-    // Insert
     const result = await pgClient.query(updateSql, values);
     if (result.rowCount === 0) {
       throw new CustomError(
@@ -400,20 +399,28 @@ export const approvalUserRegistrationStatus = async (
 
     const updateId: number = result.rows[0]?.id;
 
-    // TODO: パスワードの復号化を行う
+    /* 復号化
+    ------------------------------------------------------------------ */
+    const decryptPassword: string = decrypt(password);
+
+    /* 暗号化
+    ------------------------------------------------------------------ */
+    const signUpEncrypt: SignUpEncrypt = { id: updateId };
+    const signUpEncryptReq: string = encrypt(JSON.stringify(signUpEncrypt));
 
     /* signUp
   　------------------------------------------------------------------ */
     const { error: signUpError } = await supabase.auth.signUp({
       email,
-      password,
+      password: decryptPassword,
+      options: { emailRedirectTo: process.env.APP_URL_DEV + '/pre-registration/' + signUpEncryptReq },
     });
 
     if (signUpError) {
       console.error('Error signing up:', signUpError);
       throw new CustomError(
         ErrorCodes.NOT_FOUND.code,
-        'ユーザー情報のサインアップ' + ErrorCodes.NOT_FOUND.message,
+        '認証メール送信' + ErrorCodes.NOT_FOUND.message,
         ErrorCodes.NOT_FOUND.status
       );
     }

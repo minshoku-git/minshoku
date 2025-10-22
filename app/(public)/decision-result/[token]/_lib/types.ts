@@ -4,7 +4,9 @@ import { UserApprovalType } from '@/app/_types/enum';
  * ログイン FormValues
  */
 export type DecisionData = {
-  // 暗号文
+  /** ユーザー承認種別 */
+  userApprovalType: string;
+  /** 暗号 */
   token: string;
 };
 

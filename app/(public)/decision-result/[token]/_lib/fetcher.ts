@@ -8,7 +8,7 @@ import { DecisionData, DecisionResult } from './types';
  * @param {ApiRequest<UpdateUserData>} req
  * @returns {Promise<ApiResponse<DecisionResult>>}
  */
-export const decision = (req: ApiRequest<DecisionData>): Promise<ApiResponse<DecisionResult>> => {
+export const decisionFetcher = (req: ApiRequest<DecisionData>): Promise<ApiResponse<DecisionResult>> => {
   return fetcher<ApiResponse<DecisionResult>>('/api/decision-result/decision', {
     method: 'POST',
     body: JSON.stringify(req),

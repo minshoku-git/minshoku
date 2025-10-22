@@ -1,13 +1,13 @@
 import { parse } from 'querystring';
 
-import { decrypt } from '@/app/_lib/encryption/crypto';
+import { decrypt, encrypt } from '@/app/_lib/encryption/crypto';
 import { getNow } from '@/app/_lib/getDateTime';
 import { createClient, createPgClient } from '@/app/_lib/supabase/server';
 import { t_user } from '@/app/_lib/supabase/tableTypes';
 import { rollbackWithLog } from '@/app/_lib/supabase/transaction';
 import { getPostgreSqlItems } from '@/app/_lib/utill';
 import { UsageStatus, UserApprovalType, UserRegistrationStatus } from '@/app/_types/enum';
-import { ApiRequest, ApiResponse } from '@/app/_types/types';
+import { ApiRequest, ApiResponse, SignUpEncrypt } from '@/app/_types/types';
 import { UserDetailFormValues } from '@/app/(private)/user-detail/[id]/_lib/types';
 import { CustomError } from '@/app/errors/customError';
 import { ErrorCodes } from '@/app/errors/ErrorCodes';
@@ -24,40 +24,25 @@ export const decision = async (values: ApiRequest<DecisionData>): Promise<ApiRes
   try {
     // 復号化
     const token = values.request.token;
+    const userApprovalType = values.request.userApprovalType;
     const decryptedQuery = decrypt(token);
-    const queryObject = parse(decryptedQuery);
+    const queryObject = JSON.parse(decryptedQuery);
 
-    const id = queryObject.id as string;
-    const user_approval_type = queryObject.user_approval_type;
+    const userId = queryObject.id as string;
 
-    if (!id || !user_approval_type) {
-      throw new CustomError(
-        ErrorCodes.NOT_FOUND.code,
-        '不正なリクエストです。' + ErrorCodes.NOT_FOUND.message,
-        ErrorCodes.NOT_FOUND.status
-      );
+    if (!userId || !userApprovalType) {
+      throw new CustomError(ErrorCodes.INVALID_RECOVERY_LINK);
     }
 
-    if (user_approval_type === UserApprovalType.APPROVAL) {
+    if (userApprovalType === UserApprovalType.APPROVAL) {
       // 承認
-      await approvalUserRegistrationStatus(Number(id));
-      return {
-        success: true,
-        data: { userApprovalType: UserApprovalType.APPROVAL },
-      };
-    } else if (user_approval_type === UserApprovalType.DISAPPROVAL) {
-      await approvalUserRegistrationStatus(Number(id));
-      return {
-        success: true,
-        data: { userApprovalType: UserApprovalType.DISAPPROVAL },
-      };
+      return await approvalUserRegistrationStatus(Number(userId));
+    } else if (userApprovalType === UserApprovalType.DISAPPROVAL) {
+      // 否認
+      return await approvalUserRegistrationStatus(Number(userId));
     } else {
-      // それ以外(不正)
-      throw new CustomError(
-        ErrorCodes.NOT_FOUND.code,
-        '不正なリクエストです。' + ErrorCodes.NOT_FOUND.message,
-        ErrorCodes.NOT_FOUND.status
-      );
+      // 無効なリンク
+      throw new CustomError(ErrorCodes.INVALID_RECOVERY_LINK);
     }
   } catch (e: unknown) {
     if (e instanceof CustomError) {
@@ -84,9 +69,9 @@ export const decision = async (values: ApiRequest<DecisionData>): Promise<ApiRes
  * IDに一致する店舗情報を承認する。
  *
  * @param {number} id - ユーザーID
- * @returns {Promise<UserDetailFormValues>} 検索結果
+ * @returns {Promise<ApiResponse<DecisionResult>>} 検索結果
  */
-export const approvalUserRegistrationStatus = async (id: number): Promise<ApiResponse<number>> => {
+export const approvalUserRegistrationStatus = async (id: number): Promise<ApiResponse<DecisionResult>> => {
   const pgClient = createPgClient();
   const supabase = await createClient(); //signUp用
   const timestamp = getNow();
@@ -104,22 +89,27 @@ export const approvalUserRegistrationStatus = async (id: number): Promise<ApiRes
     const selectSql = `
       SELECT
         user_email,
-        signup_password
+        signup_password,
+        user_registration_status
       From
         t_user
       Where
         id = ${id};`;
 
-    // Insert
     const emailAndPassword = await pgClient.query(selectSql);
     const email: string = emailAndPassword.rows[0]?.user_email;
     const password: string = emailAndPassword.rows[0]?.signup_password;
+    const userRegistrationStatus: string = emailAndPassword.rows[0]?.user_registration_status;
+
+    if (userRegistrationStatus !== UserRegistrationStatus.WAITING_APPROVAL) {
+      return { success: true, data: { userApprovalType: UserApprovalType.PROCESSED } };
+    }
 
     /* Update - t_user
   　------------------------------------------------------------------ */
     // UpdateData setting
     const updateValues: Pick<t_user, 'user_registration_status' | 'signup_password' | 'updated_at'> = {
-      user_registration_status: UserRegistrationStatus.WAITING_EMAIL_VERIFICATION,
+      user_registration_status: UserRegistrationStatus.WAITING_EMAIL_VERIFICATION.toString(),
       signup_password: '',
       updated_at: timestamp,
     };
@@ -127,12 +117,11 @@ export const approvalUserRegistrationStatus = async (id: number): Promise<ApiRes
     const updateSql = `
       UPDATE t_user
         SET ${columns.map((col, index) => `${col} = $${index + 1}`).join(', ')}
-        WHERE id = ${id}
-        AND usage_status = ${UsageStatus.DEACTIVATION} 
-        AND user_registration_status = ${UserRegistrationStatus.WAITING_APPROVAL} 
+        WHERE id = ${Number(id)}
+        AND usage_status = '${UsageStatus.DEACTIVATION}'
+        AND user_registration_status = '${UserRegistrationStatus.WAITING_APPROVAL}'
         RETURNING id;`;
 
-    // Insert
     const result = await pgClient.query(updateSql, values);
     if (result.rowCount === 0) {
       throw new CustomError(
@@ -144,28 +133,134 @@ export const approvalUserRegistrationStatus = async (id: number): Promise<ApiRes
 
     const updateId: number = result.rows[0]?.id;
 
-    // TODO: パスワードの復号化を行う
+    /* 復号化
+    ------------------------------------------------------------------ */
+    const decryptPassword: string = decrypt(password);
+
+    /* 暗号化
+    ------------------------------------------------------------------ */
+    const signUpEncrypt: SignUpEncrypt = { id: updateId };
+    const signUpEncryptReq: string = encrypt(JSON.stringify(signUpEncrypt));
 
     /* signUp
   　------------------------------------------------------------------ */
-    // const { error: signUpError } = await supabase.auth.signUp({
-    //   email,
-    //   password,
-    // });
+    const { error: signUpError } = await supabase.auth.signUp({
+      email,
+      password: decryptPassword,
+      options: { emailRedirectTo: process.env.APP_URL_DEV + '/pre-registration/' + signUpEncryptReq },
+    });
 
-    // if (signUpError) {
-    //   console.error('Error signing up:', signUpError);
-    //   throw new Error('ユーザー情報のサインアップ' + ERROR_MESSAGE.TEMPLATE);
-    // }
-
-    /* --------------------------------------------------------------- */
-    // throw new Error('疑似エラー:ロールバックを確認しました。');
+    if (signUpError) {
+      console.error('Error signing up:', signUpError);
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        '認証メール送信' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
+    }
 
     // Commit
     await pgClient.query('COMMIT');
     console.log('Transaction completed, new company ID:', updateId);
 
-    return { success: true, data: updateId };
+    return { success: true, data: { userApprovalType: UserApprovalType.APPROVAL } };
+  } catch (e: unknown) {
+    console.error('Transaction failed:', e);
+    // Rollback
+    await rollbackWithLog(pgClient);
+
+    if (e instanceof CustomError) {
+      return {
+        success: false,
+        error: {
+          code: e.code,
+          message: e.message,
+        },
+      };
+    }
+    return {
+      success: false,
+      error: {
+        code: ErrorCodes.INTERNAL_SERVER_ERROR.code,
+        message: ErrorCodes.INTERNAL_SERVER_ERROR.message,
+      },
+    };
+  } finally {
+    // Transaction End
+    await pgClient.end();
+  }
+};
+
+/**
+ * _disapprovalUserRegistrationStatus
+ * IDに一致する店舗情報を否認する。
+ *
+ * @param {number} id - ユーザーID
+ * @returns {Promise<ApiResponse<DecisionResult>>} 検索結果
+ */
+export const disapprovalUserRegistrationStatus = async (id: number): Promise<ApiResponse<DecisionResult>> => {
+  const pgClient = createPgClient();
+  const timestamp = getNow();
+
+  try {
+    // connection Start
+    await pgClient.connect();
+    console.log('Connected to the database successfully');
+
+    // Transaction Start
+    await pgClient.query('BEGIN');
+
+    /* Select - t_user
+  　------------------------------------------------------------------ */
+    const selectSql = `
+      SELECT
+        user_email,
+        signup_password,
+        user_registration_status
+      From
+        t_user
+      Where
+        id = ${id};`;
+
+    const checkStatus = await pgClient.query(selectSql);
+    const userRegistrationStatus: string = checkStatus.rows[0]?.user_registration_status;
+
+    if (userRegistrationStatus !== UserRegistrationStatus.WAITING_APPROVAL) {
+      return { success: true, data: { userApprovalType: UserApprovalType.PROCESSED } };
+    }
+
+    /* Update - t_user
+  　------------------------------------------------------------------ */
+    // UpdateData setting
+    const updateValues: Pick<t_user, 'user_registration_status' | 'updated_at'> = {
+      user_registration_status: UserRegistrationStatus.WAITING_EMAIL_VERIFICATION.toString(),
+      updated_at: timestamp,
+    };
+    const { columns, values } = getPostgreSqlItems(updateValues);
+    const updateSql = `
+      UPDATE t_user
+        SET ${columns.map((col, index) => `${col} = $${index + 1}`).join(', ')}
+        WHERE id = ${Number(id)}
+        AND usage_status = '${UsageStatus.DEACTIVATION}'
+        AND user_registration_status = '${UserRegistrationStatus.DISAPPROVAL}'
+        RETURNING id;`;
+
+    const result = await pgClient.query(updateSql, values);
+    if (result.rowCount === 0) {
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        'ユーザー情報の否認' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
+    }
+
+    const updateId: number = result.rows[0]?.id;
+
+    // Commit
+    await pgClient.query('COMMIT');
+    console.log('Transaction completed, new company ID:', updateId);
+
+    return { success: true, data: { userApprovalType: UserApprovalType.DISAPPROVAL } };
   } catch (e: unknown) {
     console.error('Transaction failed:', e);
     // Rollback
