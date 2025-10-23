@@ -72,15 +72,13 @@ export const decision = async (values: ApiRequest<DecisionData>): Promise<ApiRes
  * @returns {Promise<ApiResponse<DecisionResult>>} 検索結果
  */
 export const approvalUserRegistrationStatus = async (id: number): Promise<ApiResponse<DecisionResult>> => {
-  const pgClient = await createPgClient();
-  const supabase = await createClient(); //signUp用
   const timestamp = getNow();
+  const supabase = await createClient(); //signUp用
+
+  // connection Start
+  const pgClient = await createPgClient();
 
   try {
-    // connection Start
-    await pgClient.connect();
-    console.log('Connected to the database successfully');
-
     // Transaction Start
     await pgClient.query('BEGIN');
 
@@ -199,14 +197,12 @@ export const approvalUserRegistrationStatus = async (id: number): Promise<ApiRes
  * @returns {Promise<ApiResponse<DecisionResult>>} 検索結果
  */
 export const disapprovalUserRegistrationStatus = async (id: number): Promise<ApiResponse<DecisionResult>> => {
-  const pgClient = await createPgClient();
   const timestamp = getNow();
 
-  try {
-    // connection Start
-    await pgClient.connect();
-    console.log('Connected to the database successfully');
+  // connection Start
+  const pgClient = await createPgClient();
 
+  try {
     // Transaction Start
     await pgClient.query('BEGIN');
 

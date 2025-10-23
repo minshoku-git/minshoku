@@ -218,16 +218,14 @@ export const disapprovalUserRegistrationStatus = async (
 export const pullBackUserRegistrationStatus = async (
   values: ApiRequest<UserDataDetailRequest>
 ): Promise<ApiResponse<null>> => {
-  const pgClient = await createPgClient();
-  const supabase = await createClient(); //signUp用
   const req = values.request;
   const timestamp = getNow();
+  const supabase = await createClient(); //signUp用
+
+  // connection Start
+  const pgClient = await createPgClient();
 
   try {
-    // connection Start
-    await pgClient.connect();
-    console.log('Connected to the database successfully');
-
     // Transaction Start
     await pgClient.query('BEGIN');
 
@@ -342,16 +340,14 @@ export const pullBackUserRegistrationStatus = async (
 export const approvalUserRegistrationStatus = async (
   values: ApiRequest<UserDataDetailRequest>
 ): Promise<ApiResponse<number>> => {
-  const pgClient = await createPgClient();
-  const supabase = await createClient(); //signUp用
   const req = values.request;
   const timestamp = getNow();
+  const supabase = await createClient(); //signUp用
+
+  // connection Start
+  const pgClient = await createPgClient();
 
   try {
-    // connection Start
-    await pgClient.connect();
-    console.log('Connected to the database successfully');
-
     // Transaction Start
     await pgClient.query('BEGIN');
 

@@ -110,13 +110,11 @@ export const searchShopDetail = async (values: ApiRequest<number>): Promise<ApiR
 export const _insertShopDetail = async (values: shopDeteilRequestData): Promise<ApiResponse<number>> => {
   const req = values;
   const supabase = await createClient();
+
+  // connection Start
   const pgClient = await createPgClient();
 
   try {
-    // connection Start
-    await pgClient.connect();
-    console.log('Connected to the database successfully');
-
     // Transaction Start
     await pgClient.query('BEGIN');
 
@@ -210,15 +208,13 @@ export const _insertShopDetail = async (values: shopDeteilRequestData): Promise<
  */
 export const updateShopDetail = async (values: shopDeteilRequestData): Promise<ApiResponse<number>> => {
   const req = values;
-  const supabase = await createClient();
-  const pgClient = await createPgClient();
   const timestamp = getNow();
+  const supabase = await createClient();
+
+  // connection Start
+  const pgClient = await createPgClient();
 
   try {
-    // connection Start
-    await pgClient.connect();
-    console.log('Connected to the database successfully');
-
     // Transaction Start
     await pgClient.query('BEGIN');
 
