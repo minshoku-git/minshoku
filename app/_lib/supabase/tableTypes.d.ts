@@ -164,7 +164,7 @@ export type t_order = {
   delivery_day?: Date;
   /** 個数 */
   count?: number;
-  /** 単価 */
+  /** 定価 */
   list_price?: number;
   /** 総額 */
   amount?: number;
@@ -280,10 +280,8 @@ export type t_menu_schedule = {
   spice_level?: number;
   /** 在庫数 */
   stock_count?: number;
-  /** 単価 */
+  /** 定価 */
   list_price?: number;
-  /** 売価 */
-  sale_price?: number;
   /** キャンセルフラグ */
   cancel_flag?: string;
   /** 登録日時 */

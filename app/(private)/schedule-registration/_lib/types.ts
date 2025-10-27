@@ -22,10 +22,8 @@ export const ScheduleCsvSchema = z.object({
   stock_count: z.coerce.number(),
   /** 注文数 */
   order_count: z.coerce.number(),
-  /** 単価 */
+  /** 定価 */
   list_price: z.coerce.number(),
-  /** 売価 */
-  sale_price: z.coerce.number(),
   /** キャンセルフラグ */
   cancel_flag: z.coerce.string(),
 });

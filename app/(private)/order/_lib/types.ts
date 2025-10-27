@@ -108,7 +108,7 @@ export type orderDeteilResponseData = {
   delivery_day?: string | Date;
   /** 個数 */
   count?: number;
-  /** 単価 */
+  /** 定価 */
   list_price?: number;
   /** 総額 */
   amount?: number;

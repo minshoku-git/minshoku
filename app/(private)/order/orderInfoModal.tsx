@@ -259,7 +259,7 @@ const OrderInfoModal = (props: OrderInfoModalProps): React.JSX.Element => {
                         <TableCell sx={{ ...styles.tableCell, width: '26%' }}>店舗名</TableCell>
                         <TableCell sx={{ ...styles.tableCell, width: '26%' }}>メニュー名</TableCell>
                         <TableCell sx={{ ...styles.tableCell, width: '8%', textAlign: 'center' }}>食数</TableCell>
-                        <TableCell sx={{ ...styles.tableCell, width: '10%', textAlign: 'center' }}>単価</TableCell>
+                        <TableCell sx={{ ...styles.tableCell, width: '10%', textAlign: 'center' }}>定価</TableCell>
                         <TableCell sx={{ ...styles.tableCell, width: '10%', textAlign: 'center' }}>小計</TableCell>
                         <TableCell sx={{ ...styles.tableCell, width: '10%', textAlign: 'center' }}>
                           会社

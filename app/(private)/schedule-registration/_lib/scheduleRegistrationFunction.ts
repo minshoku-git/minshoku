@@ -62,7 +62,6 @@ export const RefreshingScheduleData = async (values: ScheduleCsvValues[]): Promi
           spice_level: item.spice_level,
           stock_count: item.stock_count,
           list_price: item.list_price,
-          sale_price: item.sale_price,
           cancel_flag: item.cancel_flag,
           updated_at: now,
         };
@@ -99,7 +98,6 @@ export const RefreshingScheduleData = async (values: ScheduleCsvValues[]): Promi
           spice_level: item.spice_level,
           stock_count: item.stock_count,
           list_price: item.list_price,
-          sale_price: item.sale_price,
           cancel_flag: item.cancel_flag,
         };
         const { columns, placeholders, values } = getPostgreSqlItems(insertValues);
