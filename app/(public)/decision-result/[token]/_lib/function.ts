@@ -66,7 +66,7 @@ export const decision = async (values: ApiRequest<DecisionData>): Promise<ApiRes
 
 /**
  * _disapprovalUserRegistrationStatus
- * IDに一致する店舗情報を承認する。
+ * IDに一致するユーザー情報を承認する。
  *
  * @param {number} id - ユーザーID
  * @returns {Promise<ApiResponse<DecisionResult>>} 検索結果
@@ -106,9 +106,8 @@ export const approvalUserRegistrationStatus = async (id: number): Promise<ApiRes
     /* Update - t_user
   　------------------------------------------------------------------ */
     // UpdateData setting
-    const updateValues: Pick<t_user, 'user_registration_status' | 'signup_password' | 'updated_at'> = {
+    const updateValues: Pick<t_user, 'user_registration_status' | 'updated_at'> = {
       user_registration_status: UserRegistrationStatus.WAITING_EMAIL_VERIFICATION.toString(),
-      signup_password: '',
       updated_at: timestamp,
     };
     const { columns, values } = getPostgreSqlItems(updateValues);
@@ -211,7 +210,6 @@ export const disapprovalUserRegistrationStatus = async (id: number): Promise<Api
     const selectSql = `
       SELECT
         user_email,
-        signup_password,
         user_registration_status
       From
         t_user

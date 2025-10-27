@@ -44,7 +44,7 @@ export const TEMP_HYPHEN: string = 'temp-';
 ------------------------------------------------------------------ */
 /**
  * 仮ID用文字列('temp-')
- * @returns {string} - 'temp-'
+ * @returns {string} - 'shop-images'
  */
 export const BUCKET_SHOP_IMAGES: string = 'shop-images';
 

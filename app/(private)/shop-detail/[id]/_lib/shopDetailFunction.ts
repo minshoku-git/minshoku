@@ -1,12 +1,12 @@
 import { PostgrestSingleResponse } from '@supabase/supabase-js';
 
 import { getNow } from '@/app/_lib/getDateTime';
-import { deleteFile } from '@/app/_lib/subabaseStorage/deleteFile';
-import { getImageSignedUrl } from '@/app/_lib/subabaseStorage/getImageUrl';
-import { uploadFile } from '@/app/_lib/subabaseStorage/uploadFile';
 import { createClient, createPgClient } from '@/app/_lib/supabase/server';
 import { t_shops } from '@/app/_lib/supabase/tableTypes';
 import { rollbackWithLog } from '@/app/_lib/supabase/transaction';
+import { deleteFile } from '@/app/_lib/supabaseStorage/deleteFile';
+import { getImageSignedUrl } from '@/app/_lib/supabaseStorage/getImageUrl';
+import { uploadFile } from '@/app/_lib/supabaseStorage/uploadFile';
 import { getPostgreSqlItems, getSafeFileName } from '@/app/_lib/utill';
 import { BUCKET_SHOP_IMAGES } from '@/app/_types/constants';
 import { UsageStatus } from '@/app/_types/enum';
@@ -47,7 +47,7 @@ export const searchShopDetail = async (values: ApiRequest<number>): Promise<ApiR
     let imageUrl: string = '';
     if (data.shop_image_safe_file_name) {
       const filepath = BUCKET_SHOP_IMAGES + '/' + id + '/' + data.shop_image_safe_file_name;
-      imageUrl = await getImageSignedUrl(supabase, BUCKET_SHOP_IMAGES, filepath);
+      imageUrl = await getImageSignedUrl(supabase, process.env.SUPABASE_STORAGE!, filepath);
       if (!imageUrl) {
         console.error(error);
         throw new CustomError(
@@ -162,7 +162,7 @@ export const _insertShopDetail = async (values: shopDeteilRequestData): Promise<
   　------------------------------------------------------------------ */
     if (req.shop_image_file_name && req.shop_image_file_data) {
       const filepath = BUCKET_SHOP_IMAGES + '/' + newShopId + '/' + safeFileName;
-      await uploadFile(supabase, BUCKET_SHOP_IMAGES, filepath, req.shop_image_file_data);
+      await uploadFile(supabase, process.env.SUPABASE_STORAGE!, filepath, req.shop_image_file_data);
     }
 
     /* --------------------------------------------------------------- */
@@ -290,14 +290,14 @@ export const updateShopDetail = async (values: shopDeteilRequestData): Promise<A
     // 新規登録の画像ファイルが存在する && 既存ファイル名が値有りの場合
     if ((req.shop_image_file_data && exSafeFileName) || (!req.shop_image_file_data && exSafeFileName)) {
       const filepath = BUCKET_SHOP_IMAGES + '/' + updatedId + '/' + exSafeFileName;
-      await deleteFile(supabase, BUCKET_SHOP_IMAGES, filepath);
+      await deleteFile(supabase, process.env.SUPABASE_STORAGE!, filepath);
     }
 
     // 店舗画像ファイル登録
     // 新規登録の画像ファイルが存在する場合
     if (req.shop_image_file_data) {
       const filepath = BUCKET_SHOP_IMAGES + '/' + updatedId + '/' + safeFileName;
-      await uploadFile(supabase, BUCKET_SHOP_IMAGES, filepath, req.shop_image_file_data);
+      await uploadFile(supabase, process.env.SUPABASE_STORAGE!, filepath, req.shop_image_file_data);
     }
 
     /* --------------------------------------------------------------- */
