@@ -1,10 +1,11 @@
 'use client';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Download } from '@mui/icons-material';
 import { Box, Button, Divider, Paper, TableCell, TableRow, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ja } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { JSX, useEffect, useState } from 'react';
@@ -19,14 +20,14 @@ import { QUERY_KEYS } from '@/app/_types/queryKeys';
 import { SESSION_STORAGE_KEYS } from '@/app/_types/sessionStorageKeys';
 import { ApiRequest, ApiResponse, HeaderStatus } from '@/app/_types/types';
 import { CustomTable } from '@/app/_ui/_shared/costomTable/customTable';
-import { DownloadCsvButton } from '@/app/_ui/_shared/downloadCsv/downloadCsvButton';
+import { downloadCsv } from '@/app/_ui/_shared/downloadCsv/downloadCsvButton';
 import { ResultsCounter } from '@/app/_ui/_shared/resultsCounter';
 import ConfirmDialog from '@/app/_ui/dirty/conformDialog';
 import { useProcessing } from '@/app/_ui/processing/processingContext';
 import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
 
 import ItemBase from '../../_ui/_shared/itemBase';
-import { orderCancel, searchOrderDetail, searchOrderList } from './_lib/fetcher';
+import { orderCancelFetcher, orderListExportCSVFetcher, searchOrderDetailFetcher, searchOrderListFetcher } from './_lib/fetcher';
 import { orderDeteilResponseData, OrderListSearchResult, OrderSearchFormValues, OrderSearchSchema } from './_lib/types';
 import OrderInfoModal from './orderInfoModal';
 
@@ -65,6 +66,7 @@ export const OrderComponent = (): JSX.Element => {
   /* initialize
   ------------------------------------------------------------------ */
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { openSnackbar } = useSnackBar();
   const { openProcessing, closeProcessing } = useProcessing();
   const [searchType, setSearchType] = useState<SearchType>(SearchType.SEARCH);
@@ -96,8 +98,8 @@ export const OrderComponent = (): JSX.Element => {
   /* useForm
   ------------------------------------------------------------------ */
   const { reset, control, setValue, handleSubmit } = useForm<OrderSearchFormValues>({
-    mode: 'onSubmit', // 初回validation時を検索ボタンが押されたタイミングに設定
-    reValidateMode: 'onBlur', // 送信ボタンが押され、バリデーションに引っかかった後は、常に入力値のフォーカスが外れた際にバリデーションが走る
+    mode: 'onSubmit',
+    reValidateMode: 'onBlur',
     resolver: zodResolver(OrderSearchSchema),
     defaultValues: {
       deliveryFrom: getNow(),
@@ -109,12 +111,45 @@ export const OrderComponent = (): JSX.Element => {
   });
 
   /* useQuery
-   ------------------------------------------------------------------ */
+  ------------------------------------------------------------------ */
   const { data, isFetching, refetch } = useQuery<ApiResponse<OrderListSearchResult[]>>({
     queryKey: [QUERY_KEYS.ORDER_SEARCH_RESULT, condition],
-    queryFn: () => searchOrderList(condition),
+    queryFn: () => searchOrderListFetcher(condition),
     enabled: false,
   });
+
+  /* useQuery exportCSV
+  ------------------------------------------------------------------ */
+  const { data: dataCsv, isFetching: isFetchingCsv, refetch: refetchCsv } = useQuery<ApiResponse<OrderListSearchResult[]>>({
+    queryKey: [QUERY_KEYS.ORDER_DETAIL_EXPORT_CSV, condition],
+    queryFn: () => orderListExportCSVFetcher(condition),
+    enabled: false,
+  });
+
+  const exportCsvHandler = async () => {
+    refetchCsv()
+  };
+
+  useEffect(() => {
+    if (!dataCsv) {
+      return;
+    }
+    const handleDownload = async () => {
+      if (dataCsv.success) {
+        const result = await downloadCsv(dataCsv.data);
+        if (!result.success) {
+          openSnackbar(AlertType.ERROR, 'CSV出力に失敗しました。');
+        }
+      } else {
+        openSnackbar(AlertType.ERROR, 'CSVデータの取得に失敗しました。');
+      }
+      // CSVダウンロード後にキャッシュを削除
+      queryClient.removeQueries({ queryKey: [QUERY_KEYS.ORDER_DETAIL_EXPORT_CSV, condition] });
+    };
+    handleDownload()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataCsv])
+
 
   const {
     data: dataDetail,
@@ -123,7 +158,7 @@ export const OrderComponent = (): JSX.Element => {
   } = useQuery<ApiResponse<orderDeteilResponseData>>({
     // queryKeyにIDを含める
     queryKey: [QUERY_KEYS.ORDER_DETAIL_INIT, conditionDetail],
-    queryFn: () => searchOrderDetail(conditionDetail as ApiRequest<number>),
+    queryFn: () => searchOrderDetailFetcher(conditionDetail as ApiRequest<number>),
     enabled: !!conditionDetail,
   });
 
@@ -273,7 +308,7 @@ export const OrderComponent = (): JSX.Element => {
     mutationFn: async (id: number) => {
       openProcessing();
       const req: ApiRequest<number> = { request: id };
-      return orderCancel(req);
+      return orderCancelFetcher(req);
     },
     onSuccess: async (res: ApiResponse<number>) => {
       if (!res.success) {
@@ -533,7 +568,7 @@ export const OrderComponent = (): JSX.Element => {
                       count={result.paginate?.count}
                     />
                     <Box sx={{ flexGrow: 1 }} />
-                    <DownloadCsvButton fileName={'タイトル'} fetchAPI={''} openSnackbar={openSnackbar} />
+                    <Button startIcon={<Download />} variant="outlined" onClick={() => exportCsvHandler()} loading={isFetchingCsv}>CSV出力</Button>
                   </Box>
                 ) : (
                   <></>

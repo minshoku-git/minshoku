@@ -9,7 +9,12 @@ import { ApiRequest, ApiResponse, SortItems } from '@/app/_types/types';
 import { CustomError } from '@/app/errors/customError';
 import { ErrorCodes } from '@/app/errors/ErrorCodes';
 
-import { orderDeteilResponseData, OrderListSearchResult, OrderSearchFormValues } from './types';
+import {
+  orderDeteilCsvResponseData,
+  orderDeteilResponseData,
+  OrderListSearchResult,
+  OrderSearchFormValues,
+} from './types';
 
 /* オーダー一覧
 ------------------------------------------------------------------ */
@@ -110,6 +115,162 @@ export const _searchOrderList = async (
         totalPage,
         currentPage: values.sortItems?.nextPage ?? 0,
       },
+    };
+  } catch (e: unknown) {
+    console.error(e);
+
+    if (e instanceof CustomError) {
+      return {
+        success: false,
+        error: {
+          code: e.code,
+          message: e.message,
+        },
+      };
+    }
+
+    return {
+      success: false,
+      error: {
+        code: ErrorCodes.INTERNAL_SERVER_ERROR.code,
+        message: ErrorCodes.INTERNAL_SERVER_ERROR.message,
+      },
+    };
+  }
+};
+
+/**
+ * createOrderListCsvData
+ * 検索条件に一致するオーダー情報を取得し、CSVデータに成型する。
+ *
+ * @param {ApiRequest<OrderSearchFormValues>} values - 検索条件
+ * @returns {Promise<ApiResponse<orderDeteilCsvResponseData>>} 検索結果
+ */
+export const createOrderListCsvData = async (
+  values: ApiRequest<OrderSearchFormValues>
+): Promise<ApiResponse<orderDeteilCsvResponseData[]>> => {
+  const supabase = await createClient();
+  const req = values.request;
+  const sortItems = values.sortItems;
+
+  try {
+    /* 件数取得
+    ------------------------------------------------------------------ */
+    let queryCount = supabase.from('v_order').select('*', { count: 'exact', head: true });
+    queryCount = applyFilters(queryCount, req);
+
+    const { count, error: countError } = await queryCount;
+    if (countError) {
+      console.error('countError', countError);
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        'オーダー情報の件数取得' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
+    }
+
+    if (!count) {
+      return {
+        success: true,
+        data: [],
+        paginate: {
+          count: 0,
+          startRow: 0,
+          endRow: 0,
+          totalPage: 0,
+          currentPage: 0,
+        },
+      };
+    }
+
+    /* 明細行取得(該当IDを取得)
+    ------------------------------------------------------------------ */
+    let query = supabase.from('v_order').select('id');
+
+    query = applyFilters(query, req);
+    query = applySorts(query, sortItems);
+
+    const { data, error } = await query;
+    if (error) {
+      console.error('query error', error);
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        'オーダー情報の取得' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
+    }
+
+    /* 明細行取得(詳細)
+    ------------------------------------------------------------------ */
+    const ids: number[] = data.map((m) => m.id);
+    const detailQuery = supabase
+      .from('t_order')
+      .select(
+        `id,
+        delivery_day,
+        count,
+        list_price,
+        amount,
+        companies_burden_amount,
+        user_burden_amount,
+        payment_type,
+        order_status_type,
+        order_datetime,
+        cancel_datetime,
+        t_menu_schedule!inner(
+          menu_name
+        ),
+        t_shops!inner(
+          shop_name
+        ),
+        t_user!inner(
+          id,
+          user_name,
+          user_name_kana,
+          user_email,
+          optional_item_answer_1,
+          optional_item_answer_2
+        ),
+        t_companies!inner(
+          id,
+          company_name,
+          branch_name,
+          optional_item_title_1,
+          optional_item_title_2
+        ),
+        t_companies_department!inner(
+          department_name
+        ),
+        t_companies_employment_status!inner(
+          employment_status_name
+        )
+        `
+      )
+      .in('id', ids);
+    const { data: dataDetail, error: errorDetail } = (await detailQuery) as PostgrestSingleResponse<
+      orderDeteilCsvResponseData[]
+    >;
+
+    if (errorDetail) {
+      console.error('query error', errorDetail);
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        'オーダー情報の取得' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
+    }
+
+    /* 返却
+    ------------------------------------------------------------------ */
+    const res: orderDeteilCsvResponseData[] = dataDetail.map((m) => ({
+      ...m,
+      id: m.id!.toString(),
+      delivery_day: getDateString(new Date(m.delivery_day!)),
+    }));
+
+    return {
+      success: true,
+      data: res,
     };
   } catch (e: unknown) {
     console.error(e);

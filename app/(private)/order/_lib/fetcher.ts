@@ -8,7 +8,7 @@ import { orderDeteilResponseData, OrderListSearchResult, OrderSearchFormValues }
  * @param {ApiRequest<ApiRequest<OrderSearchFormValues> | null>} condition
  * @returns {Promise<ApiResponse<OrderListSearchResult[]>>}
  */
-export const searchOrderList = async (
+export const searchOrderListFetcher = async (
   condition: ApiRequest<OrderSearchFormValues> | null
 ): Promise<ApiResponse<OrderListSearchResult[]>> => {
   return fetcher<ApiResponse<OrderListSearchResult[]>>('/api/order/search', {
@@ -25,7 +25,7 @@ export const searchOrderList = async (
  * @param {ApiRequest<number>} condition
  * @returns {Promise<ApiResponse<orderDeteilResponseData>>}
  */
-export const searchOrderDetail = async (
+export const searchOrderDetailFetcher = async (
   condition: ApiRequest<number> | null
 ): Promise<ApiResponse<orderDeteilResponseData>> => {
   return fetcher<ApiResponse<orderDeteilResponseData>>('/api/order/searchDetail', {
@@ -42,10 +42,27 @@ export const searchOrderDetail = async (
  * @param {ApiRequest<number>} req
  * @returns {Promise<ApiResponse<number>>}
  */
-export const orderCancel = (req: ApiRequest<number>): Promise<ApiResponse<number>> => {
+export const orderCancelFetcher = (req: ApiRequest<number>): Promise<ApiResponse<number>> => {
   return fetcher<ApiResponse<number>>('/api/order/orderCancel', {
     method: 'PUT',
     body: JSON.stringify(req),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+};
+
+/**
+ * searchOrderList
+ * @param {ApiRequest<ApiRequest<OrderSearchFormValues> | null>} condition
+ * @returns {Promise<ApiResponse<OrderListSearchResult[]>>}
+ */
+export const orderListExportCSVFetcher = async (
+  condition: ApiRequest<OrderSearchFormValues> | null
+): Promise<ApiResponse<OrderListSearchResult[]>> => {
+  return fetcher<ApiResponse<OrderListSearchResult[]>>('/api/order/exportCsv', {
+    method: 'POST',
+    body: JSON.stringify(condition),
     headers: {
       'Content-Type': 'application/json',
     },

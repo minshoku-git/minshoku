@@ -18,42 +18,29 @@ type props = {
 };
 
 /**
- * CSVダウンロードボタン
- * ※データ取得込み
+ * CSVダウンロード
  * @returns {JSX.Element}
  */
-export const DownloadCsvButton = (props: props): JSX.Element => {
-  const [loading, setLoading] = useState<boolean>(false);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const downloadCsv = async (data: any): Promise<{ success: boolean }> => {
+  try {
+    // 共通関数でCSV Blobを生成
+    const blob = await createCsvBlob(data);
 
-  const handleDownload = async () => {
-    setLoading(true);
-    try {
-      // サーバーAPIからデータを取得
-      const response = await fetch('/api/testplace/csv');
-      const data = await response.json();
+    // ダウンロード処理
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'order.csv';
+    a.click();
+    URL.revokeObjectURL(url);
 
-      // 共通関数でCSV Blobを生成
-      const blob = await createCsvBlob(data);
-
-      // ダウンロード処理
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = props.fileName + 'users.csv';
-      a.click();
-      URL.revokeObjectURL(url);
-      props.openSnackbar(AlertType.SUCCESS, 'CSVを出力しました。');
-    } catch (error) {
-      console.error('CSVダウンロード中にエラー:', error);
-      props.openSnackbar(AlertType.ERROR, 'CSVダウンロード中にエラーが発生しました。');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <Button onClick={handleDownload} startIcon={<Download />} variant="outlined" loading={loading}>
-      CSV出力
-    </Button>
-  );
+    return { success: true };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    console.error('CSVダウンロード中にエラー:', error);
+    return {
+      success: false,
+    };
+  }
 };

@@ -3,7 +3,6 @@ import { Box, Button, Container, Typography } from '@mui/material';
 import { useRouter } from 'next/navigation';
 
 import { ApiRequest, ApiResponse } from '@/app/_types/types';
-import { DownloadCsvButton } from '@/app/_ui/_shared/downloadCsv/downloadCsvButton';
 import { useProcessing } from '@/app/_ui/processing/processingContext';
 
 import { AlertType } from '../../_types/enum';
@@ -84,8 +83,7 @@ export const TestPlaceComponent = () => {
           <Button variant="contained" onClick={() => mailSendHandler()} sx={{ display: 'flex', mb: 1.5, width: 240 }}>
             <Typography variant="button">メール送信</Typography>
           </Button>
-          {/* CSV出力ボタン */}
-          <DownloadCsvButton fileName={'タイトル'} fetchAPI={''} openSnackbar={openSnackbar} />
+
 
           <Button variant="contained" onClick={() => logoutHandler()} sx={{ display: 'flex', mb: 1.5, width: 240 }}>
             <Typography variant="button">ログアウト</Typography>
