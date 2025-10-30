@@ -14,7 +14,8 @@ import React from 'react';
 
 import { SortType } from '@/app/_types/enum';
 import { HeaderStatus, PaginateData } from '@/app/_types/types';
-import CustomPagination from '@/app/_ui/_shared/costomTable/costomPagination';
+
+import CustomPagination from './customPagination';
 
 type CustomTableProps = {
   /* ページネート情報 */
@@ -68,13 +69,13 @@ export const CustomTable = ({
       const jadge = sortTarget.name === header.name;
       const res = jadge
         ? // ソートしたい対象が同じなら、逆のソート順に変更して、他の項目を昇順に変更。
-          sortArray.map((item) =>
-            item.name === header.name ? { ...item, sort: setType } : { ...item, sort: SortType.ASC }
-          )
+        sortArray.map((item) =>
+          item.name === header.name ? { ...item, sort: setType } : { ...item, sort: SortType.ASC }
+        )
         : // それ以外の場合は、選択した項目を昇順として、他の項目も昇順に変更。
-          sortArray.map((item) =>
-            item.name === header.name ? { ...item, sort: SortType.ASC } : { ...item, sort: SortType.ASC }
-          );
+        sortArray.map((item) =>
+          item.name === header.name ? { ...item, sort: SortType.ASC } : { ...item, sort: SortType.ASC }
+        );
 
       // ソートAPI実行
       sortHandler(header.variableName, jadge ? (SortType.ASC === setType ? true : false) : true);

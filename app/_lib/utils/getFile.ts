@@ -3,7 +3,7 @@
  * Fileに関わる関数を管理します。
  */
 
-import { KB_BYTE_SIZE } from '../_types/constants';
+import { KB_BYTE_SIZE } from '../../_config/constants';
 
 /**
  * byte => MB 変換

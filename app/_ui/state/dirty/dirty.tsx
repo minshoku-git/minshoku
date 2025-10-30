@@ -1,7 +1,7 @@
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
 
-import { useDirty } from './dartyContext';
+import { useDirty } from './dirtyContext';
 
 /**
  * 処理中背景

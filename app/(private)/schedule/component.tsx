@@ -11,15 +11,15 @@ import { SubmitHandler, useForm } from 'react-hook-form';
 import { TextFieldElement } from 'react-hook-form-mui';
 import { DatePickerElement } from 'react-hook-form-mui/date-pickers';
 
-import { getTodayXHour, getTomorrow, getYesterday } from '@/app/_lib/getDateTime';
+import { QUERY_KEYS } from '@/app/_lib/hooks/query/queryKeys';
+import { getTodayXHour, getTomorrow, getYesterday } from '@/app/_lib/utils/getDateTime';
 import { AlertType, SearchType, SortType } from '@/app/_types/enum';
-import { QUERY_KEYS } from '@/app/_types/queryKeys';
 import { ApiRequest, ApiResponse, HeaderStatus } from '@/app/_types/types';
-import { CustomTable } from '@/app/_ui/_shared/costomTable/customTable';
-import ItemBase from '@/app/_ui/_shared/itemBase';
-import { ResultsCounter } from '@/app/_ui/_shared/resultsCounter';
-import { useProcessing } from '@/app/_ui/processing/processingContext';
-import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
+import ItemBase from '@/app/_ui/components/atoms/itemBase';
+import { ResultsCounter } from '@/app/_ui/components/atoms/resultsCounter';
+import { CustomTable } from '@/app/_ui/components/organisms/customTable/customTable';
+import { useProcessing } from '@/app/_ui/state/processing/processingContext';
+import { useSnackBar } from '@/app/_ui/state/snackBar/snackbarContext';
 
 import { searchScheduleListFetcher } from './_lib/fetcher';
 import { ScheduleListSearchResult, ScheduleSearchFormValues, ScheduleSearchSchema } from './_lib/types';

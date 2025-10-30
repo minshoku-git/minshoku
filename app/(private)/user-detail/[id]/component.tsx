@@ -9,15 +9,15 @@ import { JSX, useEffect, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { SelectElement, TextareaAutosizeElement } from 'react-hook-form-mui';
 
+import { SESSION_STORAGE_KEYS } from '@/app/_config/sessionStorageKeys';
+import { QUERY_KEYS } from '@/app/_lib/hooks/query/queryKeys';
 import { AlertType, convertUserRegistrationStatusName, UsageStatus, UserRegistrationStatus } from '@/app/_types/enum';
-import { QUERY_KEYS } from '@/app/_types/queryKeys';
-import { SESSION_STORAGE_KEYS } from '@/app/_types/sessionStorageKeys';
 import { ApiRequest, ApiResponse } from '@/app/_types/types';
-import ItemBase from '@/app/_ui/_shared/itemBase';
-import ConfirmDialog from '@/app/_ui/dirty/conformDialog';
-import { useDirty } from '@/app/_ui/dirty/dartyContext';
-import { useProcessing } from '@/app/_ui/processing/processingContext';
-import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
+import ItemBase from '@/app/_ui/components/atoms/itemBase';
+import ConfirmDialog from '@/app/_ui/state/dirty/conformDialog';
+import { useDirty } from '@/app/_ui/state/dirty/dirtyContext';
+import { useProcessing } from '@/app/_ui/state/processing/processingContext';
+import { useSnackBar } from '@/app/_ui/state/snackBar/snackbarContext';
 
 import { approval, disapproval, pullbackFetcher, searchUserDetail, updateUserDetail } from './_lib/fetcher';
 import { UpdateUserData, UserDataDetailRequest, UserDataDetailResult, UserDetailFormValues, UserDetailSchema } from './_lib/types';

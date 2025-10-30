@@ -1,7 +1,7 @@
 import { PostgrestSingleResponse } from '@supabase/supabase-js';
 
 import { createClient } from '@/app/_lib/supabase/server';
-import { getPagenationsItems, getPostCodeAddHyphen, getRange } from '@/app/_lib/utill';
+import { getPagenationsItems, getPostCodeAddHyphen, getRange } from '@/app/_lib/utils/utils';
 import { convertUsageStatusName, UsageStatus } from '@/app/_types/enum';
 import { ApiRequest, ApiResponse, SortItems } from '@/app/_types/types';
 import { CompanyListSearchResult, CompanySearchFormValues } from '@/app/(private)/company/_lib/types';

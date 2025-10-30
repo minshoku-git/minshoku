@@ -1,7 +1,7 @@
 'use client';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import MenuIcon from '@mui/icons-material/Menu';
-import { Box, Button, Link, ListSubheader } from '@mui/material';
+import { Box, ListSubheader } from '@mui/material';
 import { AppBar as MuiAppBar, AppBarProps as MuiAppBarProps } from '@mui/material';
 import Divider from '@mui/material/Divider';
 import Drawer from '@mui/material/Drawer';
@@ -20,15 +20,15 @@ import * as React from 'react';
 
 import { AlertType } from '../_types/enum';
 import { ApiResponse } from '../_types/types';
-import { LogoutButton } from '../_ui/_shared/logoutButton';
-import { WaitingApprovalBadge } from '../_ui/_shared/waitingApprovalBadge';
-import ConfirmDialog from '../_ui/dirty/conformDialog';
-import { useDirty } from '../_ui/dirty/dartyContext';
-import DirtyCheck from '../_ui/dirty/dirty';
-import { OpenProcessing } from '../_ui/processing/processing';
-import { ProcessingProvider } from '../_ui/processing/processingContext';
-import { OpenSnackBar, useSnackBar } from '../_ui/snackBar/snackBar';
-import { SnackBarProvider } from '../_ui/snackBar/snackbarContext';
+import { LogoutButton } from '../_ui/components/atoms/logoutButton';
+import { WaitingApprovalBadge } from '../_ui/components/atoms/waitingApprovalBadge';
+import ConfirmDialog from '../_ui/state/dirty/conformDialog';
+import DirtyCheck from '../_ui/state/dirty/dirty';
+import { useDirty } from '../_ui/state/dirty/dirtyContext';
+import { OpenProcessing } from '../_ui/state/processing/processing';
+import { ProcessingProvider } from '../_ui/state/processing/processingContext';
+import { OpenSnackBar, useSnackBar } from '../_ui/state/snackBar/snackBar';
+import { SnackBarProvider } from '../_ui/state/snackBar/snackbarContext';
 
 const drawerWidth = 240;
 

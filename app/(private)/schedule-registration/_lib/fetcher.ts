@@ -6,7 +6,6 @@ import { ApiResponse } from '@/app/_types/types';
  * @param {FormData} formData
  * @returns {Promise<ApiResponse<number>>}
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const upsertScheduleFetcher = (formData: FormData): Promise<ApiResponse<number>> => {
   return fetcher<ApiResponse<number>>('/api/schedule-registration/insert', {
     method: 'POST',

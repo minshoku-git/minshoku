@@ -1,6 +1,5 @@
 import { z } from 'zod';
 
-import { formatString } from '@/app/_lib/utill';
 import {
   MSG_DOMAIN,
   MSG_EMAIL,
@@ -11,7 +10,8 @@ import {
   MSG_REQUIRED,
   REG_DOMAIN,
   REG_HANKAKU_NUM,
-} from '@/app/_types/constants';
+} from '@/app/_config/constants';
+import { formatString } from '@/app/_lib/utils/utils';
 import { UsageStatus } from '@/app/_types/enum';
 
 /**

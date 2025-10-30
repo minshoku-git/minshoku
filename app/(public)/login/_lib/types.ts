@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-import { formatString } from '@/app/_lib/utill';
-import { MSG_EMAIL, MSG_MAX, MSG_REQUIRED } from '@/app/_types/constants';
+import { MSG_EMAIL, MSG_MAX, MSG_REQUIRED } from '@/app/_config/constants';
+import { formatString } from '@/app/_lib/utils/utils';
 
 /**
  * ログイン Schema

@@ -9,10 +9,10 @@ import { SubmitHandler, useForm } from 'react-hook-form';
 import { TextFieldElement } from 'react-hook-form-mui';
 
 import { ApiRequest, ApiResponse } from '@/app/_types/types';
+import { useSnackBar } from '@/app/_ui/state/snackBar/snackbarContext';
 
 import { AlertType } from '../../_types/enum';
-import RequiredMark from '../../_ui/_shared/requiredMark';
-import { useSnackBar } from '../../_ui/snackBar/snackbarContext';
+import RequiredMark from '../../_ui/components/atoms/requiredMark';
 import { LoginFormValues, LoginSchema } from './_lib/types';
 
 export const LoginComponent = () => {

@@ -2,7 +2,7 @@ import { PostgrestSingleResponse } from '@supabase/supabase-js';
 
 import { createClient } from '@/app/_lib/supabase/server';
 import { t_shops } from '@/app/_lib/supabase/tableTypes';
-import { getPagenationsItems, getPostCodeAddHyphen, getRange } from '@/app/_lib/utill';
+import { getPagenationsItems, getPostCodeAddHyphen, getRange } from '@/app/_lib/utils/utils';
 import { convertUsageStatusName, UsageStatus } from '@/app/_types/enum';
 import { ApiRequest, ApiResponse, SortItems } from '@/app/_types/types';
 import { CustomError } from '@/app/errors/customError';

@@ -6,13 +6,12 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import * as React from 'react';
 
-import { useDirty } from '../_ui/dirty/dartyContext';
-import DirtyCheck from '../_ui/dirty/dirty';
-import { OpenProcessing } from '../_ui/processing/processing';
-import { ProcessingProvider } from '../_ui/processing/processingContext';
-import { OpenSnackBar } from '../_ui/snackBar/snackBar';
-import { SnackBarProvider } from '../_ui/snackBar/snackbarContext';
-
+import DirtyCheck from '../_ui/state/dirty/dirty';
+import { useDirty } from '../_ui/state/dirty/dirtyContext';
+import { OpenProcessing } from '../_ui/state/processing/processing';
+import { ProcessingProvider } from '../_ui/state/processing/processingContext';
+import { OpenSnackBar } from '../_ui/state/snackBar/snackBar';
+import { SnackBarProvider } from '../_ui/state/snackBar/snackbarContext';
 const drawerWidth = 240;
 
 /* AppBarの型を拡張

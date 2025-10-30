@@ -4,7 +4,8 @@ import Alert, { AlertColor } from '@mui/material/Alert';
 import Snackbar from '@mui/material/Snackbar';
 import { JSX, useEffect } from 'react';
 
-import { AlertType } from '../../_types/enum';
+import { AlertType } from '@/app/_types/enum';
+
 import { useSnackBar } from './snackbarContext';
 
 export type SnackBarType = {

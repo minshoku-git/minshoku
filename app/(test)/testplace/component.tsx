@@ -3,10 +3,10 @@ import { Box, Button, Container, Typography } from '@mui/material';
 import { useRouter } from 'next/navigation';
 
 import { ApiRequest, ApiResponse } from '@/app/_types/types';
-import { useProcessing } from '@/app/_ui/processing/processingContext';
+import { useProcessing } from '@/app/_ui/state/processing/processingContext';
+import { useSnackBar } from '@/app/_ui/state/snackBar/snackbarContext';
 
 import { AlertType } from '../../_types/enum';
-import { useSnackBar } from '../../_ui/snackBar/snackbarContext';
 
 /**
  * 実験用ページです。

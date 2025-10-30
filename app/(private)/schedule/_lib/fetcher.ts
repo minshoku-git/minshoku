@@ -8,7 +8,6 @@ import { ScheduleListSearchResult, ScheduleSearchFormValues } from './types';
  * @param {ApiRequest<ScheduleSearchFormValues> | null} req
  * @returns {Promise<ApiResponse<ScheduleListSearchResult>>}
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const searchScheduleListFetcher = (
   req: ApiRequest<ScheduleSearchFormValues> | null
 ): Promise<ApiResponse<ScheduleListSearchResult>> => {

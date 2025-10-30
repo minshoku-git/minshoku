@@ -9,21 +9,20 @@ import { ChangeEvent, JSX, useEffect, useMemo, useRef, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { SelectElement, TextareaAutosizeElement, TextFieldElement } from 'react-hook-form-mui';
 
-import { getAddress } from '@/app/_lib/getAddress';
-import { getAttachmentSizeOver, getMbSize } from '@/app/_lib/getFile';
+import { IMAGE_TYPES } from '@/app/_config/constants';
+import { SESSION_STORAGE_KEYS } from '@/app/_config/sessionStorageKeys';
+import { QUERY_KEYS } from '@/app/_lib/hooks/query/queryKeys';
 import { t_shops } from '@/app/_lib/supabase/tableTypes';
-import { getEditFlag } from '@/app/_lib/utill';
-import { IMAGE_TYPES } from '@/app/_types/constants';
+import { getAddress } from '@/app/_lib/utils/getAddress';
+import { getAttachmentSizeOver, getMbSize } from '@/app/_lib/utils/getFile';
+import { getEditFlag } from '@/app/_lib/utils/utils';
 import { AlertType, UsageStatus } from '@/app/_types/enum';
-import { QUERY_KEYS } from '@/app/_types/queryKeys';
-import { SESSION_STORAGE_KEYS } from '@/app/_types/sessionStorageKeys';
 import { ApiRequest, ApiResponse } from '@/app/_types/types';
-import ItemBase from '@/app/_ui/_shared/itemBase';
-import { useDirty } from '@/app/_ui/dirty/dartyContext';
-import { useProcessing } from '@/app/_ui/processing/processingContext';
-import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
+import ItemBase from '@/app/_ui/components/atoms/itemBase';
+import { useDirty } from '@/app/_ui/state/dirty/dirtyContext';
+import { useProcessing } from '@/app/_ui/state/processing/processingContext';
+import { useSnackBar } from '@/app/_ui/state/snackBar/snackbarContext';
 
-import { state as stateMockData } from '../../../../public/state.json';
 import { insertShopDetailFetcher, searchShopDetailFetcher, updateShopDetailFetcher } from './_lib/fetcher';
 import { ShopDetailFormValues, ShopDetailSchema, shopDeteilResponseData } from './_lib/types';
 /** ページ名 */
@@ -277,15 +276,6 @@ export const ShopComponent = (): JSX.Element => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  /* mock ※のちすて
-  ------------------------------------------------------------------ */
-  const stateData = [
-    { id: '', label: '未選択' },
-    ...stateMockData.map((d: string, index: number) => {
-      return { id: index.toString(), label: d };
-    }),
-  ];
 
   /* JSX.Element
   ------------------------------------------------------------------ */

@@ -1,7 +1,8 @@
 'use client';
 import React, { createContext, ReactNode, useContext, useState } from 'react';
 
-import { AlertType } from '../../_types/enum';
+import { AlertType } from '@/app/_types/enum';
+
 import { SnackBarType } from './snackBar';
 
 // 後でゆっくり確認する…

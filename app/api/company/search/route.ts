@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { searchComponyList } from '@/app/(private)/company/_lib/companyFunction';
+import { searchComponyList } from '@/app/(private)/company/_lib/function';
 
 export async function POST(req: NextRequest) {
   const body = await req.json();

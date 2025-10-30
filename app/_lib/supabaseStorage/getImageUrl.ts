@@ -1,6 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 
-import { EXPIRES_IN_TIME } from '@/app/_types/constants';
+import { EXPIRES_IN_TIME } from '@/app/_config/constants';
 
 /**
  * 画像URLを取得する

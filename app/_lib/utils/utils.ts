@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 
-import { HYPHEN, PAGE_MAX_COUNT, TEMP_HYPHEN } from '../_types/constants';
+import { HYPHEN, PAGE_MAX_COUNT, TEMP_HYPHEN } from '../../_config/constants';
 /**
  * getFile.ts
  * 汎用的な関数を管理します。

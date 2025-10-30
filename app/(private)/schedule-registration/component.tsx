@@ -7,9 +7,9 @@ import { ChangeEvent, JSX, useRef, useState } from 'react';
 
 import { AlertType } from '@/app/_types/enum';
 import { ApiResponse } from '@/app/_types/types';
-import ItemBase from '@/app/_ui/_shared/itemBase';
-import { useProcessing } from '@/app/_ui/processing/processingContext';
-import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
+import ItemBase from '@/app/_ui/components/atoms/itemBase';
+import { useProcessing } from '@/app/_ui/state/processing/processingContext';
+import { useSnackBar } from '@/app/_ui/state/snackBar/snackbarContext';
 
 import { upsertScheduleFetcher } from './_lib/fetcher';
 

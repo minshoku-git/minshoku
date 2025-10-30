@@ -1,7 +1,7 @@
 import { PostgrestSingleResponse } from '@supabase/supabase-js';
 
 import { createClient } from '@/app/_lib/supabase/server';
-import { getPagenationsItems, getRange } from '@/app/_lib/utill';
+import { getPagenationsItems, getRange } from '@/app/_lib/utils/utils';
 import {
   convertUsageStatusName,
   convertUserRegistrationStatusName,

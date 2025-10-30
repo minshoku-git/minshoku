@@ -1,8 +1,8 @@
 import { PostgrestSingleResponse } from '@supabase/supabase-js';
 
-import { getDateString } from '@/app/_lib/getDateTime';
 import { createClient } from '@/app/_lib/supabase/server';
-import { getPagenationsItems, getRange } from '@/app/_lib/utill';
+import { getDateString } from '@/app/_lib/utils/getDateTime';
+import { getPagenationsItems, getRange } from '@/app/_lib/utils/utils';
 import { ApiRequest, ApiResponse, SortItems } from '@/app/_types/types';
 import { CustomError } from '@/app/errors/customError';
 import { ErrorCodes } from '@/app/errors/ErrorCodes';

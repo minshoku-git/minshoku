@@ -6,12 +6,12 @@ import { SubmitHandler, useForm } from 'react-hook-form';
 import { TextFieldElement } from 'react-hook-form-mui';
 
 import { ApiRequest, ApiResponse } from '@/app/_types/types';
-import { useProcessing } from '@/app/_ui/processing/processingContext';
+import { useProcessing } from '@/app/_ui/state/processing/processingContext';
+import { useSnackBar } from '@/app/_ui/state/snackBar/snackbarContext';
 import { LoginFormValues, LoginSchema } from '@/app/(public)/login/_lib/types';
 
 import { AlertType } from '../../_types/enum';
-import RequiredMark from '../../_ui/_shared/requiredMark';
-import { useSnackBar } from '../../_ui/snackBar/snackbarContext';
+import RequiredMark from '../../_ui/components/atoms/requiredMark';
 
 /**
  * サインアップ

@@ -3,10 +3,10 @@ import { useQuery } from '@tanstack/react-query';
 import { JSX, useEffect } from 'react';
 
 import { getWaitingApproval } from '@/app/_lib/getWaitingApproval/fetcher';
+import { QUERY_KEYS } from '@/app/_lib/hooks/query/queryKeys';
 import { AlertType } from '@/app/_types/enum';
-import { QUERY_KEYS } from '@/app/_types/queryKeys';
 import { ApiResponse } from '@/app/_types/types';
-import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
+import { useSnackBar } from '@/app/_ui/state/snackBar/snackbarContext';
 
 /**
  * 承認待ちユーザー数コンポーネント

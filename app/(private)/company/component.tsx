@@ -8,17 +8,16 @@ import { JSX, useEffect, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { SelectElement, TextFieldElement } from 'react-hook-form-mui';
 
+import { SESSION_STORAGE_KEYS } from '@/app/_config/sessionStorageKeys';
+import { QUERY_KEYS } from '@/app/_lib/hooks/query/queryKeys';
 import { AlertType, SearchType, SortType, UsageStatus } from '@/app/_types/enum';
-import { QUERY_KEYS } from '@/app/_types/queryKeys';
-import { SESSION_STORAGE_KEYS } from '@/app/_types/sessionStorageKeys';
 import { ApiRequest, ApiResponse, HeaderStatus } from '@/app/_types/types';
-import { CustomTable } from '@/app/_ui/_shared/costomTable/customTable';
-import { ResultsCounter } from '@/app/_ui/_shared/resultsCounter';
-import { useProcessing } from '@/app/_ui/processing/processingContext';
-import { useSnackBar } from '@/app/_ui/snackBar/snackbarContext';
+import { ResultsCounter } from '@/app/_ui/components/atoms/resultsCounter';
+import { CustomTable } from '@/app/_ui/components/organisms/customTable/customTable';
+import { useProcessing } from '@/app/_ui/state/processing/processingContext';
+import { useSnackBar } from '@/app/_ui/state/snackBar/snackbarContext';
 
-import { state as stateMockData } from '../../../public/state.json';
-import ItemBase from '../../_ui/_shared/itemBase';
+import ItemBase from '../../_ui/components/atoms/itemBase';
 import { ShopSearchFormValues } from '../shop/_lib/types';
 import { searchCompanyListFetcher } from './_lib/fetcher';
 import { CompanyListSearchResult, CompanySearchFormValues, CompanySearchSchema } from './_lib/types';

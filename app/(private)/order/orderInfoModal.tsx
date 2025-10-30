@@ -18,7 +18,7 @@ import * as React from 'react';
 
 import { OrderStatusType, PaymentType } from '@/app/_types/enum';
 import { ApiResponse } from '@/app/_types/types';
-import CustomModal from '@/app/_ui/_shared/customModal';
+import CustomModal from '@/app/_ui/components/atoms/customModal';
 
 import { orderDeteilResponseData } from './_lib/types';
 

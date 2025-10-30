@@ -1,4 +1,3 @@
-// app/lib/csvUtil.ts
 import { stringify } from 'csv-stringify';
 import iconv from 'iconv-lite';
 
@@ -11,8 +10,11 @@ export const createCsvBlob = (data: Record<string, string>[]): Promise<Blob> => 
       if (err) {
         reject(err);
       } else {
-        const sjis = iconv.encode(output, 'Shift_JIS');
-        const blob = new Blob([sjis], { type: 'text/csv' });
+        // Shift_JISでエンコード
+        const sjisBuffer = iconv.encode(output, 'Shift_JIS');
+
+        // BufferをUint8Arrayに変換してBlobを作成
+        const blob = new Blob([new Uint8Array(sjisBuffer)], { type: 'text/csv' });
         resolve(blob);
       }
     });

@@ -1,4 +1,4 @@
-import { hasDuplicate } from './utill';
+import { hasDuplicate } from './utils';
 
 /**
  * 郵便番号検索結果

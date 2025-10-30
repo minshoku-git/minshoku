@@ -5,11 +5,11 @@ import Image from 'next/image';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { JSX, useEffect } from 'react';
 
+import { QUERY_KEYS } from '@/app/_lib/hooks/query/queryKeys';
 import { AlertType, UserApprovalType } from '@/app/_types/enum';
-import { QUERY_KEYS } from '@/app/_types/queryKeys';
 import { ApiRequest, ApiResponse } from '@/app/_types/types';
-import { useProcessing } from '@/app/_ui/processing/processingContext';
-import { useSnackBar } from '@/app/_ui/snackBar/snackBar';
+import { useProcessing } from '@/app/_ui/state/processing/processingContext';
+import { useSnackBar } from '@/app/_ui/state/snackBar/snackbarContext';
 
 import { decisionFetcher } from './_lib/fetcher';
 import { DecisionData, DecisionResult } from './_lib/types';

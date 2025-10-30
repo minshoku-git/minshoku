@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-import { formatString } from '@/app/_lib/utill';
-import { MSG_MAX } from '@/app/_types/constants';
+import { MSG_MAX } from '@/app/_config/constants';
+import { formatString } from '@/app/_lib/utils/utils';
 import { UsageStatus, UserRegistrationStatus } from '@/app/_types/enum';
 
 /**
