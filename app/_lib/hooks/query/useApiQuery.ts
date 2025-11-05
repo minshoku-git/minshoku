@@ -19,6 +19,8 @@ type UseApiQueryOptions<TQueryFnData, TData, TQueryKey extends readonly unknown[
 
   // initialDataも ApiResponse<TQueryFnData> 型で受け取る
   initialData?: ApiResponse<TQueryFnData> | (() => ApiResponse<TQueryFnData>);
+
+  onError?: (error: unknown) => void;
 };
 
 /**
@@ -43,11 +45,13 @@ export const useApiQuery = <
         // CustomError の場合、エラーメッセージを表示
         showGlobalSnackbar(AlertType.ERROR, error.message);
         console.error('Custom Error:', error.code, error.message); // ログに詳細を出力
+        options.onError?.(error);
         return Promise.reject(error);
       } else {
         // 予期しないエラーの場合、より詳細なエラーメッセージを表示
         showGlobalSnackbar(AlertType.ERROR, FETCH_FAILURE_MESSAGE);
         console.error('Unexpected Error:', error); // 予期しないエラーをログに出力
+        options.onError?.(error);
         return Promise.reject(error);
       }
     }
@@ -57,9 +61,6 @@ export const useApiQuery = <
   return useQuery<ApiResponse<TQueryFnData>, unknown, TData, TQueryKey>({
     ...options,
     queryFn: wrappedQueryFn,
-
-    // データの抽出をフック内部で強制し、コンポーネント側の .data アクセスを不要にする
-    // 成功レスポンスから純粋なデータ (TQueryFnData) を抽出する
     select: (res) => (res as ApiSuccess<TQueryFnData>).data as unknown as TData,
   });
 };

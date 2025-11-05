@@ -18,6 +18,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import * as React from 'react';
 
+import { queryClientInstance } from '../_lib/hooks/query/queryClient';
 import { AlertType } from '../_types/enum';
 import { ApiResponse } from '../_types/types';
 import { LogoutButton } from '../_ui/components/atoms/logoutButton';
@@ -29,6 +30,7 @@ import { OpenProcessing } from '../_ui/state/processing/processing';
 import { ProcessingProvider } from '../_ui/state/processing/processingContext';
 import { OpenSnackBar, useSnackBar } from '../_ui/state/snackBar/snackBar';
 import { SnackBarProvider } from '../_ui/state/snackBar/snackbarContext';
+import { SnackBarInitializer } from '../_ui/state/snackBar/snackBarInitializer';
 
 const drawerWidth = 240;
 
@@ -148,7 +150,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   ------------------------------------------------------------------ */
   return (
     <SnackBarProvider>
-      <QueryClientProvider client={queryClient}>
+      <SnackBarInitializer />
+      <QueryClientProvider client={queryClientInstance}>
         <ProcessingProvider>
           {/* snackバー表示 */}
           <OpenSnackBar />

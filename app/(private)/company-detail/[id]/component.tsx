@@ -5,7 +5,7 @@ import { Box, Button, Divider, Paper, TextField, Typography } from '@mui/materia
 import Grid from '@mui/material/Grid2';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { ja } from 'date-fns/locale/ja';
 import { useParams, useRouter } from 'next/navigation';
 import { JSX, useEffect, useMemo, useState } from 'react';
@@ -16,6 +16,8 @@ import { TimePickerElement } from 'react-hook-form-mui/date-pickers';
 import { TEMP_HYPHEN } from '@/app/_config/constants';
 import { SESSION_STORAGE_KEYS } from '@/app/_config/sessionStorageKeys';
 import { QUERY_KEYS } from '@/app/_lib/hooks/query/queryKeys';
+import { useApiMutation } from '@/app/_lib/hooks/query/useApiMutation';
+import { useApiQuery } from '@/app/_lib/hooks/query/useApiQuery';
 import { getAddress } from '@/app/_lib/utils/getAddress';
 import { getTodayXHour } from '@/app/_lib/utils/getDateTime';
 import { checkTempId, getEditFlag } from '@/app/_lib/utils/utils';
@@ -88,13 +90,17 @@ export const CompanyComponent = (): JSX.Element => {
   };
 
   const {
-    data: result,
+    data,
     isLoading,
     refetch,
-  } = useQuery<ApiResponse<CompanyDetailResult>>({
+  } = useApiQuery<CompanyDetailResult>({
     queryKey: [QUERY_KEYS.COMPANY_SEARCH_RESULT],
     queryFn: searchCompanyDetailFetch,
     enabled: editMode,
+    onError: () => {
+      // MEMO: 初期表示取得失敗時、会社検索に強制遷移
+      router.push('/company')
+    }
   });
 
   /* useEffect
@@ -104,15 +110,9 @@ export const CompanyComponent = (): JSX.Element => {
       setDataLoaded(true);
       return;
     }
-    if (!result) {
+    if (!data) {
       return;
-    }
-    if (!result.success) {
-      openSnackbar(AlertType.WARNING, result.error.message);
-      router.push('/company');
-    }
-    else if (result.data) {
-      const data = result.data;
+    } else {
       const conversion: CompanyDetailFormValues = {
         ...data,
         offer_time_to: new Date(data.offer_time_to),
@@ -121,11 +121,11 @@ export const CompanyComponent = (): JSX.Element => {
         cancel_period_time: new Date(data.cancel_period_time),
       };
       reset(getInitData(conversion));
-      setUrl(result.data.url)
+      setUrl(data.url)
       setDataLoaded(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [result]);
+  }, [data]);
 
   useEffect(() => {
     if (isLoading) {
@@ -236,23 +236,16 @@ export const CompanyComponent = (): JSX.Element => {
     insertMutate.mutate(data);
   };
 
-  const insertMutate = useMutation({
+  const insertMutate = useApiMutation({
     mutationFn: async (data: CompanyDetailFormValues) => {
       openProcessing();
       const req: ApiRequest<CompanyDetailFormValues> = { request: data }
       return insertCompanyDetail(req) as unknown as ApiResponse<number>;
     },
     onSuccess: (res) => {
-      if (res.success) {
-        openSnackbar(AlertType.SUCCESS, '会社情報の登録が完了しました。');
-        router.push(`/company-detail/${res.data}`);
-      } else {
-        openSnackbar(AlertType.ERROR, res.error.message);
-      }
-    },
-    onError: (e) => {
-      console.log(e.message);
-      openSnackbar(AlertType.ERROR, '会社情報の新規登録に失敗しました。再度お試しください。');
+      openSnackbar(AlertType.SUCCESS, '会社情報の登録が完了しました。');
+      router.push(`/company-detail/${res.data}`);
+
     },
     onSettled: () => {
       closeProcessing();
@@ -265,23 +258,14 @@ export const CompanyComponent = (): JSX.Element => {
     updateMutate.mutate(data);
   };
 
-  const updateMutate = useMutation({
+  const updateMutate = useApiMutation({
     mutationFn: async (data: CompanyDetailFormValues) => {
       openProcessing();
-      return updateCompanyDetail(data) as unknown as ApiResponse<number>;
+      return updateCompanyDetail({ ...data, id: id }) as unknown as ApiResponse<number>;
     },
-    onSuccess: (res: ApiResponse<number>) => {
-      if (res.success) {
-        refetch();
-        openSnackbar(AlertType.SUCCESS, '会社情報の更新が完了しました。');
-        router.push(`/company-detail/${res.data}`);
-      } else {
-        openSnackbar(AlertType.ERROR, res.error.message);
-      }
-    },
-    onError: (e) => {
-      console.error(e.message);
-      openSnackbar(AlertType.ERROR, '会社情報の更新に失敗しました。再度お試しください。');
+    onSuccess: () => {
+      openSnackbar(AlertType.SUCCESS, '会社情報の更新が完了しました。');
+      router.push(`/company-detail/${id}`);
     },
     onSettled: () => {
       closeProcessing();

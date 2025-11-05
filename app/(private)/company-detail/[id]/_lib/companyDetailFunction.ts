@@ -1,6 +1,5 @@
 import { PostgrestSingleResponse } from '@supabase/supabase-js';
 
-import { ERROR_MESSAGE } from '@/app/_config/constants';
 import { encrypt } from '@/app/_lib/encryption/crypto';
 import { createClient, createPgClient } from '@/app/_lib/supabase/server';
 import { t_companies, t_companies_department, t_companies_employment_status } from '@/app/_lib/supabase/tableTypes';
@@ -27,7 +26,7 @@ export type usageData = {
  * @param {ApiRequest<number>} values - 検索条件
  * @returns {Promise<ApiResponse<CompanyDetailResult>>} 検索結果
  */
-export const _searchCompanyDetail = async (values: ApiRequest<number>): Promise<ApiResponse<CompanyDetailResult>> => {
+export const searchCompanyDetail = async (values: ApiRequest<number>): Promise<ApiResponse<CompanyDetailResult>> => {
   const supabase = await createClient();
   const id = values.request;
 
@@ -237,15 +236,12 @@ export const _searchCompanyDetail = async (values: ApiRequest<number>): Promise<
     if (e instanceof CustomError) {
       return {
         success: false,
-        error: {
-          code: e.code,
-          message: e.message,
-        },
+        error: e,
       };
     }
     return {
       success: false,
-      error: { code: ErrorCodes.INTERNAL_SERVER_ERROR.code, message: ErrorCodes.INTERNAL_SERVER_ERROR.message },
+      error: ErrorCodes.INTERNAL_SERVER_ERROR,
     };
   }
 };
@@ -254,9 +250,9 @@ export const _searchCompanyDetail = async (values: ApiRequest<number>): Promise<
  * insert_companyDetail
  * Transaction専用・会社情報をINSERTする。
  * @param {ApiRequest<CompanyDetailFormValues>} values 入力内容
- * @returns {Promise<ApiResponse<number>>} 企業ID
+ * @returns {Promise<ApiResponse<number>>} 会社ID
  */
-export const _insertComponyDetail = async (
+export const insertComponyDetail = async (
   values: ApiRequest<CompanyDetailFormValues>
 ): Promise<ApiResponse<number>> => {
   const req = values.request;
@@ -367,18 +363,12 @@ export const _insertComponyDetail = async (
     if (e instanceof CustomError) {
       return {
         success: false,
-        error: {
-          code: e.code,
-          message: e.message,
-        },
+        error: e,
       };
     }
     return {
       success: false,
-      error: {
-        code: ErrorCodes.INTERNAL_SERVER_ERROR.code,
-        message: ErrorCodes.INTERNAL_SERVER_ERROR.message,
-      },
+      error: ErrorCodes.INTERNAL_SERVER_ERROR,
     };
   } finally {
     // Transaction End
@@ -390,9 +380,9 @@ export const _insertComponyDetail = async (
  * update_companyDetail
  * Transaction専用・会社情報をUPDATEする。
  * @param {ApiRequest<CompanyDetailFormValues>} values - 入力内容
- * @returns {Promise<ApiResponse<number>>} 企業ID
+ * @returns {Promise<ApiResponse<number>>} 会社ID
  */
-export const _updateComponyDetail = async (values: CompanyDetailFormValues): Promise<ApiResponse<number>> => {
+export const updateComponyDetail = async (values: CompanyDetailFormValues): Promise<ApiResponse<number>> => {
   const req = values;
   const timestamp = getNow();
 
@@ -405,17 +395,17 @@ export const _updateComponyDetail = async (values: CompanyDetailFormValues): Pro
 
     /* Update - t_companies
   　------------------------------------------------------------------ */
-    // UpdateData setting
     const updateValues: Omit<t_companies, 'id' | 'url_key' | 'created_at'> = {
       company_name: req.company_name,
       branch_name: req.branch_name,
+      restaurant_name: req.restaurant_name,
       postal_code: req.postal_code_prefix + req.postal_code_suffix,
       address: req.address,
       area_block_number: req.area_block_number,
       building_name: req.building_name,
-      restaurant_name: req.restaurant_name,
       location: req.location,
       email: req.email,
+      usage_status: req.usage_status,
       memo: req.memo,
       domain: req.domain.map((m) => m.name),
       optional_item_title_1: req.optional_item_title_1,
@@ -428,7 +418,6 @@ export const _updateComponyDetail = async (values: CompanyDetailFormValues): Pro
       order_period_time: getTimeString(req.order_period_time!),
       cancel_period_day: Number(req.cancel_period_day),
       cancel_period_time: getTimeString(req.cancel_period_time!),
-      usage_status: req.usage_status,
       updated_at: timestamp,
     };
     const { columns, values } = getPostgreSqlItems(updateValues);
@@ -436,18 +425,18 @@ export const _updateComponyDetail = async (values: CompanyDetailFormValues): Pro
 
     // Update
     const result = await client.query(updateCompanyText, values);
-
     if (result.rowCount === 0) {
-      const errorMsg = '企業情報の更新' + ERROR_MESSAGE.TEMPLATE;
-      console.error(errorMsg);
-      throw new Error(errorMsg);
+      throw new CustomError(
+        ErrorCodes.NOT_FOUND.code,
+        '会社情報の更新' + ErrorCodes.NOT_FOUND.message,
+        ErrorCodes.NOT_FOUND.status
+      );
     }
 
     const updatedId = result.rows[0]?.id;
 
     /* Dalete/Update/Insert - t_companies_department
   　------------------------------------------------------------------ */
-
     if (req.departmentInfo.length > 0) {
       const deleteList = req.departmentInfo.filter((f) => !checkTempId(f.id) && f.delete_flag) ?? null;
       const updateList = req.departmentInfo.filter((f) => !checkTempId(f.id) && !f.delete_flag) ?? null;
@@ -462,9 +451,11 @@ export const _updateComponyDetail = async (values: CompanyDetailFormValues): Pro
           const deleteCompanyText = `UPDATE t_companies_department SET delete_flag = 1, updated_at = $1 WHERE id = $2;`;
           const res = await client.query(deleteCompanyText, [timestamp, item.id]);
           if (res.rowCount === 0) {
-            const errorMsg = '企業部署情報の削除' + ERROR_MESSAGE.TEMPLATE;
-            console.log(errorMsg);
-            throw new Error(errorMsg);
+            throw new CustomError(
+              ErrorCodes.NOT_FOUND.code,
+              '会社部署情報の削除' + ErrorCodes.NOT_FOUND.message,
+              ErrorCodes.NOT_FOUND.status
+            );
           }
         }
       }
@@ -474,9 +465,11 @@ export const _updateComponyDetail = async (values: CompanyDetailFormValues): Pro
           const updateCompanyText = `UPDATE t_companies_department SET department_name = $1, updated_at = $2 WHERE id = $3;`;
           const res = await client.query(updateCompanyText, [item.name, timestamp, item.id]);
           if (res.rowCount === 0) {
-            const errorMsg = '企業部署情報の更新' + ERROR_MESSAGE.TEMPLATE;
-            console.log(errorMsg);
-            throw new Error(errorMsg);
+            throw new CustomError(
+              ErrorCodes.NOT_FOUND.code,
+              '会社部署情報の更新' + ErrorCodes.NOT_FOUND.message,
+              ErrorCodes.NOT_FOUND.status
+            );
           }
         }
       }
@@ -498,9 +491,11 @@ export const _updateComponyDetail = async (values: CompanyDetailFormValues): Pro
           // Insert
           const res = await client.query(insertDepartmentText, valuesDep);
           if (res.rowCount === 0) {
-            const errorMsg = '企業部署情報の新規登録' + ERROR_MESSAGE.TEMPLATE;
-            console.log(errorMsg);
-            throw new Error(errorMsg);
+            throw new CustomError(
+              ErrorCodes.NOT_FOUND.code,
+              '会社部署情報の新規登録' + ErrorCodes.NOT_FOUND.message,
+              ErrorCodes.NOT_FOUND.status
+            );
           }
         }
       }
@@ -519,9 +514,11 @@ export const _updateComponyDetail = async (values: CompanyDetailFormValues): Pro
           const res = await client.query(deleteCompanyText, [timestamp, item.id]);
           // const ress = await client.query({text:deleteCompanyText, values:[timestamp, item.id]});
           if (res.rowCount === 0) {
-            const errorMsg = '企業雇用形態情報の削除' + ERROR_MESSAGE.TEMPLATE;
-            console.log(errorMsg);
-            throw new Error(errorMsg);
+            throw new CustomError(
+              ErrorCodes.NOT_FOUND.code,
+              '会社雇用形態情報の削除' + ErrorCodes.NOT_FOUND.message,
+              ErrorCodes.NOT_FOUND.status
+            );
           }
         }
       }
@@ -549,9 +546,11 @@ export const _updateComponyDetail = async (values: CompanyDetailFormValues): Pro
             item.id,
           ]);
           if (res.rowCount === 0) {
-            const errorMsg = '企業雇用形態情報の新規登録' + ERROR_MESSAGE.TEMPLATE;
-            console.error(errorMsg);
-            throw new Error(errorMsg);
+            throw new CustomError(
+              ErrorCodes.NOT_FOUND.code,
+              '会社雇用形態情報の新規登録' + ErrorCodes.NOT_FOUND.message,
+              ErrorCodes.NOT_FOUND.status
+            );
           }
         }
       }
@@ -576,9 +575,11 @@ export const _updateComponyDetail = async (values: CompanyDetailFormValues): Pro
           // Insert
           const res = await client.query(insertEmploymentStatusText, valuesEmp);
           if (res.rowCount === 0) {
-            const errorMsg = '企業雇用形態情報の新規登録' + ERROR_MESSAGE.TEMPLATE;
-            console.log(errorMsg);
-            throw new Error(errorMsg);
+            throw new CustomError(
+              ErrorCodes.NOT_FOUND.code,
+              '会社雇用形態情報の新規登録' + ErrorCodes.NOT_FOUND.message,
+              ErrorCodes.NOT_FOUND.status
+            );
           }
         }
       }
@@ -599,18 +600,12 @@ export const _updateComponyDetail = async (values: CompanyDetailFormValues): Pro
     if (e instanceof CustomError) {
       return {
         success: false,
-        error: {
-          code: e.code,
-          message: e.message,
-        },
+        error: e,
       };
     }
     return {
       success: false,
-      error: {
-        code: ErrorCodes.INTERNAL_SERVER_ERROR.code,
-        message: ErrorCodes.INTERNAL_SERVER_ERROR.message,
-      },
+      error: ErrorCodes.INTERNAL_SERVER_ERROR,
     };
   } finally {
     // Transaction End
