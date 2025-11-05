@@ -5,5 +5,8 @@ import { searchUserDetail } from '@/app/(private)/user-detail/[id]/_lib/userDeta
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const result = await searchUserDetail(body);
-  return NextResponse.json(result);
+  if (result.success) {
+    return NextResponse.json(result);
+  }
+  return NextResponse.json(result.error, { status: result.error.status });
 }

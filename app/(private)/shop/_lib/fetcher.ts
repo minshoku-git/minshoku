@@ -10,8 +10,8 @@ import { ShopListSearchResult, ShopSearchFormValues } from './types';
  */
 export const searchShopListFetcher = async (
   condition: ApiRequest<ShopSearchFormValues> | null
-): Promise<ApiResponse<ShopListSearchResult[]>> => {
-  return fetcher<ApiResponse<ShopListSearchResult[]>>('/api/shop/search', {
+): Promise<ApiResponse<ShopListSearchResult>> => {
+  return fetcher<ApiResponse<ShopListSearchResult>>('/api/shop/search', {
     method: 'POST',
     body: JSON.stringify(condition),
     headers: {

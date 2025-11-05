@@ -4,7 +4,7 @@ import { createClient } from '@/app/_lib/supabase/server';
 import { getPagenationsItems, getPostCodeAddHyphen, getRange } from '@/app/_lib/utils/utils';
 import { convertUsageStatusName, UsageStatus } from '@/app/_types/enum';
 import { ApiRequest, ApiResponse, SortItems } from '@/app/_types/types';
-import { CompanyListSearchResult, CompanySearchFormValues } from '@/app/(private)/company/_lib/types';
+import { CompanyData, CompanyListSearchResult, CompanySearchFormValues } from '@/app/(private)/company/_lib/types';
 import { CustomError } from '@/app/errors/customError';
 import { ErrorCodes } from '@/app/errors/ErrorCodes';
 
@@ -15,11 +15,11 @@ import { ErrorCodes } from '@/app/errors/ErrorCodes';
  * 検索条件に一致する会社情報を取得する。
  *
  * @param {ApiRequest<CompanySearchFormValues>} values - 検索条件
- * @returns {Promise<ApiResponse<CompanyListSearchResult[]>>} 検索結果
+ * @returns {Promise<ApiResponse<CompanyListSearchResult>>} 検索結果
  */
 export const searchComponyList = async (
   values: ApiRequest<CompanySearchFormValues>
-): Promise<ApiResponse<CompanyListSearchResult[]>> => {
+): Promise<ApiResponse<CompanyListSearchResult>> => {
   const supabase = await createClient();
 
   const req = values.request;
@@ -32,7 +32,7 @@ export const searchComponyList = async (
     let queryCount = supabase.from('t_companies').select('*', { count: 'exact', head: true });
     queryCount = applyFilters(queryCount, req);
 
-    const { count, error: countError }: PostgrestSingleResponse<CompanyListSearchResult[]> = await queryCount;
+    const { count, error: countError }: PostgrestSingleResponse<CompanyData[]> = await queryCount;
 
     if (countError) {
       console.error(countError);
@@ -45,14 +45,7 @@ export const searchComponyList = async (
     if (!count) {
       return {
         success: true,
-        data: [],
-        paginate: {
-          count: 0,
-          startRow: 0,
-          endRow: 0,
-          totalPage: 0,
-          currentPage: 0,
-        },
+        data: { companyDatas: [] },
       };
     }
 
@@ -65,7 +58,7 @@ export const searchComponyList = async (
     query = applyFilters(query, req);
     query = applySorts(query, sortItems);
 
-    const { data, error }: PostgrestSingleResponse<CompanyListSearchResult[]> = await query;
+    const { data, error }: PostgrestSingleResponse<CompanyData[]> = await query;
 
     if (error) {
       console.error(error);
@@ -78,25 +71,26 @@ export const searchComponyList = async (
 
     /* 返却
     ------------------------------------------------------------------ */
-    const resData: CompanyListSearchResult[] = data.map((m) => {
+    const resData: CompanyData[] = data.map((m) => {
       return {
         ...m,
         postal_code: getPostCodeAddHyphen(m.postal_code),
         usage_status: convertUsageStatusName(m.usage_status as UsageStatus),
       };
     });
-
     const { startRow, endRow, totalPage } = getPagenationsItems(startRange, data.length, count ?? 0);
 
     return {
       success: true,
-      data: resData,
-      paginate: {
-        count,
-        startRow,
-        endRow,
-        totalPage,
-        currentPage: values.sortItems?.nextPage ?? 0,
+      data: {
+        companyDatas: resData,
+        paginate: {
+          count,
+          startRow,
+          endRow,
+          totalPage,
+          currentPage: values.sortItems?.nextPage ?? 0,
+        },
       },
     };
   } catch (e: unknown) {
@@ -104,18 +98,12 @@ export const searchComponyList = async (
     if (e instanceof CustomError) {
       return {
         success: false,
-        error: {
-          code: e.code,
-          message: e.message,
-        },
+        error: e,
       };
     }
     return {
       success: false,
-      error: {
-        code: ErrorCodes.INTERNAL_SERVER_ERROR.code,
-        message: ErrorCodes.INTERNAL_SERVER_ERROR.message,
-      },
+      error: ErrorCodes.INTERNAL_SERVER_ERROR,
     };
   }
 };

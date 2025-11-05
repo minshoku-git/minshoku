@@ -4,6 +4,7 @@ import { JSX, useEffect } from 'react';
 
 import { getWaitingApproval } from '@/app/_lib/getWaitingApproval/fetcher';
 import { QUERY_KEYS } from '@/app/_lib/hooks/query/queryKeys';
+import { useApiQuery } from '@/app/_lib/hooks/query/useApiQuery';
 import { AlertType } from '@/app/_types/enum';
 import { ApiResponse } from '@/app/_types/types';
 import { useSnackBar } from '@/app/_ui/state/snackBar/snackbarContext';
@@ -14,42 +15,28 @@ import { useSnackBar } from '@/app/_ui/state/snackBar/snackbarContext';
  */
 export const WaitingApprovalBadge = (): JSX.Element => {
   /* initialize
-    ------------------------------------------------------------------ */
-  const { openSnackbar } = useSnackBar();
+  ------------------------------------------------------------------ */
 
   /* useQuery
-    ------------------------------------------------------------------ */
+  ------------------------------------------------------------------ */
   const getWaitingApprovalFetch = async () => {
     return getWaitingApproval();
   };
 
-  const { data: result, isError } = useQuery<ApiResponse<number>>({
+  const { data: result } = useApiQuery<number>({
     queryKey: [QUERY_KEYS.WAITING_APPROVAL_SEARCH_RESULT],
     queryFn: getWaitingApprovalFetch,
     enabled: true,
     refetchOnWindowFocus: true, // window がフォーカスされたら再取得してくれる
   });
 
-  /* useEffect
-    ------------------------------------------------------------------ */
-  useEffect(() => {
-    if (!result) {
-      return
-    }
-    if (!result.success) {
-      openSnackbar(AlertType.WARNING, result.error.message);
-      return;
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [result]);
-
   /* JSX
-    ------------------------------------------------------------------ */
+  ------------------------------------------------------------------ */
   return (
     <>
-      {result?.success && (
-        <Avatar sx={{ bgcolor: '#f7514d', width: 28, height: 28, fontSize: 12 }}>{result.data}</Avatar>
-      )}{' '}
+      {result && (
+        <Avatar sx={{ bgcolor: '#f7514d', width: 28, height: 28, fontSize: 12 }}>{result}</Avatar>
+      )}
     </>
   );
 };

@@ -12,15 +12,13 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
 import { styled } from '@mui/material/styles';
 import Toolbar from '@mui/material/Toolbar';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import * as React from 'react';
 
 import { queryClientInstance } from '../_lib/hooks/query/queryClient';
-import { AlertType } from '../_types/enum';
-import { ApiResponse } from '../_types/types';
 import { LogoutButton } from '../_ui/components/atoms/logoutButton';
 import { WaitingApprovalBadge } from '../_ui/components/atoms/waitingApprovalBadge';
 import ConfirmDialog from '../_ui/state/dirty/conformDialog';
@@ -102,10 +100,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   /* initialize
   ------------------------------------------------------------------ */
   const router = useRouter();
-  const queryClient = new QueryClient();
   const currentPathname = usePathname();
   const [open, setOpen] = useState(true);
-  const { isDirty, setDirty, openConfirmDialog, closeConform, url } = useDirty();
+  const { setDirty, openConfirmDialog, closeConform, url } = useDirty();
   const { confirmNavigation } = DirtyCheck();
   const { openSnackbar } = useSnackBar();
 
@@ -122,20 +119,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   /** 表示中画面のメニューボタンを非活性化 */
   const disabledTitle = (pathname: string) => {
     return currentPathname === pathname;
-  };
-
-  /** logout */
-  const logoutHandler = async () => {
-    const response = await fetch('/api/login/logout', {
-      method: 'POST',
-    });
-    const res = await response.json() as ApiResponse<null>;
-    if (res.success) {
-      console.log('ログアウトしましたわ！')
-      router.push('/login')
-    } else {
-      openSnackbar(AlertType.ERROR, res.error.message)
-    }
   };
 
   /* functions - 離脱確認ダイアログ

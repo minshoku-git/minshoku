@@ -8,7 +8,7 @@ import { ApiRequest, ApiResponse, SortItems } from '@/app/_types/types';
 import { CustomError } from '@/app/errors/customError';
 import { ErrorCodes } from '@/app/errors/ErrorCodes';
 
-import { ShopListSearchResult, ShopSearchFormValues } from './types';
+import { ShopData, ShopListSearchResult, ShopSearchFormValues } from './types';
 
 /* 店舗一覧
 ------------------------------------------------------------------ */
@@ -18,11 +18,11 @@ import { ShopListSearchResult, ShopSearchFormValues } from './types';
  * 検索条件に一致する会社情報を取得する。
  *
  * @param {ApiRequest<ShopSearchFormValues>} values - 検索条件
- * @returns {Promise<ApiResponse<ShopListSearchResult[]>>} 検索結果
+ * @returns {Promise<ApiResponse<ShopListSearchResult>>} 検索結果
  */
 export const searchShopList = async (
   values: ApiRequest<ShopSearchFormValues>
-): Promise<ApiResponse<ShopListSearchResult[]>> => {
+): Promise<ApiResponse<ShopListSearchResult>> => {
   const supabase = await createClient();
   const req = values.request;
   const sortItems = values.sortItems;
@@ -46,13 +46,8 @@ export const searchShopList = async (
     if (!count) {
       return {
         success: true,
-        data: [],
-        paginate: {
-          count: 0,
-          startRow: 0,
-          endRow: 0,
-          totalPage: 0,
-          currentPage: 0,
+        data: {
+          shopDatas: [],
         },
       };
     }
@@ -75,7 +70,7 @@ export const searchShopList = async (
 
     /* 返却
     ------------------------------------------------------------------ */
-    const res: ShopListSearchResult[] = data.map((m) => {
+    const res: ShopData[] = data.map((m) => {
       return {
         ...m,
         id: m.id!.toString(),
@@ -88,13 +83,15 @@ export const searchShopList = async (
     const { startRow, endRow, totalPage } = getPagenationsItems(startRange, data.length, count);
     return {
       success: true,
-      data: res,
-      paginate: {
-        count,
-        startRow,
-        endRow,
-        totalPage,
-        currentPage: values.sortItems?.nextPage ?? 0,
+      data: {
+        shopDatas: res,
+        paginate: {
+          count,
+          startRow,
+          endRow,
+          totalPage,
+          currentPage: values.sortItems?.nextPage ?? 0,
+        },
       },
     };
   } catch (e: unknown) {
@@ -103,19 +100,13 @@ export const searchShopList = async (
     if (e instanceof CustomError) {
       return {
         success: false,
-        error: {
-          code: e.code,
-          message: e.message,
-        },
+        error: e,
       };
     }
 
     return {
       success: false,
-      error: {
-        code: ErrorCodes.INTERNAL_SERVER_ERROR.code,
-        message: ErrorCodes.INTERNAL_SERVER_ERROR.message,
-      },
+      error: ErrorCodes.INTERNAL_SERVER_ERROR,
     };
   }
 };

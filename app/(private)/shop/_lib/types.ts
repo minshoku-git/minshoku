@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { UsageStatus } from '@/app/_types/enum';
+import { PaginateData } from '@/app/_types/types';
 
 /**
  * 店舗一覧 検索条件 スキーマ
@@ -27,6 +28,14 @@ export type ShopSearchFormValues = z.infer<typeof ShopSearchSchema>;
 
 /** 検索結果 店舗一覧 */
 export type ShopListSearchResult = {
+  /** 店舗情報配列 */
+  shopDatas: ShopData[];
+  /** ページネート */
+  paginate?: PaginateData;
+};
+
+/** 店舗情報 */
+export type ShopData = {
   /** ID */
   id: string;
   /** 店舗名 */

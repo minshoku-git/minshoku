@@ -10,6 +10,7 @@ import { CustomError } from '@/app/errors/customError';
 import { ErrorCodes } from '@/app/errors/ErrorCodes';
 
 import {
+  OrderData,
   orderDeteilCsvResponseData,
   orderDeteilResponseData,
   OrderListSearchResult,
@@ -28,7 +29,7 @@ import {
  */
 export const _searchOrderList = async (
   values: ApiRequest<OrderSearchFormValues>
-): Promise<ApiResponse<OrderListSearchResult[]>> => {
+): Promise<ApiResponse<OrderListSearchResult>> => {
   const supabase = await createClient();
   const req = values.request;
   const sortItems = values.sortItems;
@@ -53,14 +54,7 @@ export const _searchOrderList = async (
     if (!count) {
       return {
         success: true,
-        data: [],
-        paginate: {
-          count: 0,
-          startRow: 0,
-          endRow: 0,
-          totalPage: 0,
-          currentPage: 0,
-        },
+        data: { orderDatas: [] },
       };
     }
 
@@ -98,7 +92,7 @@ export const _searchOrderList = async (
 
     /* 返却
     ------------------------------------------------------------------ */
-    const res: OrderListSearchResult[] = data.map((m) => ({
+    const res: OrderData[] = data.map((m) => ({
       ...m,
       id: m.id!.toString(),
       delivery_day: getDateString(new Date(m.delivery_day)),
@@ -107,13 +101,15 @@ export const _searchOrderList = async (
     const { startRow, endRow, totalPage } = getPagenationsItems(startRange, data.length, count ?? 0);
     return {
       success: true,
-      data: res,
-      paginate: {
-        count,
-        startRow,
-        endRow,
-        totalPage,
-        currentPage: values.sortItems?.nextPage ?? 0,
+      data: {
+        orderDatas: res,
+        paginate: {
+          count,
+          startRow,
+          endRow,
+          totalPage,
+          currentPage: values.sortItems?.nextPage ?? 0,
+        },
       },
     };
   } catch (e: unknown) {
@@ -122,19 +118,13 @@ export const _searchOrderList = async (
     if (e instanceof CustomError) {
       return {
         success: false,
-        error: {
-          code: e.code,
-          message: e.message,
-        },
+        error: e,
       };
     }
 
     return {
       success: false,
-      error: {
-        code: ErrorCodes.INTERNAL_SERVER_ERROR.code,
-        message: ErrorCodes.INTERNAL_SERVER_ERROR.message,
-      },
+      error: ErrorCodes.INTERNAL_SERVER_ERROR,
     };
   }
 };
@@ -144,7 +134,7 @@ export const _searchOrderList = async (
  * 検索条件に一致するオーダー情報を取得し、CSVデータに成型する。
  *
  * @param {ApiRequest<OrderSearchFormValues>} values - 検索条件
- * @returns {Promise<ApiResponse<orderDeteilCsvResponseData>>} 検索結果
+ * @returns {Promise<ApiResponse<orderDeteilCsvResponseData[]>>} 検索結果
  */
 export const createOrderListCsvData = async (
   values: ApiRequest<OrderSearchFormValues>
@@ -173,13 +163,6 @@ export const createOrderListCsvData = async (
       return {
         success: true,
         data: [],
-        paginate: {
-          count: 0,
-          startRow: 0,
-          endRow: 0,
-          totalPage: 0,
-          currentPage: 0,
-        },
       };
     }
 
@@ -278,19 +261,13 @@ export const createOrderListCsvData = async (
     if (e instanceof CustomError) {
       return {
         success: false,
-        error: {
-          code: e.code,
-          message: e.message,
-        },
+        error: e,
       };
     }
 
     return {
       success: false,
-      error: {
-        code: ErrorCodes.INTERNAL_SERVER_ERROR.code,
-        message: ErrorCodes.INTERNAL_SERVER_ERROR.message,
-      },
+      error: ErrorCodes.INTERNAL_SERVER_ERROR,
     };
   }
 };
@@ -538,15 +515,12 @@ export const _searchOrderDetail = async (values: ApiRequest<number>): Promise<Ap
     if (e instanceof CustomError) {
       return {
         success: false,
-        error: {
-          code: e.code,
-          message: e.message,
-        },
+        error: e,
       };
     }
     return {
       success: false,
-      error: { code: ErrorCodes.INTERNAL_SERVER_ERROR.code, message: ErrorCodes.INTERNAL_SERVER_ERROR.message },
+      error: ErrorCodes.INTERNAL_SERVER_ERROR,
     };
   }
 };
@@ -603,8 +577,6 @@ export const _orderCancel = async (values: ApiRequest<number>): Promise<ApiRespo
     // TASK: GMO連携後に処理追加予定
 
     /* --------------------------------------------------------------- */
-    // throw new Error('疑似エラー:ロールバックを確認しました。');
-
     // Commit
     await client.query('COMMIT');
     console.log('Transaction completed, Update user ID:', updatedId);
@@ -618,18 +590,12 @@ export const _orderCancel = async (values: ApiRequest<number>): Promise<ApiRespo
     if (e instanceof CustomError) {
       return {
         success: false,
-        error: {
-          code: e.code,
-          message: e.message,
-        },
+        error: e,
       };
     }
     return {
       success: false,
-      error: {
-        code: ErrorCodes.INTERNAL_SERVER_ERROR.code,
-        message: ErrorCodes.INTERNAL_SERVER_ERROR.message,
-      },
+      error: ErrorCodes.INTERNAL_SERVER_ERROR,
     };
   } finally {
     // Transaction End

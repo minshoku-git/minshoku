@@ -42,10 +42,7 @@ export async function POST(req: NextRequest) {
       console.error('ログインエラー:', signInError);
       const result: ApiResponse<null> = {
         success: false,
-        error: {
-          code: ErrorCodes.CONFLICT.code,
-          message: ErrorCodes.CONFLICT.message,
-        },
+        error: ErrorCodes.CONFLICT,
       };
       // エラー時はJSONレスポンスを返す
       return NextResponse.json(result, { status: 401 });
@@ -65,10 +62,7 @@ export async function POST(req: NextRequest) {
     console.error('予期せぬエラー:', e);
     const result: ApiResponse<null> = {
       success: false,
-      error: {
-        code: ErrorCodes.INTERNAL_SERVER_ERROR.code,
-        message: ErrorCodes.INTERNAL_SERVER_ERROR.message,
-      },
+      error: ErrorCodes.INTERNAL_SERVER_ERROR,
     };
     return NextResponse.json(result, { status: 500 });
   }

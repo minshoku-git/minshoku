@@ -46,13 +46,6 @@ export const searchScheduleList = async (
       return {
         success: true,
         data: { orderAmout: 0, scheduleDatas: [] },
-        paginate: {
-          count: 0,
-          startRow: 0,
-          endRow: 0,
-          totalPage: 0,
-          currentPage: 0,
-        },
       };
     }
     console.log('スケジュール件数の取得結果:', count);
@@ -107,7 +100,9 @@ export const searchScheduleList = async (
     console.log('スケジュール一覧納品数合計:', totalOrderCount);
 
     /* 返却
-  ------------------------------------------------------------------ */
+    ------------------------------------------------------------------ */
+    const { startRow, endRow, totalPage } = getPagenationsItems(startRange, data.length, count ?? 0);
+
     const res: ScheduleListSearchResult = {
       orderAmout: totalOrderCount,
       scheduleDatas: data.map((m) => {
@@ -118,13 +113,6 @@ export const searchScheduleList = async (
           sum: totalOrderCount,
         };
       }),
-    };
-
-    // 結果返却
-    const { startRow, endRow, totalPage } = getPagenationsItems(startRange, data.length, count ?? 0);
-    return {
-      success: true,
-      data: res,
       paginate: {
         count,
         startRow,
@@ -133,25 +121,24 @@ export const searchScheduleList = async (
         currentPage: values.sortItems?.nextPage ?? 0,
       },
     };
+
+    return {
+      success: true,
+      data: res,
+    };
   } catch (e: unknown) {
     console.error(e);
 
     if (e instanceof CustomError) {
       return {
         success: false,
-        error: {
-          code: e.code,
-          message: e.message,
-        },
+        error: e,
       };
     }
 
     return {
       success: false,
-      error: {
-        code: ErrorCodes.INTERNAL_SERVER_ERROR.code,
-        message: ErrorCodes.INTERNAL_SERVER_ERROR.message,
-      },
+      error: ErrorCodes.INTERNAL_SERVER_ERROR,
     };
   }
 };

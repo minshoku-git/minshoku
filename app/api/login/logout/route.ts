@@ -18,7 +18,7 @@ export async function POST(_req: Request) {
       }
       const req: ApiResponse<null> = {
         success: false,
-        error: { code: ErrorCodes.LOGOUT_FAILED.code, message: ErrorCodes.LOGOUT_FAILED.message },
+        error: ErrorCodes.LOGOUT_FAILED,
       };
       return NextResponse.json(req);
     }
@@ -28,7 +28,7 @@ export async function POST(_req: Request) {
   } catch (error) {
     const req: ApiResponse<null> = {
       success: false,
-      error: { code: ErrorCodes.INTERNAL_SERVER_ERROR.code, message: ErrorCodes.INTERNAL_SERVER_ERROR.message },
+      error: ErrorCodes.INTERNAL_SERVER_ERROR,
     };
     return NextResponse.json(req);
   }

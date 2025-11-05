@@ -2,7 +2,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Box, Button, Divider, Paper, TableCell, TableRow, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2';
-import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { JSX, useEffect, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
@@ -10,8 +9,9 @@ import { SelectElement, TextFieldElement } from 'react-hook-form-mui';
 
 import { SESSION_STORAGE_KEYS } from '@/app/_config/sessionStorageKeys';
 import { QUERY_KEYS } from '@/app/_lib/hooks/query/queryKeys';
-import { AlertType, SearchType, SortType, UsageStatus } from '@/app/_types/enum';
-import { ApiRequest, ApiResponse, HeaderStatus } from '@/app/_types/types';
+import { useApiQuery } from '@/app/_lib/hooks/query/useApiQuery';
+import { SearchType, SortType, UsageStatus } from '@/app/_types/enum';
+import { ApiRequest, HeaderStatus } from '@/app/_types/types';
 import { ResultsCounter } from '@/app/_ui/components/atoms/resultsCounter';
 import { CustomTable } from '@/app/_ui/components/organisms/customTable/customTable';
 import { useProcessing } from '@/app/_ui/state/processing/processingContext';
@@ -65,7 +65,7 @@ export const ShopComponent = (): JSX.Element => {
   const [isSearch, setIsSearch] = useState(false);
   const [condition, setCondition] = useState<ApiRequest<ShopSearchFormValues> | null>(null);
 
-  const [result, setResult] = useState<ApiResponse<ShopListSearchResult[]> | null>(null);
+  const [result, setResult] = useState<ShopListSearchResult | null>(null);
 
   /* useForm
   ------------------------------------------------------------------ */
@@ -82,7 +82,7 @@ export const ShopComponent = (): JSX.Element => {
 
   /* useQuery
   ------------------------------------------------------------------ */
-  const { data, isFetching, refetch } = useQuery<ApiResponse<ShopListSearchResult[]>>({
+  const { data, isFetching, refetch } = useApiQuery<ShopListSearchResult>({
     queryKey: [QUERY_KEYS.SHOP_SEARCH_RESULT, condition],
     queryFn: () => searchShopListFetcher(condition),
     enabled: false,
@@ -126,12 +126,6 @@ export const ShopComponent = (): JSX.Element => {
     if (!data) {
       return;
     }
-    if (!data.success) {
-      openSnackbar(AlertType.ERROR, data.error.message);
-      setResult(null);
-      setIsSearch(false);
-      return;
-    }
     if (searchType === SearchType.SEARCH) {
       setSortArray(resultHeader);
       setSortTarget(resultHeader[0]);
@@ -143,7 +137,7 @@ export const ShopComponent = (): JSX.Element => {
       });
     }
     setIsSearch(true);
-    setResult(data ?? null);
+    setResult(data);
     closeProcessing();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
@@ -299,15 +293,15 @@ export const ShopComponent = (): JSX.Element => {
             </Grid>
             {!isFetching && (
               <>
-                {isSearch && result?.success && (
+                {isSearch && result && (
                   <>
                     <Divider sx={{ my: 3 }} />
-                    {result.paginate?.count && result.paginate?.count > 0 ? (
+                    {result.paginate && result.paginate.count > 0 ? (
                       <Box sx={{ display: 'flex', alignItems: 'end' }}>
                         <ResultsCounter
-                          startRow={result.paginate?.startRow}
-                          endRow={result.paginate?.endRow}
-                          count={result.paginate?.count}
+                          startRow={result.paginate.startRow}
+                          endRow={result.paginate.endRow}
+                          count={result.paginate.count}
                         />
                       </Box>
                     ) : (
@@ -323,7 +317,7 @@ export const ShopComponent = (): JSX.Element => {
                       sortTarget={sortTarget}
                       setSortTarget={setSortTarget}
                       renderBody={() =>
-                        result.data?.map((row, index) => (
+                        result.shopDatas?.map((row, index) => (
                           <TableRow
                             key={index}
                             hover

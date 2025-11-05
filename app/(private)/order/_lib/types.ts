@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { MSG_INVALID, MSG_MAX } from '@/app/_config/constants';
 import { formatString } from '@/app/_lib/utils/utils';
 import { OrderStatusType } from '@/app/_types/enum';
+import { PaginateData } from '@/app/_types/types';
 
 /**
  * オーダー一覧 検索条件 Schema
@@ -82,6 +83,14 @@ export type OrderSearchFormValues = z.infer<typeof OrderSearchSchema>;
 
 /** 検索結果 オーダー一覧 */
 export type OrderListSearchResult = {
+  /** 注文情報配列 */
+  orderDatas: OrderData[];
+  /** ページネート */
+  paginate?: PaginateData;
+};
+
+/** オーダー情報 */
+export type OrderData = {
   /** ID */
   id: string;
   /** 納品日 */

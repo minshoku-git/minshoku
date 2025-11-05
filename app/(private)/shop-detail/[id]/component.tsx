@@ -3,7 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowBack, CloudUpload, Delete, Search } from '@mui/icons-material';
 import { Box, Button, Divider, IconButton, Paper, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
 import { ChangeEvent, JSX, useEffect, useMemo, useRef, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
@@ -12,6 +12,8 @@ import { SelectElement, TextareaAutosizeElement, TextFieldElement } from 'react-
 import { IMAGE_TYPES } from '@/app/_config/constants';
 import { SESSION_STORAGE_KEYS } from '@/app/_config/sessionStorageKeys';
 import { QUERY_KEYS } from '@/app/_lib/hooks/query/queryKeys';
+import { useApiMutation } from '@/app/_lib/hooks/query/useApiMutation';
+import { useApiQuery } from '@/app/_lib/hooks/query/useApiQuery';
 import { t_shops } from '@/app/_lib/supabase/tableTypes';
 import { getAddress } from '@/app/_lib/utils/getAddress';
 import { getAttachmentSizeOver, getMbSize } from '@/app/_lib/utils/getFile';
@@ -78,7 +80,7 @@ export const ShopComponent = (): JSX.Element => {
     data: result,
     isLoading,
     refetch,
-  } = useQuery<ApiResponse<t_shops>>({
+  } = useApiQuery<ApiResponse<t_shops>>({
     queryKey: [QUERY_KEYS.SHOP_DETAIL_INIT],
     queryFn: searchShopDetailFetch,
     enabled: editMode,
@@ -129,7 +131,7 @@ export const ShopComponent = (): JSX.Element => {
     insertMutate.mutate(data);
   };
 
-  const insertMutate = useMutation({
+  const insertMutate = useApiMutation({
     mutationFn: async (data: ShopDetailFormValues) => {
       openProcessing();
 
@@ -141,20 +143,11 @@ export const ShopComponent = (): JSX.Element => {
         formData.append('shop_image_file_bytesize', file.size.toString());
         formData.append('shop_image_file_data', file);
       }
-
       return insertShopDetailFetcher(formData) as unknown as ApiResponse<number>;
     },
     onSuccess: (res) => {
-      if (res.success) {
-        openSnackbar(AlertType.SUCCESS, '店舗情報の登録が完了しました。');
-        router.push(`/shop-detail/${res.data}`);
-      } else {
-        openSnackbar(AlertType.ERROR, res.error.message);
-      }
-    },
-    onError: (e) => {
-      console.log(e.message);
-      openSnackbar(AlertType.ERROR, '店舗情報の新規登録に失敗しました。再度お試しください。');
+      openSnackbar(AlertType.SUCCESS, '店舗情報の登録が完了しました。');
+      router.push(`/shop-detail/${res.data}`);
     },
     onSettled: () => {
       closeProcessing();
@@ -168,7 +161,7 @@ export const ShopComponent = (): JSX.Element => {
     updateMutate.mutate(data);
   };
 
-  const updateMutate = useMutation({
+  const updateMutate = useApiMutation({
     mutationFn: async (data: ShopDetailFormValues) => {
 
       const formData = new FormData();
@@ -183,17 +176,9 @@ export const ShopComponent = (): JSX.Element => {
       return updateShopDetailFetcher(formData);
     },
     onSuccess: (res) => {
-      if (res.success) {
-        refetch();
-        setFile(undefined);
-        openSnackbar(AlertType.SUCCESS, '店舗情報の更新が完了しました。');
-      } else {
-        openSnackbar(AlertType.ERROR, res.error.message);
-      }
-    },
-    onError: (e) => {
-      console.error(e.message);
-      openSnackbar(AlertType.ERROR, '店舗情報の更新に失敗しました。再度お試しください。');
+      refetch();
+      setFile(undefined);
+      openSnackbar(AlertType.SUCCESS, '店舗情報の更新が完了しました。');
     },
     onSettled: () => {
       closeProcessing();

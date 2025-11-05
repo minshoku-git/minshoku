@@ -12,7 +12,7 @@ import { ApiRequest, ApiResponse, SortItems } from '@/app/_types/types';
 import { CustomError } from '@/app/errors/customError';
 import { ErrorCodes } from '@/app/errors/ErrorCodes';
 
-import { UserListSearchResult, UserSearchFormValues } from './types';
+import { UserData, UserListSearchResult, UserSearchFormValues } from './types';
 
 /* ユーザー一覧
 ------------------------------------------------------------------ */
@@ -21,11 +21,11 @@ import { UserListSearchResult, UserSearchFormValues } from './types';
  * 検索条件に一致するユーザー情報を取得する。
  *
  * @param {ApiRequest<UserSearchFormValues>} values - 検索条件
- * @returns {Promise<ApiResponse<UserListSearchResult[]>>} - 検索結果
+ * @returns {Promise<ApiResponse<UserListSearchResult>>} - 検索結果
  */
 export const searchUserList = async (
   values: ApiRequest<UserSearchFormValues>
-): Promise<ApiResponse<UserListSearchResult[]>> => {
+): Promise<ApiResponse<UserListSearchResult>> => {
   const supabase = await createClient();
 
   const req = values.request;
@@ -53,7 +53,7 @@ export const searchUserList = async (
     );
     queryCount = applyFilters(queryCount, req);
 
-    const { count, error: countError } = (await queryCount) as PostgrestSingleResponse<UserListSearchResult[]>;
+    const { count, error: countError } = (await queryCount) as PostgrestSingleResponse<UserData[]>;
 
     if (countError) {
       console.error('countError', countError);
@@ -66,13 +66,8 @@ export const searchUserList = async (
     if (!count) {
       return {
         success: true,
-        data: [],
-        paginate: {
-          count: 0,
-          startRow: 0,
-          endRow: 0,
-          totalPage: 0,
-          currentPage: 0,
+        data: {
+          userDatas: [],
         },
       };
     }
@@ -96,7 +91,7 @@ export const searchUserList = async (
     query = applyFilters(query, req);
     query = applySorts(query, sortItems);
 
-    const { data, error } = (await query) as PostgrestSingleResponse<UserListSearchResult[]>;
+    const { data, error } = (await query) as PostgrestSingleResponse<UserData[]>;
     if (error) {
       console.error(error);
       throw new CustomError(
@@ -112,21 +107,23 @@ export const searchUserList = async (
 
     return {
       success: true,
-      data: data.map((m) => {
-        return {
-          ...m,
-          user_registration_status: convertUserRegistrationStatusName(
-            m.user_registration_status as UserRegistrationStatus
-          ),
-          usage_status: convertUsageStatusName(m.usage_status as UsageStatus),
-        };
-      }),
-      paginate: {
-        count,
-        startRow,
-        endRow,
-        totalPage,
-        currentPage: values.sortItems?.nextPage ?? 0,
+      data: {
+        userDatas: data.map((m) => {
+          return {
+            ...m,
+            user_registration_status: convertUserRegistrationStatusName(
+              m.user_registration_status as UserRegistrationStatus
+            ),
+            usage_status: convertUsageStatusName(m.usage_status as UsageStatus),
+          };
+        }),
+        paginate: {
+          count,
+          startRow,
+          endRow,
+          totalPage,
+          currentPage: values.sortItems?.nextPage ?? 0,
+        },
       },
     };
   } catch (e: unknown) {
@@ -134,18 +131,12 @@ export const searchUserList = async (
     if (e instanceof CustomError) {
       return {
         success: false,
-        error: {
-          code: e.code,
-          message: e.message,
-        },
+        error: e,
       };
     }
     return {
       success: false,
-      error: {
-        code: ErrorCodes.INTERNAL_SERVER_ERROR.code,
-        message: ErrorCodes.INTERNAL_SERVER_ERROR.message,
-      },
+      error: ErrorCodes.INTERNAL_SERVER_ERROR,
     };
   }
 };

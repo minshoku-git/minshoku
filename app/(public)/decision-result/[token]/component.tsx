@@ -1,13 +1,13 @@
 'use client';
 import { Box, Button, Grid2 as Grid, Paper, Typography } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { JSX, useEffect } from 'react';
 
 import { QUERY_KEYS } from '@/app/_lib/hooks/query/queryKeys';
-import { AlertType, UserApprovalType } from '@/app/_types/enum';
-import { ApiRequest, ApiResponse } from '@/app/_types/types';
+import { useApiQuery } from '@/app/_lib/hooks/query/useApiQuery';
+import { UserApprovalType } from '@/app/_types/enum';
+import { ApiRequest } from '@/app/_types/types';
 import { useProcessing } from '@/app/_ui/state/processing/processingContext';
 import { useSnackBar } from '@/app/_ui/state/snackBar/snackbarContext';
 
@@ -22,7 +22,6 @@ export const DecisiondataComponent = (): JSX.Element => {
   /* initialize
   ------------------------------------------------------------------ */
   const router = useRouter();
-  const { openSnackbar } = useSnackBar();
   const { openProcessing, closeProcessing } = useProcessing();
   const userApprovalType = (useParams().token as string) ?? '';
   const token = useSearchParams().get('token') ?? '';
@@ -35,9 +34,9 @@ export const DecisiondataComponent = (): JSX.Element => {
   };
 
   const {
-    data: result,
+    data,
     isLoading,
-  } = useQuery<ApiResponse<DecisionResult>>({
+  } = useApiQuery<DecisionResult>({
     queryKey: [QUERY_KEYS.DECISION_INIT],
     queryFn: decisionFetch,
   });
@@ -45,15 +44,10 @@ export const DecisiondataComponent = (): JSX.Element => {
   /* useEffect
   ------------------------------------------------------------------ */
   useEffect(() => {
-    if (!result) {
+    if (!data) {
       return;
     }
-    if (!result.success) {
-      openSnackbar(AlertType.ERROR, result.error.message);
-      // router.push('/');
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [result]);
+  }, [data]);
 
   useEffect(() => {
     if (isLoading) {
@@ -104,19 +98,19 @@ export const DecisiondataComponent = (): JSX.Element => {
           </Grid>
           {/* <Divider /> */}
           <Box sx={{ mx: 'auto' }}>
-            {result?.success && (
+            {data && (
               <>
-                {UserApprovalType.APPROVAL === result.data.userApprovalType && (
+                {UserApprovalType.APPROVAL === data.userApprovalType && (
                   <>
                     <Typography>ユーザーの承認処理が完了しました。</Typography>
                   </>
                 )}
-                {UserApprovalType.DISAPPROVAL === result.data.userApprovalType && (
+                {UserApprovalType.DISAPPROVAL === data.userApprovalType && (
                   <>
                     <Typography>ユーザーの否認処理が完了しました。</Typography>
                   </>
                 )}
-                {UserApprovalType.PROCESSED === result.data.userApprovalType && (
+                {UserApprovalType.PROCESSED === data.userApprovalType && (
                   <>
                     <Typography>このユーザーの承認フローはすでに完了しています。</Typography>
                   </>

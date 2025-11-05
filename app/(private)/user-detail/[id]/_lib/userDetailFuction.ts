@@ -21,7 +21,7 @@ import { UpdateUserData, UserDataDetailRequest, UserDataDetailResult, UserDetail
  * IDに一致するユーザー情報を取得する。
  *
  * @param {ApiRequest<number>} values - 検索条件
- * @returns {Promise<UserDetailFormValues>} 検索結果
+ * @returns {Promise<ApiResponse<UserDataDetailResult>>} 検索結果
  */
 export const searchUserDetail = async (values: ApiRequest<number>): Promise<ApiResponse<UserDataDetailResult>> => {
   const supabase = await createClient();
@@ -80,15 +80,12 @@ export const searchUserDetail = async (values: ApiRequest<number>): Promise<ApiR
     if (e instanceof CustomError) {
       return {
         success: false,
-        error: {
-          code: e.code,
-          message: e.message,
-        },
+        error: e,
       };
     }
     return {
       success: false,
-      error: { code: ErrorCodes.INTERNAL_SERVER_ERROR.code, message: ErrorCodes.INTERNAL_SERVER_ERROR.message },
+      error: ErrorCodes.INTERNAL_SERVER_ERROR,
     };
   }
 };
@@ -98,9 +95,9 @@ export const searchUserDetail = async (values: ApiRequest<number>): Promise<ApiR
  * IDに一致するユーザー情報を更新する。
  *
  * @param {ApiRequest<UserDataDetailRequest>} values - 検索条件
- * @returns {Promise<ApiResponse<number>>} 検索結果
+ * @returns {Promise<ApiResponse<null>>} 検索結果
  */
-export const updateUserDetail = async (values: ApiRequest<UserDataDetailRequest>): Promise<ApiResponse<number>> => {
+export const updateUserDetail = async (values: ApiRequest<UserDataDetailRequest>): Promise<ApiResponse<null>> => {
   const supabase = await createClient();
   const req = values.request;
   const timestamp = getNow();
@@ -131,21 +128,19 @@ export const updateUserDetail = async (values: ApiRequest<UserDataDetailRequest>
       );
     }
 
-    return { success: true, data: Number(data.id) };
+    console.log('update userId:' + data.id);
+    return { success: true, data: null };
   } catch (e: unknown) {
     console.error(e);
     if (e instanceof CustomError) {
       return {
         success: false,
-        error: {
-          code: e.code,
-          message: e.message,
-        },
+        error: e,
       };
     }
     return {
       success: false,
-      error: { code: ErrorCodes.INTERNAL_SERVER_ERROR.code, message: ErrorCodes.INTERNAL_SERVER_ERROR.message },
+      error: ErrorCodes.INTERNAL_SERVER_ERROR,
     };
   }
 };
@@ -155,11 +150,11 @@ export const updateUserDetail = async (values: ApiRequest<UserDataDetailRequest>
  * IDに一致するユーザー情報を否認する。
  *
  * @param {ApiRequest<UpdateUserData>} values - 検索条件
- * @returns {Promise<UserDetailFormValues>} 検索結果
+ * @returns {Promise<ApiResponse<null>>} 検索結果
  */
 export const disapprovalUserRegistrationStatus = async (
   values: ApiRequest<UpdateUserData>
-): Promise<ApiResponse<number>> => {
+): Promise<ApiResponse<null>> => {
   const supabase = await createClient();
 
   const id = values.request.id;
@@ -189,21 +184,19 @@ export const disapprovalUserRegistrationStatus = async (
       );
     }
 
-    return { success: true, data: Number(data.id) };
+    console.log('update userId:' + data.id);
+    return { success: true, data: null };
   } catch (e: unknown) {
     console.error(e);
     if (e instanceof CustomError) {
       return {
         success: false,
-        error: {
-          code: e.code,
-          message: e.message,
-        },
+        error: e,
       };
     }
     return {
       success: false,
-      error: { code: ErrorCodes.INTERNAL_SERVER_ERROR.code, message: ErrorCodes.INTERNAL_SERVER_ERROR.message },
+      error: ErrorCodes.INTERNAL_SERVER_ERROR,
     };
   }
 };
@@ -213,7 +206,7 @@ export const disapprovalUserRegistrationStatus = async (
  * IDに一致するユーザー情報を引き戻し(承認)する。
  *
  * @param {ApiRequest<UserDataDetailRequest>} values - 検索条件
- * @returns {Promise<null>} 検索結果
+ * @returns {Promise<ApiResponse<null>>} 検索結果
  */
 export const pullBackUserRegistrationStatus = async (
   values: ApiRequest<UserDataDetailRequest>
@@ -297,8 +290,6 @@ export const pullBackUserRegistrationStatus = async (
     }
 
     /* --------------------------------------------------------------- */
-    // throw new Error('疑似エラー:ロールバックを確認しました。');
-
     // Commit
     await pgClient.query('COMMIT');
 
@@ -311,18 +302,12 @@ export const pullBackUserRegistrationStatus = async (
     if (e instanceof CustomError) {
       return {
         success: false,
-        error: {
-          code: e.code,
-          message: e.message,
-        },
+        error: e,
       };
     }
     return {
       success: false,
-      error: {
-        code: ErrorCodes.INTERNAL_SERVER_ERROR.code,
-        message: ErrorCodes.INTERNAL_SERVER_ERROR.message,
-      },
+      error: ErrorCodes.INTERNAL_SERVER_ERROR,
     };
   } finally {
     // Transaction End
@@ -335,11 +320,11 @@ export const pullBackUserRegistrationStatus = async (
  * IDに一致するユーザー情報を承認する。
  *
  * @param {ApiRequest<UserDataDetailRequest>} values - 検索条件
- * @returns {Promise<UserDetailFormValues>} 検索結果
+ * @returns {Promise<ApiResponse<null>> } 検索結果
  */
 export const approvalUserRegistrationStatus = async (
   values: ApiRequest<UserDataDetailRequest>
-): Promise<ApiResponse<number>> => {
+): Promise<ApiResponse<null>> => {
   const req = values.request;
   const timestamp = getNow();
   const supabase = await createClient(); //signUp用
@@ -422,13 +407,11 @@ export const approvalUserRegistrationStatus = async (
     }
 
     /* --------------------------------------------------------------- */
-    // throw new Error('疑似エラー:ロールバックを確認しました。');
-
     // Commit
     await pgClient.query('COMMIT');
     console.log('Transaction completed, new company ID:', updateId);
 
-    return { success: true, data: updateId };
+    return { success: true, data: null };
   } catch (e: unknown) {
     console.error('Transaction failed:', e);
     // Rollback
@@ -437,18 +420,12 @@ export const approvalUserRegistrationStatus = async (
     if (e instanceof CustomError) {
       return {
         success: false,
-        error: {
-          code: e.code,
-          message: e.message,
-        },
+        error: e,
       };
     }
     return {
       success: false,
-      error: {
-        code: ErrorCodes.INTERNAL_SERVER_ERROR.code,
-        message: ErrorCodes.INTERNAL_SERVER_ERROR.message,
-      },
+      error: ErrorCodes.INTERNAL_SERVER_ERROR,
     };
   } finally {
     // Transaction End

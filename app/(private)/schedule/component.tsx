@@ -4,7 +4,6 @@ import { Box, Button, Divider, Paper, TableCell, TableRow, Typography } from '@m
 import Grid from '@mui/material/Grid2';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { useQuery } from '@tanstack/react-query';
 import { ja } from 'date-fns/locale';
 import { JSX, useEffect, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
@@ -12,9 +11,10 @@ import { TextFieldElement } from 'react-hook-form-mui';
 import { DatePickerElement } from 'react-hook-form-mui/date-pickers';
 
 import { QUERY_KEYS } from '@/app/_lib/hooks/query/queryKeys';
+import { useApiQuery } from '@/app/_lib/hooks/query/useApiQuery';
 import { getTodayXHour, getTomorrow, getYesterday } from '@/app/_lib/utils/getDateTime';
-import { AlertType, SearchType, SortType } from '@/app/_types/enum';
-import { ApiRequest, ApiResponse, HeaderStatus } from '@/app/_types/types';
+import { SearchType, SortType } from '@/app/_types/enum';
+import { ApiRequest, HeaderStatus } from '@/app/_types/types';
 import ItemBase from '@/app/_ui/components/atoms/itemBase';
 import { ResultsCounter } from '@/app/_ui/components/atoms/resultsCounter';
 import { CustomTable } from '@/app/_ui/components/organisms/customTable/customTable';
@@ -58,7 +58,7 @@ export const ScheduleComponent = (): JSX.Element => {
   const [isSearch, setIsSearch] = useState(false);
   /* 検索条件/検索結果 */
   const [condition, setCondition] = useState<ApiRequest<ScheduleSearchFormValues> | null>(null);
-  const [result, setResult] = useState<ApiResponse<ScheduleListSearchResult> | null>(null);
+  const [result, setResult] = useState<ScheduleListSearchResult | null>(null);
 
   /* useForm
   ------------------------------------------------------------------ */
@@ -109,7 +109,7 @@ export const ScheduleComponent = (): JSX.Element => {
 
   /* useQuery
   ------------------------------------------------------------------ */
-  const { data, isFetching, refetch, isError } = useQuery<ApiResponse<ScheduleListSearchResult>>({
+  const { data, isFetching, refetch } = useApiQuery<ScheduleListSearchResult>({
     queryKey: [QUERY_KEYS.SCHEDULE_SEARCH_RESULT, condition],
     queryFn: () => searchScheduleListFetcher(condition),
     enabled: false,
@@ -138,12 +138,6 @@ export const ScheduleComponent = (): JSX.Element => {
     if (!data) {
       return;
     }
-    if (!data.success) {
-      openSnackbar(AlertType.ERROR, data.error.message);
-      setResult(null);
-      setIsSearch(false);
-      return;
-    }
     if (searchType === SearchType.SEARCH) {
       setSortArray(resultHeader);
       setSortTarget(resultHeader[0]);
@@ -155,7 +149,7 @@ export const ScheduleComponent = (): JSX.Element => {
       });
     }
     setIsSearch(true);
-    setResult(data ?? null);
+    setResult(data);
     closeProcessing();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
@@ -371,20 +365,20 @@ export const ScheduleComponent = (): JSX.Element => {
               </Button>
             </Grid>
           </form>
-          {isSearch && result?.success && (
+          {isSearch && result && (
             <>
               <Divider sx={{ my: 3 }} />
-              {result.paginate?.count && result.paginate?.count > 0 ? (
+              {result.paginate && result.paginate.count > 0 ? (
                 <>
                   <Box sx={{ display: 'flex', alignItems: 'end' }}>
                     {/* 検索件数 */}
                     <ResultsCounter
-                      startRow={result.paginate?.startRow}
-                      endRow={result.paginate?.endRow}
-                      count={result.paginate?.count}
+                      startRow={result.paginate.startRow}
+                      endRow={result.paginate.endRow}
+                      count={result.paginate.count}
                     />
                     {/* 合計食数 */}
-                    <Typography sx={{ fontSize: '14px', ml: 2 }}>合計食数 : {result.data?.orderAmout ?? 0}</Typography>
+                    <Typography sx={{ fontSize: '14px', ml: 2 }}>合計食数 : {result.orderAmout ?? 0}</Typography>
                   </Box>
                 </>
               ) : (
@@ -401,7 +395,7 @@ export const ScheduleComponent = (): JSX.Element => {
                 setSortTarget={setSortTarget}
                 renderBody={() =>
                   /* 検索結果 */
-                  result.data?.scheduleDatas.map((row, index) => (
+                  result.scheduleDatas.map((row, index) => (
                     <TableRow key={index} hover>
                       <TableCell sx={{ whiteSpace: 'pre' }}>{row.delivery_day}</TableCell>
                       <TableCell>

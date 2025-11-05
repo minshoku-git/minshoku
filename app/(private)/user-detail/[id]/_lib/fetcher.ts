@@ -22,10 +22,10 @@ export const searchUserDetail = (req: ApiRequest<number>): Promise<any> => {
 /**
  * ユーザー情報更新
  * @param {ApiRequest<UserDetailFormValues>} req
- * @returns {Promise<ApiResponse<number>>}
+ * @returns {Promise<ApiResponse<null>>}
  */
-export const updateUserDetail = (req: ApiRequest<UserDataDetailRequest>): Promise<ApiResponse<number>> => {
-  return fetcher<ApiResponse<number>>('/api/user-detail/update', {
+export const updateUserDetail = (req: ApiRequest<UserDataDetailRequest>): Promise<ApiResponse<null>> => {
+  return fetcher<ApiResponse<null>>('/api/user-detail/update', {
     method: 'PUT',
     body: JSON.stringify(req),
     headers: {
@@ -37,10 +37,10 @@ export const updateUserDetail = (req: ApiRequest<UserDataDetailRequest>): Promis
 /**
  * 否認
  * @param {ApiRequest<UpdateUserData>} req
- * @returns {Promise<ApiResponse<number>>}
+ * @returns {Promise<ApiResponse<null>>}
  */
-export const disapproval = (req: ApiRequest<UpdateUserData>): Promise<ApiResponse<number>> => {
-  return fetcher<ApiResponse<number>>('/api/user-detail/disapproval', {
+export const disapproval = (req: ApiRequest<UpdateUserData>): Promise<ApiResponse<null>> => {
+  return fetcher<ApiResponse<null>>('/api/user-detail/disapproval', {
     method: 'PUT',
     body: JSON.stringify(req),
     headers: {
@@ -52,10 +52,10 @@ export const disapproval = (req: ApiRequest<UpdateUserData>): Promise<ApiRespons
 /**
  * 承認
  * @param {ApiRequest<UpdateUserData>} req
- * @returns {Promise<ApiResponse<number>>}
+ * @returns {Promise<ApiResponse<null>>}
  */
-export const approval = (req: ApiRequest<UpdateUserData>): Promise<ApiResponse<number>> => {
-  return fetcher<ApiResponse<number>>('/api/user-detail/approval', {
+export const approval = (req: ApiRequest<UpdateUserData>): Promise<ApiResponse<null>> => {
+  return fetcher<ApiResponse<null>>('/api/user-detail/approval', {
     method: 'PUT',
     body: JSON.stringify(req),
     headers: {
@@ -67,7 +67,7 @@ export const approval = (req: ApiRequest<UpdateUserData>): Promise<ApiResponse<n
 /**
  * 引き戻し承認
  * @param {ApiRequest<number>} req
- * @returns {Promise<ApiResponse<number>>}
+ * @returns {Promise<ApiResponse<null>>}
  */
 export const pullbackFetcher = (req: ApiRequest<UserDataDetailRequest>): Promise<ApiResponse<null>> => {
   return fetcher<ApiResponse<null>>('/api/user-detail/pull-back', {

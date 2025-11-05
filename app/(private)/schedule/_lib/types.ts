@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { MSG_INVALID, MSG_MAX } from '@/app/_config/constants';
 import { formatString } from '@/app/_lib/utils/utils';
+import { PaginateData } from '@/app/_types/types';
 
 /**
  * スケジュール一覧 検索条件 Schema
@@ -78,6 +79,8 @@ export type ScheduleListSearchResult = {
   scheduleDatas: ScheduleData[];
   /** 合計食数 */
   orderAmout: number;
+  /** ページネート */
+  paginate?: PaginateData;
 };
 
 /** 検索結果 スケジュール一覧 */

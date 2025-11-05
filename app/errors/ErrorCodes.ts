@@ -52,4 +52,9 @@ export const ErrorCodes = {
     message: 'CSVファイルに不正なデータが含まれています。内容を確認してください。',
     status: 400,
   },
+  FILE_NOT_FOUND: {
+    code: 'E2002',
+    message: '指定されたファイルが存在しません。ファイルのパスや名前を確認してください。',
+    status: 404,
+  },
 } as const;

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { MSG_MAX } from '@/app/_config/constants';
 import { formatString } from '@/app/_lib/utils/utils';
 import { UsageStatus } from '@/app/_types/enum';
+import { PaginateData } from '@/app/_types/types';
 
 /**
  * 会社一覧 検索条件 Schema
@@ -36,6 +37,14 @@ export type CompanySearchFormValues = z.infer<typeof CompanySearchSchema>;
 
 /** 検索結果 会社一覧 */
 export type CompanyListSearchResult = {
+  /** 利用ステータス */
+  companyDatas: CompanyData[];
+  /** ページネート */
+  paginate?: PaginateData;
+};
+
+/** 検索結果 会社一覧 */
+export type CompanyData = {
   /** ID */
   id: string;
   /** 会社名 */

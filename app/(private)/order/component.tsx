@@ -5,7 +5,7 @@ import { Box, Button, Divider, Paper, TableCell, TableRow, Typography } from '@m
 import Grid from '@mui/material/Grid2';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { ja } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { JSX, useEffect, useState } from 'react';
@@ -16,6 +16,8 @@ import { DatePickerElement } from 'react-hook-form-mui/date-pickers';
 
 import { SESSION_STORAGE_KEYS } from '@/app/_config/sessionStorageKeys';
 import { QUERY_KEYS } from '@/app/_lib/hooks/query/queryKeys';
+import { useApiMutation } from '@/app/_lib/hooks/query/useApiMutation';
+import { useApiQuery } from '@/app/_lib/hooks/query/useApiQuery';
 import { downloadCsv } from '@/app/_lib/utils/downloadCsv/downloadCsv';
 import { getLastMonthEndDay, getLastMonthStartDay, getNow, getTodayXHour, getTomorrow, getYesterday } from '@/app/_lib/utils/getDateTime';
 import { AlertType, OrderStatusType, PaymentType, SearchType, SortType } from '@/app/_types/enum';
@@ -28,7 +30,7 @@ import { useSnackBar } from '@/app/_ui/state/snackBar/snackbarContext';
 
 import ItemBase from '../../_ui/components/atoms/itemBase';
 import { orderCancelFetcher, orderListExportCSVFetcher, searchOrderDetailFetcher, searchOrderListFetcher } from './_lib/fetcher';
-import { orderDeteilResponseData, OrderListSearchResult, OrderSearchFormValues, OrderSearchSchema } from './_lib/types';
+import { OrderData, orderDeteilCsvResponseData, orderDeteilResponseData, OrderListSearchResult, OrderSearchFormValues, OrderSearchSchema } from './_lib/types';
 import OrderInfoModal from './orderInfoModal';
 
 /* ページ名 */
@@ -82,7 +84,7 @@ export const OrderComponent = (): JSX.Element => {
   const [isSearch, setIsSearch] = useState(false);
   /* 検索条件/検索結果 */
   const [condition, setCondition] = useState<ApiRequest<OrderSearchFormValues> | null>(null);
-  const [result, setResult] = useState<ApiResponse<OrderListSearchResult[]> | null>(null);
+  const [result, setResult] = useState<OrderListSearchResult | null>(null);
   /* 明細情報検索条件 */
   const [conditionDetail, setConditionDetail] = useState<ApiRequest<number> | null>(null);
 
@@ -112,7 +114,7 @@ export const OrderComponent = (): JSX.Element => {
 
   /* useQuery
   ------------------------------------------------------------------ */
-  const { data, isFetching, refetch } = useQuery<ApiResponse<OrderListSearchResult[]>>({
+  const { data, isFetching, refetch } = useApiQuery<OrderListSearchResult>({
     queryKey: [QUERY_KEYS.ORDER_SEARCH_RESULT, condition],
     queryFn: () => searchOrderListFetcher(condition),
     enabled: false,
@@ -120,7 +122,7 @@ export const OrderComponent = (): JSX.Element => {
 
   /* useQuery exportCSV
   ------------------------------------------------------------------ */
-  const { data: dataCsv, isFetching: isFetchingCsv, refetch: refetchCsv } = useQuery<ApiResponse<OrderListSearchResult[]>>({
+  const { data: dataCsv, isFetching: isFetchingCsv, refetch: refetchCsv } = useApiQuery<orderDeteilCsvResponseData[]>({
     queryKey: [QUERY_KEYS.ORDER_DETAIL_EXPORT_CSV, condition],
     queryFn: () => orderListExportCSVFetcher(condition),
     enabled: false,
@@ -135,13 +137,9 @@ export const OrderComponent = (): JSX.Element => {
       return;
     }
     const handleDownload = async () => {
-      if (dataCsv.success) {
-        const result = await downloadCsv(dataCsv.data);
-        if (!result.success) {
-          openSnackbar(AlertType.ERROR, 'CSV出力に失敗しました。');
-        }
-      } else {
-        openSnackbar(AlertType.ERROR, 'CSVデータの取得に失敗しました。');
+      const result = await downloadCsv(dataCsv);
+      if (!result.success) {
+        openSnackbar(AlertType.ERROR, 'CSV出力に失敗しました。');
       }
       // CSVダウンロード後にキャッシュを削除
       queryClient.removeQueries({ queryKey: [QUERY_KEYS.ORDER_DETAIL_EXPORT_CSV, condition] });
@@ -155,7 +153,7 @@ export const OrderComponent = (): JSX.Element => {
     data: dataDetail,
     isFetching: isFetchingDetail,
     refetch: refetchDetail,
-  } = useQuery<ApiResponse<orderDeteilResponseData>>({
+  } = useApiQuery<orderDeteilResponseData>({
     // queryKeyにIDを含める
     queryKey: [QUERY_KEYS.ORDER_DETAIL_INIT, conditionDetail],
     queryFn: () => searchOrderDetailFetcher(conditionDetail as ApiRequest<number>),
@@ -203,12 +201,6 @@ export const OrderComponent = (): JSX.Element => {
     if (!data) {
       return;
     }
-    if (!data?.success) {
-      openSnackbar(AlertType.ERROR, '検索時にエラーが発生しました。再度発生する場合は、管理者にお問い合わせください。');
-      setResult(null);
-      setIsSearch(false);
-      return;
-    }
     if (searchType === SearchType.SEARCH) {
       setSortArray(resultHeader);
       setSortTarget(resultHeader[0]);
@@ -220,7 +212,7 @@ export const OrderComponent = (): JSX.Element => {
       });
     }
     setIsSearch(true);
-    setResult(data ?? null);
+    setResult(data);
     closeProcessing();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
@@ -279,19 +271,6 @@ export const OrderComponent = (): JSX.Element => {
     setOpen(true); // モーダルを開く
   };
 
-  useEffect(() => {
-    // データ取得中ではない、かつデータが存在する場合にロジックを実行
-    if (!isFetchingDetail && dataDetail) {
-      // データ取得が成功しなかった場合
-      if (!dataDetail.success) {
-        openSnackbar(AlertType.ERROR, dataDetail.error.message);
-        setOpen(false);
-      }
-      // データ取得が成功した場合
-      // ここに成功時のロジックを追加しても良いでしょう
-      // 例: モーダル内のフォームにデータをセットするなど
-    }
-  }, [isFetchingDetail, dataDetail, openSnackbar, setOpen]);
 
   /* functions - modal
    ------------------------------------------------------------------ */
@@ -304,24 +283,16 @@ export const OrderComponent = (): JSX.Element => {
     setOpenDialog(true);
   };
 
-  const orderCancelMutate = useMutation({
+  const orderCancelMutate = useApiMutation({
     mutationFn: async (id: number) => {
       openProcessing();
       const req: ApiRequest<number> = { request: id };
       return orderCancelFetcher(req);
     },
     onSuccess: async (res: ApiResponse<number>) => {
-      if (!res.success) {
-        openSnackbar(AlertType.ERROR, res.error.message);
-        return;
-      }
       await refetch();
       await refetchDetail();
       openSnackbar(AlertType.INFO, 'キャンセルが完了しました。');
-    },
-    onError: (e) => {
-      console.error(e.message);
-      openSnackbar(AlertType.ERROR, e.message);
     },
     onSettled: () => {
       closeProcessing();
@@ -557,15 +528,15 @@ export const OrderComponent = (): JSX.Element => {
                 検索
               </Button>
             </Grid>
-            {isSearch && result?.success && (
+            {isSearch && result && (
               <>
                 <Divider sx={{ my: 3 }} />
-                {result.paginate?.count && result.paginate?.count > 0 ? (
+                {result.paginate && result.paginate.count > 0 ? (
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <ResultsCounter
-                      startRow={result.paginate?.startRow}
-                      endRow={result.paginate?.endRow}
-                      count={result.paginate?.count}
+                      startRow={result.paginate.startRow}
+                      endRow={result.paginate.endRow}
+                      count={result.paginate.count}
                     />
                     <Box sx={{ flexGrow: 1 }} />
                     <Button startIcon={<Download />} variant="outlined" onClick={() => exportCsvHandler()} loading={isFetchingCsv}>CSV出力</Button>
@@ -585,7 +556,7 @@ export const OrderComponent = (): JSX.Element => {
                   setSortTarget={setSortTarget}
                   renderBody={() =>
                     /* 検索結果 */
-                    result.data?.map((row, index) => (
+                    result.orderDatas?.map((row, index) => (
                       <TableRow
                         key={index}
                         hover

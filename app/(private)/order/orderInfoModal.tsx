@@ -17,7 +17,6 @@ import Grid from '@mui/material/Grid2';
 import * as React from 'react';
 
 import { OrderStatusType, PaymentType } from '@/app/_types/enum';
-import { ApiResponse } from '@/app/_types/types';
 import CustomModal from '@/app/_ui/components/atoms/customModal';
 
 import { orderDeteilResponseData } from './_lib/types';
@@ -30,7 +29,7 @@ type OrderInfoModalProps = {
   cancelHandler: (id: number) => void;
   openUserDetailHandler: (id: number) => void;
   openCompanyDetailHandler: (id: number) => void;
-  data: ApiResponse<orderDeteilResponseData> | undefined;
+  data?: orderDeteilResponseData;
   isFetching: boolean;
 };
 
@@ -69,7 +68,7 @@ const styles: { [key: string]: React.CSSProperties } = {
  * @returns {JSX.Element} JSX
  */
 const OrderInfoModal = (props: OrderInfoModalProps): React.JSX.Element => {
-  const data = props.data?.success ? props.data.data : null;
+  const data = props.data;
 
   return (
     <>

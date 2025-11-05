@@ -347,8 +347,6 @@ export const insertComponyDetail = async (
       }
     }
     /* --------------------------------------------------------------- */
-    // throw new Error('疑似エラー:ロールバックを確認しました。');
-
     // Commit
     await client.query('COMMIT');
     console.log('Transaction completed, new company ID:', newCompanyId);
@@ -585,7 +583,6 @@ export const updateComponyDetail = async (values: CompanyDetailFormValues): Prom
       }
     }
     /* --------------------------------------------------------------- */
-    // throw new Error('疑似エラー:ロールバックを確認しました。');
     // Commit
     await client.query('COMMIT');
     console.log('Transaction completed, update company ID:', updatedId);

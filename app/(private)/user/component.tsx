@@ -2,7 +2,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Box, Button, Divider, Paper, TableCell, TableRow, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2';
-import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { JSX, useEffect, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
@@ -10,6 +9,7 @@ import { SelectElement, TextFieldElement } from 'react-hook-form-mui';
 
 import { SESSION_STORAGE_KEYS } from '@/app/_config/sessionStorageKeys';
 import { QUERY_KEYS } from '@/app/_lib/hooks/query/queryKeys';
+import { useApiQuery } from '@/app/_lib/hooks/query/useApiQuery';
 import { AlertType, SearchType, SortType, UsageStatus, UserRegistrationStatus } from '@/app/_types/enum';
 import { ApiRequest, ApiResponse, HeaderStatus } from '@/app/_types/types';
 import { ResultsCounter } from '@/app/_ui/components/atoms/resultsCounter';
@@ -71,7 +71,7 @@ export const UserComponent = (): JSX.Element => {
   /* 検索条件 */
   const [condition, setCondition] = useState<ApiRequest<UserSearchFormValues> | null>(null);
   /* 検索結果 */
-  const [result, setResult] = useState<ApiResponse<UserListSearchResult[]> | null>(null);
+  const [result, setResult] = useState<UserListSearchResult | null>(null);
 
   /* useForm
   ------------------------------------------------------------------ */
@@ -90,7 +90,7 @@ export const UserComponent = (): JSX.Element => {
 
   /* useQuery
   ------------------------------------------------------------------ */
-  const { data, isFetching, refetch } = useQuery<ApiResponse<UserListSearchResult[]>>({
+  const { data, isFetching, refetch } = useApiQuery<UserListSearchResult>({
     queryKey: [QUERY_KEYS.USER_SEARCH_RESULT, condition],
     queryFn: () => searchUserListFetcher(condition),
     enabled: false,
@@ -136,12 +136,6 @@ export const UserComponent = (): JSX.Element => {
     if (!data) {
       return;
     }
-    if (!data?.success) {
-      openSnackbar(AlertType.ERROR, data.error.message);
-      setResult(null);
-      setIsSearch(false);
-      return;
-    }
     if (searchType === SearchType.SEARCH) {
       setSortArray(resultHeader);
       setSortTarget(resultHeader[0]);
@@ -153,7 +147,7 @@ export const UserComponent = (): JSX.Element => {
       });
     }
     setIsSearch(true);
-    setResult(data ?? null);
+    setResult(data);
     closeProcessing();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
@@ -186,6 +180,21 @@ export const UserComponent = (): JSX.Element => {
       },
     };
     setSearchType(SearchType.SORT);
+    setCondition(req);
+  };
+
+  /** ページネーション */
+  const pageChangeHandler = async (_event: React.ChangeEvent<unknown>, nextPage: number) => {
+    openProcessing();
+    const req: ApiRequest<UserSearchFormValues> = {
+      request: condition?.request ?? initConditionValues.request,
+      sortItems: {
+        nextPage: nextPage ?? 0,
+        sortColumn: condition?.sortItems?.sortColumn ?? 'user_name',
+        ascending: condition?.sortItems?.ascending ?? true,
+      },
+    };
+    setSearchType(SearchType.PAGENATION);
     setCondition(req);
   };
 
@@ -329,15 +338,15 @@ export const UserComponent = (): JSX.Element => {
               </Button>
             </Grid>
             {/* ======= 検索結果 ========================================== */}
-            {isSearch && result?.success && (
+            {isSearch && result && (
               <>
                 <Divider sx={{ my: 3 }} />
-                {result.paginate?.count && result.paginate?.count > 0 ? (
+                {result.paginate && result.paginate.count > 0 ? (
                   <Box sx={{ display: 'flex', alignItems: 'end' }}>
                     <ResultsCounter
-                      startRow={result.paginate?.startRow}
-                      endRow={result.paginate?.endRow}
-                      count={result.paginate?.count}
+                      startRow={result.paginate.startRow}
+                      endRow={result.paginate.endRow}
+                      count={result.paginate.count}
                     />
                   </Box>
                 ) : (
@@ -346,7 +355,7 @@ export const UserComponent = (): JSX.Element => {
                 <CustomTable
                   paginate={result.paginate}
                   sortHandler={sortHandler}
-                  pageChangeHandler={() => { }}
+                  pageChangeHandler={pageChangeHandler}
                   header={resultHeader}
                   sortArray={sortArray}
                   setSortArray={setSortArray}
@@ -354,7 +363,7 @@ export const UserComponent = (): JSX.Element => {
                   setSortTarget={setSortTarget}
                   renderBody={() =>
                     /* 検索結果 */
-                    result.data?.map((row, index) => (
+                    result.userDatas?.map((row, index) => (
                       <TableRow
                         key={index}
                         hover

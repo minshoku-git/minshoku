@@ -3,7 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowBack } from '@mui/icons-material';
 import { Box, Button, Divider, Paper, TextField, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useParams, useRouter } from 'next/navigation';
 import { JSX, useEffect, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
@@ -11,6 +11,8 @@ import { SelectElement, TextareaAutosizeElement } from 'react-hook-form-mui';
 
 import { SESSION_STORAGE_KEYS } from '@/app/_config/sessionStorageKeys';
 import { QUERY_KEYS } from '@/app/_lib/hooks/query/queryKeys';
+import { useApiMutation } from '@/app/_lib/hooks/query/useApiMutation';
+import { useApiQuery } from '@/app/_lib/hooks/query/useApiQuery';
 import { AlertType, convertUserRegistrationStatusName, UsageStatus, UserRegistrationStatus } from '@/app/_types/enum';
 import { ApiRequest, ApiResponse } from '@/app/_types/types';
 import ItemBase from '@/app/_ui/components/atoms/itemBase';
@@ -78,39 +80,36 @@ export const UserDetailComponent = (): JSX.Element => {
   };
 
   const {
-    data: result,
+    data,
     isLoading,
     refetch,
-  } = useQuery<ApiResponse<UserDataDetailResult>>({
+  } = useApiQuery<UserDataDetailResult>({
     queryKey: [QUERY_KEYS.USER_DETAIL_INIT],
     queryFn: searchUserDetailFetch,
     enabled: true,
+    onError: () => {
+      // MEMO: 初期表示取得失敗時、ユーザー検索に強制遷移
+      router.push('/user');
+    }
   });
 
   /* useEffect
   ------------------------------------------------------------------ */
   useEffect(() => {
-    if (!result) {
+    if (!data) {
       return;
     }
-    if (!result.success) {
-      openSnackbar(AlertType.ERROR, result.error.message);
-      router.push('/user');
-      return;
-    }
-    if (result.data) {
-      console.log(result);
-      const data = result.data;
+    else {
       const initData: Partial<UserDetailFormValues> = {
         memo: data.master_memo ?? '',
         usage_status: data?.usage_status as UsageStatus,
       };
       reset(initData);
-      setUserData(result.data);
+      setUserData(data);
       setDataLoaded(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [result]);
+  }, [data]);
 
   useEffect(() => {
     if (isLoading) {
@@ -127,23 +126,15 @@ export const UserDetailComponent = (): JSX.Element => {
     updateMutate.mutate(data);
   };
 
-  const updateMutate = useMutation({
+  const updateMutate = useApiMutation({
     mutationFn: async (data: UserDetailFormValues) => {
       openProcessing();
       const req: ApiRequest<UserDataDetailRequest> = { request: { ...data, id: Number(id) } }
       return updateUserDetail(req) as unknown as ApiResponse<number>;
     },
-    onSuccess: (res: ApiResponse<number>) => {
-      if (res.success) {
-        refetch();
-        openSnackbar(AlertType.INFO, 'ユーザー情報を更新しました。');
-      } else {
-        openSnackbar(AlertType.ERROR, res.error.message);
-      }
-    },
-    onError: (e) => {
-      console.error(e.message);
-      openSnackbar(AlertType.ERROR, 'ユーザー情報の更新に失敗しました。再度お試しください。');
+    onSuccess: () => {
+      refetch();
+      openSnackbar(AlertType.INFO, 'ユーザー情報を更新しました。');
     },
     onSettled: () => {
       queryClient.invalidateQueries({
@@ -155,7 +146,6 @@ export const UserDetailComponent = (): JSX.Element => {
 
   /* functions - 引戻し承認
   ------------------------------------------------------------------ */
-  /** 引き戻し承認 */
   const pullBackHandler = () => {
     // dialog setting
     setDialogMessage(`ユーザー情報のステータスを"否認"から"承認"に引き戻します。\nよろしいですか？`);
@@ -167,22 +157,14 @@ export const UserDetailComponent = (): JSX.Element => {
     pullbackMutate.mutate(data);
   };
 
-  const pullbackMutate = useMutation({
+  const pullbackMutate = useApiMutation({
     mutationFn: async (data: UserDetailFormValues) => {
       const req: ApiRequest<UserDataDetailRequest> = { request: { ...data, id: Number(id) } }
       return pullbackFetcher(req) as unknown as ApiResponse<number>;
     },
-    onSuccess: (res: ApiResponse<number>) => {
-      if (res.success) {
-        refetch();
-        openSnackbar(AlertType.INFO, '引き戻し承認が完了しました。');
-      } else {
-        openSnackbar(AlertType.ERROR, res.error.message);
-      }
-    },
-    onError: (e) => {
-      console.error(e.message);
-      openSnackbar(AlertType.ERROR, '引き戻し承認に失敗しました。再度お試しください。');
+    onSuccess: () => {
+      refetch();
+      openSnackbar(AlertType.INFO, '引き戻し承認が完了しました。');
     },
     onSettled: () => {
       queryClient.invalidateQueries({
@@ -202,26 +184,18 @@ export const UserDetailComponent = (): JSX.Element => {
   };
 
   const disapprovalMutateHandler = async () => {
-    disapprovalMutate.mutate();
+    disapprovalMutate.mutate({});
   };
 
-  const disapprovalMutate = useMutation({
+  const disapprovalMutate = useApiMutation({
     mutationFn: async () => {
       openProcessing();
       const req: ApiRequest<UpdateUserData> = { request: { id } }
       return disapproval(req) as unknown as ApiResponse<number>;
     },
-    onSuccess: (res: ApiResponse<number>) => {
-      if (res.success) {
-        refetch();
-        openSnackbar(AlertType.INFO, 'ユーザー情報を否認しました。');
-      } else {
-        openSnackbar(AlertType.ERROR, res.error.message);
-      }
-    },
-    onError: (e) => {
-      console.error(e.message);
-      openSnackbar(AlertType.ERROR, 'ユーザー情報の否認に失敗しました。再度お試しください。');
+    onSuccess: () => {
+      refetch();
+      openSnackbar(AlertType.INFO, 'ユーザー情報を否認しました。');
     },
     onSettled: () => {
       queryClient.invalidateQueries({
@@ -233,7 +207,6 @@ export const UserDetailComponent = (): JSX.Element => {
 
   /* functions - 承認
   ------------------------------------------------------------------ */
-  /** 承認 */
   const approvalHandler = () => {
     // dialog setting
     setDialogMessage(`ユーザー情報を"承認"します。\n変更後、引き戻しはできませんがよろしいですか？`);
@@ -242,26 +215,18 @@ export const UserDetailComponent = (): JSX.Element => {
   };
 
   const approvalMutateHandler = async () => {
-    approvalMutate.mutate();
+    approvalMutate.mutate({});
   };
 
-  const approvalMutate = useMutation({
+  const approvalMutate = useApiMutation({
     mutationFn: async () => {
       openProcessing();
       const req: ApiRequest<UpdateUserData> = { request: { id } }
       return approval(req) as unknown as ApiResponse<number>;
     },
     onSuccess: (res: ApiResponse<number>) => {
-      if (res.success) {
-        refetch();
-        openSnackbar(AlertType.INFO, 'ユーザー情報を承認しました。');
-      } else {
-        openSnackbar(AlertType.ERROR, res.error.message);
-      }
-    },
-    onError: (e) => {
-      console.error(e.message);
-      openSnackbar(AlertType.ERROR, 'ユーザー情報の承認に失敗しました。再度お試しください。');
+      refetch();
+      openSnackbar(AlertType.INFO, 'ユーザー情報を承認しました。');
     },
     onSettled: () => {
       queryClient.invalidateQueries({

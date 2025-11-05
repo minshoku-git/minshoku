@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { MSG_MAX } from '@/app/_config/constants';
 import { formatString } from '@/app/_lib/utils/utils';
 import { UsageStatus, UserRegistrationStatus } from '@/app/_types/enum';
+import { PaginateData } from '@/app/_types/types';
 
 /**
  * ユーザー一覧 検索条件 FormValues
@@ -47,6 +48,13 @@ export type UserSearchFormValues = z.infer<typeof UserSearchSchema>;
 
 /** 検索結果 ユーザー一覧 */
 export type UserListSearchResult = {
+  /** ユーザー情報リスト */
+  userDatas: UserData[];
+  /** ページネート */
+  paginate?: PaginateData;
+};
+
+export type UserData = {
   /** ID */
   id: string;
   /** ユーザー名 */

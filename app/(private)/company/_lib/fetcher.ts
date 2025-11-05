@@ -6,12 +6,12 @@ import { CompanyListSearchResult, CompanySearchFormValues } from './types';
 /**
  * searchOrderList
  * @param {ApiRequest<ApiRequest<CompanySearchFormValues> | null>} condition
- * @returns {Promise<ApiResponse<CompanyListSearchResult[]>>}
+ * @returns {Promise<ApiResponse<CompanyListSearchResult>>}
  */
 export const searchCompanyListFetcher = async (
   condition: ApiRequest<CompanySearchFormValues> | null
-): Promise<ApiResponse<CompanyListSearchResult[]>> => {
-  return fetcher<ApiResponse<CompanyListSearchResult[]>>('/api/company/search', {
+): Promise<ApiResponse<CompanyListSearchResult>> => {
+  return fetcher<ApiResponse<CompanyListSearchResult>>('/api/company/search', {
     method: 'POST',
     body: JSON.stringify(condition),
     headers: {

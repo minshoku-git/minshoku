@@ -41,7 +41,6 @@ export type PaginateData = {
 export type ApiSuccess<T> = {
   success: true;
   data: T;
-  paginate?: PaginateData;
 };
 
 export type ApiError = {

@@ -15,7 +15,7 @@ export async function POST(req: Request): Promise<Response> {
     const file = formData.get('csvFile') as File;
 
     if (!file) {
-      const res: ApiResponse<null> = { success: false, error: { code: '', message: '' } };
+      const res: ApiResponse<null> = { success: false, error: ErrorCodes.FILE_NOT_FOUND };
       return NextResponse.json(res);
     }
 
@@ -49,12 +49,12 @@ export async function POST(req: Request): Promise<Response> {
   } catch (e: unknown) {
     console.error(e);
     if (e instanceof CustomError) {
-      const res: ApiResponse<null> = { success: false, error: { code: e.code, message: e.message } };
+      const res: ApiResponse<null> = { success: false, error: e };
       return NextResponse.json(res);
     }
     const res: ApiResponse<null> = {
       success: false,
-      error: { code: ErrorCodes.INTERNAL_SERVER_ERROR.code, message: ErrorCodes.INTERNAL_SERVER_ERROR.message },
+      error: ErrorCodes.INTERNAL_SERVER_ERROR,
     };
     return NextResponse.json(res);
   }

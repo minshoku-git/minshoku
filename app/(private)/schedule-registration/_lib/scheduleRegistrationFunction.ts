@@ -117,8 +117,6 @@ export const RefreshingScheduleData = async (values: ScheduleCsvValues[]): Promi
     }
 
     /* --------------------------------------------------------------- */
-    // throw new Error('疑似エラー:ロールバックを確認しました。');
-
     // Commit
     await client.query('COMMIT');
     console.log('Transaction completed, inserted count:', req.length);
@@ -132,18 +130,12 @@ export const RefreshingScheduleData = async (values: ScheduleCsvValues[]): Promi
     if (e instanceof CustomError) {
       return {
         success: false,
-        error: {
-          code: e.code,
-          message: e.message,
-        },
+        error: e,
       };
     }
     return {
       success: false,
-      error: {
-        code: ErrorCodes.INTERNAL_SERVER_ERROR.code,
-        message: ErrorCodes.INTERNAL_SERVER_ERROR.message,
-      },
+      error: ErrorCodes.INTERNAL_SERVER_ERROR,
     };
   } finally {
     // Transaction End

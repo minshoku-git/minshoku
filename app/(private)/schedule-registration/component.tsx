@@ -2,9 +2,9 @@
 import { CloudUpload, Delete } from '@mui/icons-material';
 import { Box, Button, Divider, IconButton, Paper, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2';
-import { useMutation } from '@tanstack/react-query';
 import { ChangeEvent, JSX, useRef, useState } from 'react';
 
+import { useApiMutation } from '@/app/_lib/hooks/query/useApiMutation';
 import { AlertType } from '@/app/_types/enum';
 import { ApiResponse } from '@/app/_types/types';
 import ItemBase from '@/app/_ui/components/atoms/itemBase';
@@ -36,10 +36,10 @@ export const ScheduleRegistrationComponent = (): JSX.Element => {
   ------------------------------------------------------------------ */
   const upsertHandler = async () => {
     if (!file) return;
-    upsertMutate.mutate();
+    upsertMutate.mutate({});
   };
 
-  const upsertMutate = useMutation({
+  const upsertMutate = useApiMutation({
     mutationFn: async () => {
       openProcessing();
       const formData = new FormData();
@@ -48,15 +48,7 @@ export const ScheduleRegistrationComponent = (): JSX.Element => {
     },
     onSuccess: (res: ApiResponse<number>) => {
       setFile(undefined);
-      if (res.success) {
-        openSnackbar(AlertType.SUCCESS, 'スケジュールを登録しました。');
-      } else {
-        openSnackbar(AlertType.ERROR, res.error.message);
-      }
-    },
-    onError: (e) => {
-      console.log(e.message);
-      openSnackbar(AlertType.ERROR, 'スケジュールの登録に失敗しました。再度お試しください。');
+      openSnackbar(AlertType.SUCCESS, 'スケジュールを登録しました。');
     },
     onSettled: () => {
       closeProcessing();
