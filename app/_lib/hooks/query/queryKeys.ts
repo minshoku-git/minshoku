@@ -14,4 +14,5 @@ export const QUERY_KEYS = {
   DECISION_INIT: 'DECISION_INIT' as const,
   /** 承認待ちユーザー数取得 */
   WAITING_APPROVAL_SEARCH_RESULT: 'WAITING_APPROVAL_SEARCH_RESULT' as const,
+  AUTH_STATUS: 'AUTH_STATUS' as const,
 };

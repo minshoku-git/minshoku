@@ -1,6 +1,10 @@
 /**
  * 共通のエラーコード定義
  */
+export const FETCH_FAILURE_MESSAGE =
+  'データの取得に失敗しました。ネットワーク接続を確認するか、しばらくしてから再度お試しください。';
+export const MUTATE_FAILURE_MESSAGE =
+  'データの更新に失敗しました。ネットワーク接続を確認するか、しばらくしてから再度お試しください。';
 export const ErrorCodes = {
   VALIDATION_ERROR: { code: 'E001', message: '入力値不正', status: 400 },
   NOT_FOUND: { code: 'E404', message: 'に失敗しました。再度お試しください。', status: 404 },
