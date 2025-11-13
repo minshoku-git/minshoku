@@ -297,7 +297,7 @@ const applyFilters = (query: any, req: OrderSearchFormValues) => {
     query = query.lte('delivery_day', req.deliveryTo);
   }
   // 注文ステータス
-  if (req.order_status_type !== undefined) {
+  if (req.order_status_type) {
     query = query.eq('order_status_type', req.order_status_type);
   }
 

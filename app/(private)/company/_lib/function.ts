@@ -132,7 +132,8 @@ const applyFilters = (query: any, req: CompanySearchFormValues): any => {
     console.log(query);
   }
   // 利用ステータス
-  if (req.usage_status !== undefined) {
+  if (req.usage_status) {
+    console.log(req);
     query = query.eq('usage_status', req.usage_status);
   }
   return query;

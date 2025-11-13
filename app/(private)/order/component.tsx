@@ -51,7 +51,7 @@ const initConditionValues: ApiRequest<OrderSearchFormValues> = {
     deliveryTo: null,
     user_name: '',
     company_name: '',
-    order_status_type: '0',
+    order_status_type: undefined,
   },
   sortItems: {
     nextPage: 1,
@@ -108,7 +108,7 @@ export const OrderComponent = (): JSX.Element => {
       deliveryTo: getNow(),
       user_name: '',
       company_name: '',
-      order_status_type: '',
+      order_status_type: undefined,
     },
   });
 

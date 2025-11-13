@@ -152,7 +152,7 @@ export const CompanyComponent = (): JSX.Element => {
   /* functions 
   ------------------------------------------------------------------ */
   /* 検索ハンドラ */
-  const searchHandler: SubmitHandler<ShopSearchFormValues> = async (data) => {
+  const searchHandler: SubmitHandler<CompanySearchFormValues> = async (data) => {
     openProcessing();
     const req: ApiRequest<CompanySearchFormValues> = {
       request: data,

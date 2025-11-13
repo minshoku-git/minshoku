@@ -130,7 +130,7 @@ const applyFilters = (query: any, req: ShopSearchFormValues): any => {
     );
   }
   // 利用ステータス
-  if (req.usage_status !== undefined) {
+  if (req.usage_status) {
     query = query.eq('usage_status', req.usage_status);
   }
   return query;

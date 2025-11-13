@@ -15,7 +15,6 @@ import { ApiRequest, HeaderStatus } from '@/app/_types/types';
 import { ResultsCounter } from '@/app/_ui/components/atoms/resultsCounter';
 import { CustomTable } from '@/app/_ui/components/organisms/customTable/customTable';
 import { useProcessing } from '@/app/_ui/state/processing/processingContext';
-import { useSnackBar } from '@/app/_ui/state/snackBar/snackbarContext';
 
 import ItemBase from '../../_ui/components/atoms/itemBase';
 import { searchShopListFetcher } from './_lib/fetcher';
@@ -34,7 +33,7 @@ const initConditionValues: ApiRequest<ShopSearchFormValues> = {
   request: {
     shop_name: '',
     address: '',
-    usage_status: '',
+    usage_status: undefined,
   },
   sortItems: {
     nextPage: 1,
@@ -51,7 +50,6 @@ export const ShopComponent = (): JSX.Element => {
   /* initialize
   ------------------------------------------------------------------ */
   const router = useRouter();
-  const { openSnackbar } = useSnackBar();
   const { openProcessing, closeProcessing } = useProcessing();
   const [searchType, setSearchType] = useState<SearchType>(SearchType.SEARCH);
 
@@ -76,7 +74,7 @@ export const ShopComponent = (): JSX.Element => {
     defaultValues: {
       shop_name: '',
       address: '',
-      usage_status: '',
+      usage_status: undefined,
     },
   });
 

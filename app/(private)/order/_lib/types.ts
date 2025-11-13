@@ -32,15 +32,7 @@ export const OrderSearchSchema = z
       .max(64, formatString(MSG_MAX, '会社名', '64'))
       .optional(),
     /** 注文ステータス */
-    order_status_type: z
-      .union([z.literal('0'), z.string().optional(), z.nativeEnum(OrderStatusType)])
-      .transform((value) => {
-        // 空文字列をundefinedに変換し、'0'はそのまま残す
-        if (value === '') {
-          return undefined;
-        }
-        return value;
-      }),
+    order_status_type: z.enum(OrderStatusType).or(z.literal('')).optional(),
   })
   /** 提供時間 FROM<TOではない */
   .check((ctx) => {

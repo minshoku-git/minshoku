@@ -166,7 +166,7 @@ const applyFilters = (query: any, req: UserSearchFormValues) => {
     query = query.eq('usage_status', req.usage_status);
   }
   // 登録ステータス
-  if (req.user_registration_status !== undefined) {
+  if (req.user_registration_status) {
     query = query.eq('user_registration_status', req.user_registration_status);
   }
 
