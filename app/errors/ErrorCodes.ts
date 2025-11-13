@@ -57,4 +57,9 @@ export const ErrorCodes = {
     message: '指定されたファイルが存在しません。ファイルのパスや名前を確認してください。',
     status: 404,
   },
+  LOGIN_FAILED: {
+    code: 'E1009',
+    message: 'ログイン情報が正しくありません。メールアドレスとパスワードをご確認ください。',
+    status: 401,
+  },
 } as const;

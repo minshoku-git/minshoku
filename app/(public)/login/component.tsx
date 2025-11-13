@@ -8,11 +8,12 @@ import { useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { TextFieldElement } from 'react-hook-form-mui';
 
-import { ApiRequest, ApiResponse } from '@/app/_types/types';
+import { useApiMutation } from '@/app/_lib/hooks/query/useApiMutation';
+import { ApiRequest } from '@/app/_types/types';
 import { useSnackBar } from '@/app/_ui/state/snackBar/snackbarContext';
 
-import { AlertType } from '../../_types/enum';
 import RequiredMark from '../../_ui/components/atoms/requiredMark';
+import { loginFetcher } from './_lib/fetcher';
 import { LoginFormValues, LoginSchema } from './_lib/types';
 
 export const LoginComponent = () => {
@@ -28,13 +29,17 @@ export const LoginComponent = () => {
 
   /* useForm
   ------------------------------------------------------------------ */
-  const { handleSubmit, control } = useForm<LoginFormValues>({
+  const { handleSubmit, control, formState: { isDirty } } = useForm<LoginFormValues>({
     mode: 'onSubmit',
-    reValidateMode: 'onBlur',
+    reValidateMode: 'onChange',
     resolver: zodResolver(LoginSchema),
+    // defaultValues: {
+    //   email: 'admin@domain.co.jp', // TODO:実際は空、モック中は値有りで
+    //   password: 'password1',
+    // },
     defaultValues: {
-      email: 'admin@domain.co.jp', // TODO:実際は空、モック中は値有りで
-      password: 'password1',
+      email: '', // TODO:実際は空、モック中は値有りで
+      password: '',
     },
   });
 
@@ -42,36 +47,26 @@ export const LoginComponent = () => {
   ------------------------------------------------------------------ */
   // ログインハンドラー
   const loginHandler: SubmitHandler<LoginFormValues> = async (data) => {
-    setLoading(true);
-
-    try {
-      const req: ApiRequest<LoginFormValues> = { request: data };
-      const response = await fetch('/api/login/signIn', {
-        method: 'POST',
-        body: JSON.stringify(req),
-      });
-      const res: ApiResponse<string> = await response.json();
-
-      if (res.success) {
-        router.push('/schedule');
-      } else {
-        setLoading(false);
-        console.log(res.error);
-        openSnackbar(AlertType.ERROR, res.error.message);
-      }
-    } catch (error) {
-      setLoading(false);
-      console.log(error);
-      openSnackbar(AlertType.ERROR, 'ログインに失敗しました。再度お試しください。');
-    }
+    loginMutate.mutate(data)
   };
+
+  const loginMutate = useApiMutation({
+    mutationFn: async (data: LoginFormValues) => {
+      setLoading(true);
+      const req: ApiRequest<LoginFormValues> = { request: data };
+      return loginFetcher(req);
+    },
+    onSettled: () => {
+      setLoading(false);
+    },
+  });
 
   /* JSX
   ------------------------------------------------------------------ */
   return (
     <Container maxWidth="md">
       <Box>
-        <form onSubmit={handleSubmit(loginHandler)}>
+        <form noValidate onSubmit={handleSubmit(loginHandler)}>
           <Box
             sx={{
               marginTop: 4,
@@ -128,7 +123,7 @@ export const LoginComponent = () => {
                 }}
               />
             </Box>
-            <Button variant="contained" type={'submit'} sx={{ display: 'flex', mb: 1.5, width: 240 }} loading={loading}>
+            <Button variant="contained" type={'submit'} disabled={!isDirty} sx={{ display: 'flex', mb: 1.5, width: 240 }} loading={loading}>
               <Typography variant="button">ログインする</Typography>
             </Button>
           </Box>

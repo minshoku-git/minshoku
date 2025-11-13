@@ -45,11 +45,13 @@ export type ApiSuccess<T> = {
 
 export type ApiError = {
   success: false;
-  error: {
-    code: string;
-    message: string;
-    status?: number;
-  };
+  error: ErrorDetail;
+};
+
+export type ErrorDetail = {
+  code: string;
+  message: string;
+  status?: number;
 };
 
 export type ApiResponse<T> = ApiSuccess<T> | ApiError;

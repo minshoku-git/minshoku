@@ -17,7 +17,7 @@ type Props = {
  */
 export const LogoutButton = (props: Props): JSX.Element => {
     const logoutHandler = async () => {
-        const response = await fetch('/api/login/logout', {
+        const response = await fetch('/api/auth/logout', {
             method: 'POST',
         });
         const res = await response.json() as ApiResponse<null>;

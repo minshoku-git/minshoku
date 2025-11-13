@@ -38,19 +38,34 @@ export async function POST(req: NextRequest) {
       password,
     });
 
+    console.log(signInError);
+
     if (signInError) {
-      console.error('ログインエラー:', signInError);
-      const result: ApiResponse<null> = {
-        success: false,
-        error: ErrorCodes.CONFLICT,
-      };
-      // エラー時はJSONレスポンスを返す
-      return NextResponse.json(result, { status: 401 });
+      const raw = signInError?.code;
+      const code: string = typeof raw === 'string' ? raw : ''; // or raw ?? ''
+
+      if (code === 'invalid_credentials') {
+        const result: ApiResponse<null> = {
+          success: false,
+          error: ErrorCodes.LOGIN_FAILED,
+        };
+        return NextResponse.json(result.error, { status: result.error.status });
+      } else {
+        const result: ApiResponse<null> = {
+          success: false,
+          error: {
+            code: ErrorCodes.NOT_FOUND.code,
+            message: 'ログイン' + ErrorCodes.NOT_FOUND.message,
+            status: ErrorCodes.NOT_FOUND.status,
+          },
+        };
+        return NextResponse.json(result.error, { status: result.error.status });
+      }
     }
 
     // サインイン成功
     const result: ApiResponse<null> = { success: true, data: null };
-    const response = NextResponse.json(result, { status: 200 });
+    const response = NextResponse.json(result);
 
     // サインイン時にSupabaseが生成したクッキーをレスポンスに手動でセットする
     cookiesToSet.forEach(({ name, value, options }) => {
@@ -64,6 +79,6 @@ export async function POST(req: NextRequest) {
       success: false,
       error: ErrorCodes.INTERNAL_SERVER_ERROR,
     };
-    return NextResponse.json(result, { status: 500 });
+    return NextResponse.json(result.error, { status: result.error.status });
   }
 }

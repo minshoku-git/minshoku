@@ -28,7 +28,7 @@ export const SignUpComponent = () => {
   ------------------------------------------------------------------ */
   const { handleSubmit, control, getValues } = useForm<LoginFormValues>({
     mode: 'onSubmit',
-    reValidateMode: 'onBlur',
+    reValidateMode: 'onSubmit',
     resolver: zodResolver(LoginSchema),
     defaultValues: {
       email: 's.abe@refact.co.jp', // TODO:実際は空、モック中は値有りで
