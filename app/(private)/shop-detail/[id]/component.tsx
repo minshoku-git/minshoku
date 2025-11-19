@@ -21,6 +21,7 @@ import { getEditFlag } from '@/app/_lib/utils/utils';
 import { AlertType, UsageStatus } from '@/app/_types/enum';
 import { ApiRequest, ApiResponse } from '@/app/_types/types';
 import ItemBase from '@/app/_ui/components/atoms/itemBase';
+import DirtyCheck from '@/app/_ui/state/dirty/dirty';
 import { useDirty } from '@/app/_ui/state/dirty/dirtyContext';
 import { useProcessing } from '@/app/_ui/state/processing/processingContext';
 import { useSnackBar } from '@/app/_ui/state/snackBar/snackbarContext';
@@ -39,6 +40,7 @@ export const ShopComponent = (): JSX.Element => {
   ------------------------------------------------------------------ */
   const { openSnackbar, closeSnackbar } = useSnackBar();
   const { setDirty } = useDirty();
+  const { confirmNavigation } = DirtyCheck();
   const { openProcessing, closeProcessing } = useProcessing();
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -77,10 +79,10 @@ export const ShopComponent = (): JSX.Element => {
   };
 
   const {
-    data: result,
+    data,
     isLoading,
     refetch,
-  } = useApiQuery<ApiResponse<t_shops>>({
+  } = useApiQuery<t_shops>({
     queryKey: [QUERY_KEYS.SHOP_DETAIL_INIT],
     queryFn: searchShopDetailFetch,
     enabled: editMode,
@@ -92,17 +94,11 @@ export const ShopComponent = (): JSX.Element => {
     if (!editMode) {
       return;
     }
-    if (!result) {
+    if (!data) {
       return;
     }
-    if (!result.success) {
-      openSnackbar(AlertType.ERROR, result.error.message);
-      router.push('/shop');
-      return;
-    }
-    else if (result.data) {
-      console.log(result);
-      const data = result.data;
+    else {
+      console.log(data);
       const initData: Partial<shopDeteilResponseData> = {
         ...data,
         id: id,
@@ -114,7 +110,7 @@ export const ShopComponent = (): JSX.Element => {
       reset(initData);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [result]);
+  }, [data]);
 
   useEffect(() => {
     if (isLoading) {
@@ -165,7 +161,7 @@ export const ShopComponent = (): JSX.Element => {
     mutationFn: async (data: ShopDetailFormValues) => {
 
       const formData = new FormData();
-      formData.append('formValues', JSON.stringify(data));
+      formData.append('formValues', JSON.stringify({ ...data, id: id }));
 
       if (file) {
         formData.append('shop_image_file_name', file?.name ?? '');
@@ -244,7 +240,7 @@ export const ShopComponent = (): JSX.Element => {
   /** 検索画面に戻る */
   const pageBack = async () => {
     sessionStorage.setItem(SESSION_STORAGE_KEYS.PREVIOUS_PATH, '/shop-detail');
-    router.push('/shop');
+    confirmNavigation('/shop') // 離脱確認
   };
 
   /* dirty

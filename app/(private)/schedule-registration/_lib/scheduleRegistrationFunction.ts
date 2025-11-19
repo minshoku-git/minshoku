@@ -80,9 +80,9 @@ export const RefreshingScheduleData = async (values: ScheduleCsvValues[]): Promi
 
         if (result.rowCount === 0) {
           throw new CustomError(
-            ErrorCodes.NOT_FOUND.code,
-            'スケジュール情報の登録処理' + ErrorCodes.NOT_FOUND.message,
-            ErrorCodes.NOT_FOUND.status
+            ErrorCodes.DB_QUERY_FAILED.code,
+            'スケジュール情報の登録処理' + ErrorCodes.DB_QUERY_FAILED.message,
+            ErrorCodes.DB_QUERY_FAILED.status
           );
         }
       } else {
@@ -108,9 +108,9 @@ export const RefreshingScheduleData = async (values: ScheduleCsvValues[]): Promi
 
         if (result.rowCount === 0) {
           throw new CustomError(
-            ErrorCodes.NOT_FOUND.code,
-            'スケジュール情報の登録処理' + ErrorCodes.NOT_FOUND.message,
-            ErrorCodes.NOT_FOUND.status
+            ErrorCodes.DB_QUERY_FAILED.code,
+            'スケジュール情報の登録処理' + ErrorCodes.DB_QUERY_FAILED.message,
+            ErrorCodes.DB_QUERY_FAILED.status
           );
         }
       }

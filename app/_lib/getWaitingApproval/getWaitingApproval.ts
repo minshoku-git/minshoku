@@ -26,8 +26,6 @@ export const getWaitingApproval = async (): Promise<ApiResponse<number>> => {
   const supabase = await createClient();
 
   try {
-    /* 件数取得
-      ------------------------------------------------------------------ */
     const queryCount = supabase
       .from('t_user')
       .select('id', { count: 'exact', head: true })
@@ -37,9 +35,9 @@ export const getWaitingApproval = async (): Promise<ApiResponse<number>> => {
     if (countError) {
       console.error(countError);
       throw new CustomError(
-        ErrorCodes.NOT_FOUND.code,
-        '承認待ちステータスのユーザー数取得' + ErrorCodes.NOT_FOUND.message,
-        ErrorCodes.NOT_FOUND.status
+        ErrorCodes.DB_QUERY_FAILED.code,
+        '承認待ちステータスのユーザー数取得' + ErrorCodes.DB_QUERY_FAILED.message,
+        ErrorCodes.DB_QUERY_FAILED.status
       );
     }
     return { success: true, data: count ?? 0 };

@@ -45,9 +45,9 @@ export const _searchOrderList = async (
     if (countError) {
       console.error('countError', countError);
       throw new CustomError(
-        ErrorCodes.NOT_FOUND.code,
-        'オーダー情報の件数取得' + ErrorCodes.NOT_FOUND.message,
-        ErrorCodes.NOT_FOUND.status
+        ErrorCodes.DB_QUERY_FAILED.code,
+        'オーダー情報の件数取得' + ErrorCodes.DB_QUERY_FAILED.message,
+        ErrorCodes.DB_QUERY_FAILED.status
       );
     }
 
@@ -84,9 +84,9 @@ export const _searchOrderList = async (
     if (error) {
       console.error('query error', error);
       throw new CustomError(
-        ErrorCodes.NOT_FOUND.code,
-        'オーダー情報の取得' + ErrorCodes.NOT_FOUND.message,
-        ErrorCodes.NOT_FOUND.status
+        ErrorCodes.DB_QUERY_FAILED.code,
+        'オーダー情報の取得' + ErrorCodes.DB_QUERY_FAILED.message,
+        ErrorCodes.DB_QUERY_FAILED.status
       );
     }
 
@@ -153,9 +153,9 @@ export const createOrderListCsvData = async (
     if (countError) {
       console.error('countError', countError);
       throw new CustomError(
-        ErrorCodes.NOT_FOUND.code,
-        'オーダー情報の件数取得' + ErrorCodes.NOT_FOUND.message,
-        ErrorCodes.NOT_FOUND.status
+        ErrorCodes.DB_QUERY_FAILED.code,
+        'オーダー情報の件数取得' + ErrorCodes.DB_QUERY_FAILED.message,
+        ErrorCodes.DB_QUERY_FAILED.status
       );
     }
 
@@ -177,9 +177,9 @@ export const createOrderListCsvData = async (
     if (error) {
       console.error('query error', error);
       throw new CustomError(
-        ErrorCodes.NOT_FOUND.code,
-        'オーダー情報の取得' + ErrorCodes.NOT_FOUND.message,
-        ErrorCodes.NOT_FOUND.status
+        ErrorCodes.DB_QUERY_FAILED.code,
+        'オーダー情報の取得' + ErrorCodes.DB_QUERY_FAILED.message,
+        ErrorCodes.DB_QUERY_FAILED.status
       );
     }
 
@@ -237,9 +237,9 @@ export const createOrderListCsvData = async (
     if (errorDetail) {
       console.error('query error', errorDetail);
       throw new CustomError(
-        ErrorCodes.NOT_FOUND.code,
-        'オーダー情報の取得' + ErrorCodes.NOT_FOUND.message,
-        ErrorCodes.NOT_FOUND.status
+        ErrorCodes.DB_QUERY_FAILED.code,
+        'オーダー情報の取得' + ErrorCodes.DB_QUERY_FAILED.message,
+        ErrorCodes.DB_QUERY_FAILED.status
       );
     }
 
@@ -413,9 +413,9 @@ export const _searchOrderDetail = async (values: ApiRequest<number>): Promise<Ap
     if (error || !data) {
       console.error(error);
       throw new CustomError(
-        ErrorCodes.NOT_FOUND.code,
-        'オーダー情報の取得' + ErrorCodes.NOT_FOUND.message,
-        ErrorCodes.NOT_FOUND.status
+        ErrorCodes.DB_QUERY_FAILED.code,
+        'オーダー情報の取得' + ErrorCodes.DB_QUERY_FAILED.message,
+        ErrorCodes.DB_QUERY_FAILED.status
       );
     }
 
@@ -431,9 +431,9 @@ export const _searchOrderDetail = async (values: ApiRequest<number>): Promise<Ap
 
     if (errorTotalOrderCount) {
       throw new CustomError(
-        ErrorCodes.NOT_FOUND.code,
-        'オーダー情報(累計注文数)の取得' + ErrorCodes.NOT_FOUND.message,
-        ErrorCodes.NOT_FOUND.status
+        ErrorCodes.DB_QUERY_FAILED.code,
+        'オーダー情報(累計注文数)の取得' + ErrorCodes.DB_QUERY_FAILED.message,
+        ErrorCodes.DB_QUERY_FAILED.status
       );
     }
 
@@ -453,9 +453,9 @@ export const _searchOrderDetail = async (values: ApiRequest<number>): Promise<Ap
 
     if (errorLastOrderDateTime) {
       throw new CustomError(
-        ErrorCodes.NOT_FOUND.code,
-        'オーダー情報(前回注文日)の取得' + ErrorCodes.NOT_FOUND.message,
-        ErrorCodes.NOT_FOUND.status
+        ErrorCodes.DB_QUERY_FAILED.code,
+        'オーダー情報(前回注文日)の取得' + ErrorCodes.DB_QUERY_FAILED.message,
+        ErrorCodes.DB_QUERY_FAILED.status
       );
     }
 
@@ -565,8 +565,8 @@ export const _orderCancel = async (values: ApiRequest<number>): Promise<ApiRespo
     ]);
     if (result.rowCount === 0) {
       throw new CustomError({
-        ...ErrorCodes.NOT_FOUND,
-        message: 'オーダー情報の更新' + ErrorCodes.NOT_FOUND.message,
+        ...ErrorCodes.DB_QUERY_FAILED,
+        message: 'オーダー情報の更新' + ErrorCodes.DB_QUERY_FAILED.message,
       });
     }
     const updatedId = result.rows[0]?.id;

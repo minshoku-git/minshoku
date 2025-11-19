@@ -45,9 +45,9 @@ export const searchCompanyDetail = async (values: ApiRequest<number>): Promise<A
     if (error || !data) {
       console.error(error);
       throw new CustomError(
-        ErrorCodes.NOT_FOUND.code,
-        '会社情報の取得' + ErrorCodes.NOT_FOUND.message,
-        ErrorCodes.NOT_FOUND.status
+        ErrorCodes.DB_QUERY_FAILED.code,
+        '会社情報の取得' + ErrorCodes.DB_QUERY_FAILED.message,
+        ErrorCodes.DB_QUERY_FAILED.status
       );
     }
 
@@ -63,9 +63,9 @@ export const searchCompanyDetail = async (values: ApiRequest<number>): Promise<A
     if (errorDep) {
       console.error(errorDep);
       throw new CustomError(
-        ErrorCodes.NOT_FOUND.code,
-        '部署情報の取得' + ErrorCodes.NOT_FOUND.message,
-        ErrorCodes.NOT_FOUND.status
+        ErrorCodes.DB_QUERY_FAILED.code,
+        '部署情報の取得' + ErrorCodes.DB_QUERY_FAILED.message,
+        ErrorCodes.DB_QUERY_FAILED.status
       );
     }
 
@@ -98,9 +98,9 @@ export const searchCompanyDetail = async (values: ApiRequest<number>): Promise<A
 
     if (usageDepartment.find((f) => f.error)) {
       throw new CustomError(
-        ErrorCodes.NOT_FOUND.code,
-        '部署情報(利用状況)の取得' + ErrorCodes.NOT_FOUND.message,
-        ErrorCodes.NOT_FOUND.status
+        ErrorCodes.DB_QUERY_FAILED.code,
+        '部署情報(利用状況)の取得' + ErrorCodes.DB_QUERY_FAILED.message,
+        ErrorCodes.DB_QUERY_FAILED.status
       );
     }
 
@@ -118,9 +118,9 @@ export const searchCompanyDetail = async (values: ApiRequest<number>): Promise<A
     if (errorEmp) {
       console.error(errorEmp);
       throw new CustomError(
-        ErrorCodes.NOT_FOUND.code,
-        '雇用種別情報の取得' + ErrorCodes.NOT_FOUND.message,
-        ErrorCodes.NOT_FOUND.status
+        ErrorCodes.DB_QUERY_FAILED.code,
+        '雇用種別情報の取得' + ErrorCodes.DB_QUERY_FAILED.message,
+        ErrorCodes.DB_QUERY_FAILED.status
       );
     }
 
@@ -153,9 +153,9 @@ export const searchCompanyDetail = async (values: ApiRequest<number>): Promise<A
 
     if (usageEmployment.find((f) => f.error)) {
       throw new CustomError(
-        ErrorCodes.NOT_FOUND.code,
-        '雇用種別情報(利用状況)の取得' + ErrorCodes.NOT_FOUND.message,
-        ErrorCodes.NOT_FOUND.status
+        ErrorCodes.DB_QUERY_FAILED.code,
+        '雇用種別情報(利用状況)の取得' + ErrorCodes.DB_QUERY_FAILED.message,
+        ErrorCodes.DB_QUERY_FAILED.status
       );
     }
 
@@ -425,9 +425,9 @@ export const updateComponyDetail = async (values: CompanyDetailFormValues): Prom
     const result = await client.query(updateCompanyText, values);
     if (result.rowCount === 0) {
       throw new CustomError(
-        ErrorCodes.NOT_FOUND.code,
-        '会社情報の更新' + ErrorCodes.NOT_FOUND.message,
-        ErrorCodes.NOT_FOUND.status
+        ErrorCodes.DB_QUERY_FAILED.code,
+        '会社情報の更新' + ErrorCodes.DB_QUERY_FAILED.message,
+        ErrorCodes.DB_QUERY_FAILED.status
       );
     }
 
@@ -450,9 +450,9 @@ export const updateComponyDetail = async (values: CompanyDetailFormValues): Prom
           const res = await client.query(deleteCompanyText, [timestamp, item.id]);
           if (res.rowCount === 0) {
             throw new CustomError(
-              ErrorCodes.NOT_FOUND.code,
-              '会社部署情報の削除' + ErrorCodes.NOT_FOUND.message,
-              ErrorCodes.NOT_FOUND.status
+              ErrorCodes.DB_QUERY_FAILED.code,
+              '会社部署情報の削除' + ErrorCodes.DB_QUERY_FAILED.message,
+              ErrorCodes.DB_QUERY_FAILED.status
             );
           }
         }
@@ -464,9 +464,9 @@ export const updateComponyDetail = async (values: CompanyDetailFormValues): Prom
           const res = await client.query(updateCompanyText, [item.name, timestamp, item.id]);
           if (res.rowCount === 0) {
             throw new CustomError(
-              ErrorCodes.NOT_FOUND.code,
-              '会社部署情報の更新' + ErrorCodes.NOT_FOUND.message,
-              ErrorCodes.NOT_FOUND.status
+              ErrorCodes.DB_QUERY_FAILED.code,
+              '会社部署情報の更新' + ErrorCodes.DB_QUERY_FAILED.message,
+              ErrorCodes.DB_QUERY_FAILED.status
             );
           }
         }
@@ -490,9 +490,9 @@ export const updateComponyDetail = async (values: CompanyDetailFormValues): Prom
           const res = await client.query(insertDepartmentText, valuesDep);
           if (res.rowCount === 0) {
             throw new CustomError(
-              ErrorCodes.NOT_FOUND.code,
-              '会社部署情報の新規登録' + ErrorCodes.NOT_FOUND.message,
-              ErrorCodes.NOT_FOUND.status
+              ErrorCodes.DB_QUERY_FAILED.code,
+              '会社部署情報の新規登録' + ErrorCodes.DB_QUERY_FAILED.message,
+              ErrorCodes.DB_QUERY_FAILED.status
             );
           }
         }
@@ -513,9 +513,9 @@ export const updateComponyDetail = async (values: CompanyDetailFormValues): Prom
           // const ress = await client.query({text:deleteCompanyText, values:[timestamp, item.id]});
           if (res.rowCount === 0) {
             throw new CustomError(
-              ErrorCodes.NOT_FOUND.code,
-              '会社雇用形態情報の削除' + ErrorCodes.NOT_FOUND.message,
-              ErrorCodes.NOT_FOUND.status
+              ErrorCodes.DB_QUERY_FAILED.code,
+              '会社雇用形態情報の削除' + ErrorCodes.DB_QUERY_FAILED.message,
+              ErrorCodes.DB_QUERY_FAILED.status
             );
           }
         }
@@ -545,9 +545,9 @@ export const updateComponyDetail = async (values: CompanyDetailFormValues): Prom
           ]);
           if (res.rowCount === 0) {
             throw new CustomError(
-              ErrorCodes.NOT_FOUND.code,
-              '会社雇用形態情報の新規登録' + ErrorCodes.NOT_FOUND.message,
-              ErrorCodes.NOT_FOUND.status
+              ErrorCodes.DB_QUERY_FAILED.code,
+              '会社雇用形態情報の新規登録' + ErrorCodes.DB_QUERY_FAILED.message,
+              ErrorCodes.DB_QUERY_FAILED.status
             );
           }
         }
@@ -574,9 +574,9 @@ export const updateComponyDetail = async (values: CompanyDetailFormValues): Prom
           const res = await client.query(insertEmploymentStatusText, valuesEmp);
           if (res.rowCount === 0) {
             throw new CustomError(
-              ErrorCodes.NOT_FOUND.code,
-              '会社雇用形態情報の新規登録' + ErrorCodes.NOT_FOUND.message,
-              ErrorCodes.NOT_FOUND.status
+              ErrorCodes.DB_QUERY_FAILED.code,
+              '会社雇用形態情報の新規登録' + ErrorCodes.DB_QUERY_FAILED.message,
+              ErrorCodes.DB_QUERY_FAILED.status
             );
           }
         }

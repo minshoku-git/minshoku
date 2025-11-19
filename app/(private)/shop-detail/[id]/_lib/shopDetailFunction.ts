@@ -37,9 +37,9 @@ export const searchShopDetail = async (values: ApiRequest<number>): Promise<ApiR
     if (error || !data) {
       console.error(error);
       throw new CustomError(
-        ErrorCodes.NOT_FOUND.code,
-        '店舗情報の取得' + ErrorCodes.NOT_FOUND.message,
-        ErrorCodes.NOT_FOUND.status
+        ErrorCodes.DB_QUERY_FAILED.code,
+        '店舗情報の取得' + ErrorCodes.DB_QUERY_FAILED.message,
+        ErrorCodes.DB_QUERY_FAILED.status
       );
     }
 
@@ -51,9 +51,9 @@ export const searchShopDetail = async (values: ApiRequest<number>): Promise<ApiR
       if (!imageUrl) {
         console.error(error);
         throw new CustomError(
-          ErrorCodes.NOT_FOUND.code,
-          '店舗画像ファイルの取得' + ErrorCodes.NOT_FOUND.message,
-          ErrorCodes.NOT_FOUND.status
+          ErrorCodes.DB_QUERY_FAILED.code,
+          '店舗画像ファイルの取得' + ErrorCodes.DB_QUERY_FAILED.message,
+          ErrorCodes.DB_QUERY_FAILED.status
         );
       }
     }
@@ -147,9 +147,9 @@ export const _insertShopDetail = async (values: shopDeteilRequestData): Promise<
     const result = await pgClient.query(insertShopText, values);
     if (result.rowCount === 0) {
       throw new CustomError(
-        ErrorCodes.NOT_FOUND.code,
-        '店舗情報の新規登録' + ErrorCodes.NOT_FOUND.message,
-        ErrorCodes.NOT_FOUND.status
+        ErrorCodes.DB_QUERY_FAILED.code,
+        '店舗情報の新規登録' + ErrorCodes.DB_QUERY_FAILED.message,
+        ErrorCodes.DB_QUERY_FAILED.status
       );
     }
 
@@ -209,16 +209,16 @@ export const updateShopDetail = async (values: shopDeteilRequestData): Promise<A
 
     /* Select - t_shops 店舗画像ファイル名取得
   　------------------------------------------------------------------ */
-    const query = supabase.from('t_shops').select('shop_image_safe_file_name').eq('id', req.id).single();
+    const query = supabase.from('t_shops').select('shop_image_safe_file_name').eq('id', req.id).maybeSingle();
     const { data, error } = (await query) as PostgrestSingleResponse<t_shops>;
     const exSafeFileName = data?.shop_image_safe_file_name ?? '';
 
     if (error) {
       console.error(error);
       throw new CustomError(
-        ErrorCodes.NOT_FOUND.code,
-        '店舗画像ファイルの取得' + ErrorCodes.NOT_FOUND.message,
-        ErrorCodes.NOT_FOUND.status
+        ErrorCodes.DB_QUERY_FAILED.code,
+        '店舗画像ファイルの取得' + ErrorCodes.DB_QUERY_FAILED.message,
+        ErrorCodes.DB_QUERY_FAILED.status
       );
     }
 
@@ -248,7 +248,7 @@ export const updateShopDetail = async (values: shopDeteilRequestData): Promise<A
     const safeFileName = getSafeFileName(req.shop_image_file_name ?? '');
     if (req.shop_image_file_data) {
       updateValues.shop_image_file_name = req.shop_image_file_name;
-      updateValues.shop_image_file_bytesize = req.shop_image_file_bytesize;
+      updateValues.shop_image_file_bytesize = req.shop_image_file_bytesize ?? 0;
       updateValues.shop_image_safe_file_name = safeFileName;
     } else if (!req.shop_image_file_data && exSafeFileName) {
       updateValues.shop_image_file_name = '';
@@ -258,6 +258,8 @@ export const updateShopDetail = async (values: shopDeteilRequestData): Promise<A
 
     const { columns, values } = getPostgreSqlItems(updateValues);
     const updateCompanyText = `UPDATE t_shops SET ${columns.map((col, index) => `${col} = $${index + 1}`).join(', ')} WHERE id = ${req.id} RETURNING id;`;
+    console.log('-----------------------------------------');
+    console.log(req.id);
 
     // Update
     const result = await pgClient.query(updateCompanyText, values);
@@ -265,9 +267,9 @@ export const updateShopDetail = async (values: shopDeteilRequestData): Promise<A
     if (result.rowCount === 0) {
       console.error(error);
       throw new CustomError(
-        ErrorCodes.NOT_FOUND.code,
-        '店舗情報の更新' + ErrorCodes.NOT_FOUND.message,
-        ErrorCodes.NOT_FOUND.status
+        ErrorCodes.DB_QUERY_FAILED.code,
+        '店舗情報の更新' + ErrorCodes.DB_QUERY_FAILED.message,
+        ErrorCodes.DB_QUERY_FAILED.status
       );
     }
 

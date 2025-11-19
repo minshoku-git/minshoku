@@ -22,8 +22,6 @@ export const DirtyCheck = () => {
   // 2.router.push
   const confirmNavigation = React.useCallback(
     (url: string) => {
-      console.log('お呼び出しがかかりました');
-      console.log('isDirty:', isDirty);
       if (isDirty) {
         setConformUrl(url);
         openConform();

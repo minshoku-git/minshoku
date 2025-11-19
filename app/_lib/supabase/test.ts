@@ -31,9 +31,9 @@ export const signUp = async (req: ApiRequest<LoginFormValues>): Promise<ApiRespo
     if (signUpError) {
       console.error('Error signing up:', signUpError);
       throw new CustomError(
-        ErrorCodes.NOT_FOUND.code,
-        'ユーザー登録' + ErrorCodes.NOT_FOUND.message,
-        ErrorCodes.NOT_FOUND.status
+        ErrorCodes.DB_QUERY_FAILED.code,
+        'ユーザー登録' + ErrorCodes.DB_QUERY_FAILED.message,
+        ErrorCodes.DB_QUERY_FAILED.status
       );
     }
     return { success: true, data: null };
@@ -65,9 +65,9 @@ export const getUser = async (): Promise<ApiResponse<string>> => {
     if (getUserError || !data?.user) {
       console.error('Error signing out:', getUserError);
       throw new CustomError(
-        ErrorCodes.NOT_FOUND.code,
-        'ログイン' + ErrorCodes.NOT_FOUND.message,
-        ErrorCodes.NOT_FOUND.status
+        ErrorCodes.DB_QUERY_FAILED.code,
+        'ログイン' + ErrorCodes.DB_QUERY_FAILED.message,
+        ErrorCodes.DB_QUERY_FAILED.status
       );
     }
     console.log('User signed out:');
@@ -108,9 +108,9 @@ export const approval = async (id: string): Promise<ApiResponse<number>> => {
     if (error) {
       console.log(error.message);
       throw new CustomError(
-        ErrorCodes.NOT_FOUND.code,
-        'ユーザー情報の承認' + ErrorCodes.NOT_FOUND.message,
-        ErrorCodes.NOT_FOUND.status
+        ErrorCodes.DB_QUERY_FAILED.code,
+        'ユーザー情報の承認' + ErrorCodes.DB_QUERY_FAILED.message,
+        ErrorCodes.DB_QUERY_FAILED.status
       );
     }
 

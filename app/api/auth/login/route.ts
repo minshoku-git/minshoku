@@ -47,17 +47,13 @@ export async function POST(req: NextRequest) {
       if (code === 'invalid_credentials') {
         const result: ApiResponse<null> = {
           success: false,
-          error: ErrorCodes.LOGIN_FAILED,
+          error: ErrorCodes.INVALID_CREDENTIALS,
         };
         return NextResponse.json(result.error, { status: result.error.status });
       } else {
         const result: ApiResponse<null> = {
           success: false,
-          error: {
-            code: ErrorCodes.NOT_FOUND.code,
-            message: 'ログイン' + ErrorCodes.NOT_FOUND.message,
-            status: ErrorCodes.NOT_FOUND.status,
-          },
+          error: ErrorCodes.LOGIN_FAILED,
         };
         return NextResponse.json(result.error, { status: result.error.status });
       }

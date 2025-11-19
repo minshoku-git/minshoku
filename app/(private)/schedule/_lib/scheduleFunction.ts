@@ -37,9 +37,9 @@ export const searchScheduleList = async (
     if (countError) {
       console.log('countError', countError);
       throw new CustomError(
-        ErrorCodes.NOT_FOUND.code,
-        'スケジュール情報の件数取得' + ErrorCodes.NOT_FOUND.message,
-        ErrorCodes.NOT_FOUND.status
+        ErrorCodes.DB_QUERY_FAILED.code,
+        'スケジュール情報の件数取得' + ErrorCodes.DB_QUERY_FAILED.message,
+        ErrorCodes.DB_QUERY_FAILED.status
       );
     }
     if (!count) {
@@ -72,9 +72,9 @@ export const searchScheduleList = async (
     if (error) {
       console.error('query error', error);
       throw new CustomError(
-        ErrorCodes.NOT_FOUND.code,
-        'スケジュール情報の件数取得' + ErrorCodes.NOT_FOUND.message,
-        ErrorCodes.NOT_FOUND.status
+        ErrorCodes.DB_QUERY_FAILED.code,
+        'スケジュール情報の件数取得' + ErrorCodes.DB_QUERY_FAILED.message,
+        ErrorCodes.DB_QUERY_FAILED.status
       );
     }
 
@@ -89,9 +89,9 @@ export const searchScheduleList = async (
     if (orderCountError) {
       console.log('orderAmountError', orderCountError);
       throw new CustomError(
-        ErrorCodes.NOT_FOUND.code,
-        '納品数合計の取得' + ErrorCodes.NOT_FOUND.message,
-        ErrorCodes.NOT_FOUND.status
+        ErrorCodes.DB_QUERY_FAILED.code,
+        '納品数合計の取得' + ErrorCodes.DB_QUERY_FAILED.message,
+        ErrorCodes.DB_QUERY_FAILED.status
       );
     }
 

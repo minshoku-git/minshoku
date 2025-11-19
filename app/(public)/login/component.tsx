@@ -56,6 +56,9 @@ export const LoginComponent = () => {
       const req: ApiRequest<LoginFormValues> = { request: data };
       return loginFetcher(req);
     },
+    onSuccess: () => {
+      router.push('/schedule')
+    },
     onSettled: () => {
       setLoading(false);
     },

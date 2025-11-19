@@ -113,9 +113,9 @@ export const approvalUserRegistrationStatus = async (id: number): Promise<ApiRes
     const result = await pgClient.query(updateSql, values);
     if (result.rowCount === 0) {
       throw new CustomError(
-        ErrorCodes.NOT_FOUND.code,
-        'ユーザー情報の承認' + ErrorCodes.NOT_FOUND.message,
-        ErrorCodes.NOT_FOUND.status
+        ErrorCodes.DB_QUERY_FAILED.code,
+        'ユーザー情報の承認' + ErrorCodes.DB_QUERY_FAILED.message,
+        ErrorCodes.DB_QUERY_FAILED.status
       );
     }
 
@@ -141,9 +141,9 @@ export const approvalUserRegistrationStatus = async (id: number): Promise<ApiRes
     if (signUpError) {
       console.error('Error signing up:', signUpError);
       throw new CustomError(
-        ErrorCodes.NOT_FOUND.code,
-        '認証メール送信' + ErrorCodes.NOT_FOUND.message,
-        ErrorCodes.NOT_FOUND.status
+        ErrorCodes.DB_QUERY_FAILED.code,
+        '認証メール送信' + ErrorCodes.DB_QUERY_FAILED.message,
+        ErrorCodes.DB_QUERY_FAILED.status
       );
     }
 
@@ -227,9 +227,9 @@ export const disapprovalUserRegistrationStatus = async (id: number): Promise<Api
     const result = await pgClient.query(updateSql, values);
     if (result.rowCount === 0) {
       throw new CustomError(
-        ErrorCodes.NOT_FOUND.code,
-        'ユーザー情報の否認' + ErrorCodes.NOT_FOUND.message,
-        ErrorCodes.NOT_FOUND.status
+        ErrorCodes.DB_QUERY_FAILED.code,
+        'ユーザー情報の否認' + ErrorCodes.DB_QUERY_FAILED.message,
+        ErrorCodes.DB_QUERY_FAILED.status
       );
     }
 

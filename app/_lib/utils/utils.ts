@@ -101,11 +101,15 @@ export const getPagenationsItems = (
  * @returns {{Array<string>;string;Array<string>;}} 開始件数、終了件数、総ページ数
  */
 export const getPostgreSqlItems = (
-  insertValues: object
-): { columns: Array<string>; placeholders: string; values: Array<string> } => {
-  const columns = Object.keys(insertValues);
-  const placeholders = columns.map((_, i) => `$${i + 1}`).join(',');
-  const values = Object.values(insertValues);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  insertValues: Record<string, any>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): { columns: string[]; placeholders: string; values: any[] } => {
+  const entries = Object.entries(insertValues).filter(([_, v]) => v !== undefined);
+
+  const columns = entries.map(([k]) => k);
+  const values = entries.map(([_, v]) => v);
+  const placeholders = values.map((_, i) => `$${i + 1}`).join(',');
 
   return { columns, placeholders, values };
 };

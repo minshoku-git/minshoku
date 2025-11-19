@@ -81,47 +81,7 @@ const DrawerHeader = styled('div')(({ theme }) => ({
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   /* initialize
   ------------------------------------------------------------------ */
-  const theme = useTheme();
-  const router = useRouter();
-  const currentPathname = usePathname();
-  const [open, setOpen] = useState(true);
-  const { isDirty, setDirty, openConfirmDialog, closeConform, url } = useDirty();
-  const { confirmNavigation } = DirtyCheck();
-
-  /* functions - Header 
-  ------------------------------------------------------------------ */
-  /** メニューを開く */
-  const handleDrawerOpen = () => {
-    setOpen(true);
-  };
-  /** メニューを閉じる */
-  const handleDrawerClose = () => {
-    setOpen(false);
-  };
-  /** 表示中画面のメニューボタンを非活性化 */
-  const disabledTitle = (pathname: string) => {
-    return currentPathname === pathname;
-  };
-
-  /* functions - 離脱確認ダイアログ
-  ------------------------------------------------------------------ */
-  /** リンク先を開く */
-  const pushHandler = () => {
-    setDirty(false);
-    router.push(url!);
-  };
-
-  /* functions - のちすてゾーン
-  ------------------------------------------------------------------ */
-  // const linkHandler = (e: React.MouseEvent<HTMLButtonElement>) => {
-  //   const url = e.currentTarget.getAttribute('data-url');
-  //   router.push(url!);
-  // };
-
-  console.log('layout*isDirty:' + isDirty);
-
-  /* dirty
-  ------------------------------------------------------------------ */
+  const [open] = useState(true);
 
   /* JSX
   ------------------------------------------------------------------ */
