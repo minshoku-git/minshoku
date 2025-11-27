@@ -29,7 +29,7 @@ export const LoginComponent = () => {
 
   /* useForm
   ------------------------------------------------------------------ */
-  const { handleSubmit, control, formState: { isDirty } } = useForm<LoginFormValues>({
+  const { handleSubmit, control, formState: { isDirty }, setValue } = useForm<LoginFormValues>({
     mode: 'onSubmit',
     reValidateMode: 'onChange',
     resolver: zodResolver(LoginSchema),
@@ -42,6 +42,14 @@ export const LoginComponent = () => {
       password: '',
     },
   });
+
+
+  /* Mock 
+  ------------------------------------------------------------------ */
+  const kantanLoginHandler = () => {
+    setValue('email', 'admin@domain.co.jp')
+    setValue('password', 'password1')
+  }
 
   /* functions 
   ------------------------------------------------------------------ */
@@ -59,8 +67,11 @@ export const LoginComponent = () => {
     onSuccess: () => {
       router.push('/schedule')
     },
+    onError: () => {
+      setLoading(false)
+    },
     onSettled: () => {
-      setLoading(false);
+      // MEMO: 成功の場合、Loading解除は不要。
     },
   });
 
@@ -128,6 +139,9 @@ export const LoginComponent = () => {
             </Box>
             <Button variant="contained" type={'submit'} disabled={!isDirty} sx={{ display: 'flex', mb: 1.5, width: 240 }} loading={loading}>
               <Typography variant="button">ログインする</Typography>
+            </Button>
+            <Button variant="contained" color='secondary' sx={{ display: 'flex', mb: 1.5, width: 240 }} loading={loading} onClick={() => kantanLoginHandler()}>
+              <Typography variant="button">入力補助ボタン</Typography>
             </Button>
           </Box>
         </form>

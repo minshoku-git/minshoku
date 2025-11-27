@@ -92,9 +92,8 @@ export const CompanyComponent = (): JSX.Element => {
   const {
     data,
     isLoading,
-    refetch,
   } = useApiQuery<CompanyDetailResult>({
-    queryKey: [QUERY_KEYS.COMPANY_SEARCH_RESULT],
+    queryKey: [QUERY_KEYS.COMPANY_DETAIL_INIT, id],
     queryFn: searchCompanyDetailFetch,
     enabled: editMode,
     onError: () => {
@@ -317,6 +316,7 @@ export const CompanyComponent = (): JSX.Element => {
   useEffect(() => {
     return () => {
       // 画面離脱時にクエリを無効化・再フェッチ予約する。
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMPANY_DETAIL_INIT] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMPANY_SEARCH_RESULT] });
       setDirty(false); // CleanUp
     };

@@ -83,7 +83,7 @@ export const ShopComponent = (): JSX.Element => {
     isLoading,
     refetch,
   } = useApiQuery<t_shops>({
-    queryKey: [QUERY_KEYS.SHOP_DETAIL_INIT],
+    queryKey: [QUERY_KEYS.SHOP_DETAIL_INIT, id],
     queryFn: searchShopDetailFetch,
     enabled: editMode,
   });
@@ -253,6 +253,7 @@ export const ShopComponent = (): JSX.Element => {
     return () => {
       // 画面離脱時にクエリを無効化・再フェッチ予約する。
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SHOP_DETAIL_INIT] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SHOP_SEARCH_RESULT] });
       setDirty(false); // CleanUp
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

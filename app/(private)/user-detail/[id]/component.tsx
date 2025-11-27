@@ -84,7 +84,7 @@ export const UserDetailComponent = (): JSX.Element => {
     isLoading,
     refetch,
   } = useApiQuery<UserDataDetailResult>({
-    queryKey: [QUERY_KEYS.USER_DETAIL_INIT],
+    queryKey: [QUERY_KEYS.USER_DETAIL_INIT, id],
     queryFn: searchUserDetailFetch,
     enabled: true,
     onError: () => {
@@ -252,6 +252,9 @@ export const UserDetailComponent = (): JSX.Element => {
 
   useEffect(() => {
     return () => {
+      // 画面離脱時にクエリを無効化・再フェッチ予約する。
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.USER_DETAIL_INIT] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.USER_SEARCH_RESULT] });
       setDirty(false); // CleanUp
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
