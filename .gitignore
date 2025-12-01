@@ -39,3 +39,5 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+app/_scripts/list-eslint-problems.js
+eslint-report.json

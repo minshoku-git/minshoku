@@ -16,12 +16,16 @@ const eslintConfig = [
     rules: {
       // '@typescript-eslint/explicit-module-boundary-types': 'off',
       // '@typescript-eslint/no-non-null-assertion': 'off',
-      // '@typescript-eslint/no-unused-vars': 'off',
       // '@typescript-eslint/no-namespace': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
       'simple-import-sort/imports': 'error',
       'simple-import-sort/exports': 'error',
       'import/order': 'off',
       'prettier/prettier': 'off',
+      'import/no-unresolved': 'off',
+      'import/default': 'error',
+      'import/namespace': 'error',
+      'import/no-extraneous-dependencies': 'warn',
     },
   }),
 ];

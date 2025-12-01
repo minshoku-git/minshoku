@@ -1,0 +1,110 @@
+import { z } from 'zod';
+
+import { MSG_INVALID, MSG_MAX } from '@/app/_config/constants';
+import { formatString } from '@/app/_lib/utils/utils';
+import { PaginateData } from '@/app/_types/types';
+
+/**
+ * スケジュール一覧 検索条件 Schema
+ */
+export const ScheduleSearchSchema = z
+  .object({
+    /** 配達日(FROM) */
+    deliveryFrom: z
+      .date()
+      .nullable()
+      .refine((val) => val === null || !isNaN(val.getTime()), {
+        message: formatString(MSG_INVALID, '配達日(FROM)'),
+      }),
+    /** 配達日(TO) */
+    deliveryTo: z
+      .date()
+      .nullable()
+      .refine((val) => val === null || !isNaN(val.getTime()), {
+        message: formatString(MSG_INVALID, '配達日(TO)'),
+      }),
+    /** 会社名 */
+    company_name: z
+      .string()
+      .max(64, formatString(MSG_MAX, '会社名', '64'))
+      .optional(),
+    /** ステータス */
+    shop_name: z
+      .string()
+      .max(64, formatString(MSG_MAX, '店舗名', '64'))
+      .optional(),
+  })
+  /** 提供時間 FROM<TOではない */
+  .check((ctx) => {
+    if (!ctx.value.deliveryFrom && !ctx.value.deliveryTo) {
+      ctx.issues.push({
+        code: 'custom',
+        path: ['deliveryFrom'],
+        message: 'いずれかの日を入力してください。',
+        input: ctx.value,
+      });
+      ctx.issues.push({
+        code: 'custom',
+        path: ['deliveryTo'],
+        message: 'いずれかの日を入力してください。',
+        input: ctx.value,
+      });
+    }
+    if (ctx.value.deliveryFrom && ctx.value.deliveryTo) {
+      if (ctx.value.deliveryFrom > ctx.value.deliveryTo) {
+        ctx.issues.push({
+          code: 'custom',
+          path: ['deliveryFrom'],
+          message: '開始時間は終了時間より早い時間を設定してください。',
+          input: ctx.value,
+        });
+        ctx.issues.push({
+          code: 'custom',
+          path: ['deliveryTo'],
+          message: '終了時間は開始時間より遅い時間を設定してください。',
+          input: ctx.value,
+        });
+      }
+    }
+  });
+
+/**
+ * スケジュール一覧 検索条件 FormValues
+ */
+export type ScheduleSearchFormValues = z.infer<typeof ScheduleSearchSchema>;
+
+/** 検索結果 スケジュール一覧 */
+export type ScheduleListSearchResult = {
+  /** スケジュールデータ */
+  scheduleDatas: ScheduleData[];
+  /** 合計食数 */
+  orderAmout: number;
+  /** ページネート */
+  paginate?: PaginateData;
+};
+
+/** 検索結果 スケジュール一覧 */
+export type ScheduleData = {
+  /** ID */
+  id: string;
+  /** 納品日 */
+  delivery_day: string;
+  /** 会社名 */
+  company_name: string;
+  /** 支店名 */
+  branch_name: string;
+  /** 店舗名 */
+  shop_name: string;
+  /** メニュー名 */
+  menu_name: string;
+  /** 食数 */
+  stock_count: number;
+};
+
+/** 検索結果 スケジュール一覧 */
+export type Testcsv = {
+  /** ID */
+  id: string;
+  /** メニュー名 */
+  menu_name: string;
+};
