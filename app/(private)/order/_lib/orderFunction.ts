@@ -38,7 +38,9 @@ export const _searchOrderList = async (
   try {
     /* 件数取得
     ------------------------------------------------------------------ */
-    let queryCount = supabase.from('v_order').select('*', { count: 'exact', head: true });
+    let queryCount = supabase
+      .from('v_order_' + process.env.SUPABASE_DB_SCHEMA)
+      .select('*', { count: 'exact', head: true });
     queryCount = applyFilters(queryCount, req);
 
     const { count, error: countError } = await queryCount;
@@ -61,7 +63,7 @@ export const _searchOrderList = async (
     /* 明細行取得
     ------------------------------------------------------------------ */
     let query = supabase
-      .from('v_order')
+      .from('v_order' + process.env.SUPABASE_DB_SCHEMA)
       .select(
         `
         id,
@@ -146,7 +148,9 @@ export const createOrderListCsvData = async (
   try {
     /* 件数取得
     ------------------------------------------------------------------ */
-    let queryCount = supabase.from('v_order').select('*', { count: 'exact', head: true });
+    let queryCount = supabase
+      .from('v_order' + process.env.SUPABASE_DB_SCHEMA)
+      .select('*', { count: 'exact', head: true });
     queryCount = applyFilters(queryCount, req);
 
     const { count, error: countError } = await queryCount;
@@ -168,7 +172,7 @@ export const createOrderListCsvData = async (
 
     /* 明細行取得(該当IDを取得)
     ------------------------------------------------------------------ */
-    let query = supabase.from('v_order').select('id');
+    let query = supabase.from('v_order' + process.env.SUPABASE_DB_SCHEMA).select('id');
 
     query = applyFilters(query, req);
     query = applySorts(query, sortItems);

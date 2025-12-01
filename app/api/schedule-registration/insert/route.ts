@@ -1,6 +1,7 @@
 import * as csv from 'csv-parse';
 import { NextResponse } from 'next/server';
 import { Readable } from 'stream';
+import z from 'zod';
 
 import { ApiResponse } from '@/app/_types/types';
 import { RefreshingScheduleData } from '@/app/(private)/schedule-registration/_lib/scheduleRegistrationFunction';
@@ -8,15 +9,13 @@ import { ScheduleCsvSchema, ScheduleCsvValues } from '@/app/(private)/schedule-r
 import { CustomError } from '@/app/errors/customError';
 import { ErrorCodes } from '@/app/errors/ErrorCodes';
 
-// POSTエンドポイント
 export async function POST(req: Request): Promise<Response> {
   try {
     const formData = await req.formData();
     const file = formData.get('csvFile') as File;
 
     if (!file) {
-      const res: ApiResponse<null> = { success: false, error: ErrorCodes.FILE_NOT_FOUND };
-      return NextResponse.json(res);
+      throw new CustomError(ErrorCodes.FILE_NOT_FOUND);
     }
 
     const arrayBuffer = await file.arrayBuffer();
@@ -33,8 +32,8 @@ export async function POST(req: Request): Promise<Response> {
         .on('data', (row: ScheduleCsvValues) => {
           const parsed = ScheduleCsvSchema.safeParse(row);
           if (!parsed.success) {
-            const message = JSON.stringify(parsed.error.format(), null, 2);
-            console.log(message);
+            const message = JSON.stringify(z.treeifyError(parsed.error), null, 2);
+            console.error(message);
             return reject(new CustomError(ErrorCodes.CSV_VALIDATION_FAILED));
           }
           scheduleDatas.push(parsed.data);
@@ -43,14 +42,16 @@ export async function POST(req: Request): Promise<Response> {
         .on('error', (err) => reject(err));
     });
 
-    // 洗い替え処理
+    // スケジュール登録
     const result = await RefreshingScheduleData(scheduleDatas);
-    return NextResponse.json(result);
+    if (result.success) {
+      return NextResponse.json(result);
+    }
+    return NextResponse.json(result.error, { status: result.error.status });
   } catch (e: unknown) {
     console.error(e);
     if (e instanceof CustomError) {
-      const res: ApiResponse<null> = { success: false, error: e };
-      return NextResponse.json(res);
+      return NextResponse.json(e, { status: e.status });
     }
     const res: ApiResponse<null> = {
       success: false,

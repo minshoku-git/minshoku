@@ -30,7 +30,9 @@ export const searchScheduleList = async (
   try {
     /* 件数取得
   ------------------------------------------------------------------ */
-    let queryCount = supabase.from('v_menu_schedule').select('*', { count: 'exact', head: true });
+    let queryCount = supabase
+      .from('v_menu_schedule_' + process.env.SUPABASE_DB_SCHEMA)
+      .select('*', { count: 'exact', head: true });
     queryCount = applyFilters(queryCount, req);
 
     const { count, error: countError } = (await queryCount) as PostgrestSingleResponse<ScheduleData[]>;
@@ -53,7 +55,7 @@ export const searchScheduleList = async (
     /* 明細行取得
   ------------------------------------------------------------------ */
     let query = supabase
-      .from('v_menu_schedule')
+      .from('v_menu_schedule_' + process.env.SUPABASE_DB_SCHEMA)
       .select(
         `id,
       delivery_day,
@@ -82,7 +84,7 @@ export const searchScheduleList = async (
   ------------------------------------------------------------------ */
     // MEMO:
     // VIEWにはSUM()が使用不可のため、該当レコードの納品数を取得し、合計数を算出する。
-    let orderCountQuery = supabase.from('v_menu_schedule').select('stock_count');
+    let orderCountQuery = supabase.from('v_menu_schedule_' + process.env.SUPABASE_DB_SCHEMA).select('stock_count');
     orderCountQuery = applyFilters(orderCountQuery, req);
     const { data: orderCountData, error: orderCountError } = (await query) as PostgrestSingleResponse<ScheduleData[]>;
 
