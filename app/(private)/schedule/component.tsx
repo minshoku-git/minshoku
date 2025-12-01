@@ -256,6 +256,17 @@ export const ScheduleComponent = (): JSX.Element => {
                     <DatePickerElement
                       control={control}
                       name={'deliveryTo'}
+                      // slotProps={{
+                      //   actionBar: {
+                      //     actions: ['today', 'clear', 'cancel', 'accept'],
+                      //     sx: {
+                      //       '& .MuiButton-root': {
+                      //         color: 'contained',
+                      //       },
+                      //     },
+                      //   },
+                      // }}
+                      // closeOnSelect={false}
                       sx={{
                         minWidth: '150px',
                         '& .MuiInputBase-root': {

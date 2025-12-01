@@ -140,9 +140,9 @@ export const LoginComponent = () => {
             <Button variant="contained" type={'submit'} disabled={!isDirty} sx={{ display: 'flex', mb: 1.5, width: 240 }} loading={loading}>
               <Typography variant="button">ログインする</Typography>
             </Button>
-            <Button variant="contained" color='secondary' sx={{ display: 'flex', mb: 1.5, width: 240 }} loading={loading} onClick={() => kantanLoginHandler()}>
+            {/* <Button variant="contained" color='secondary' sx={{ display: 'flex', mb: 1.5, width: 240 }} loading={loading} onClick={() => kantanLoginHandler()}>
               <Typography variant="button">入力補助ボタン</Typography>
-            </Button>
+            </Button> */}
           </Box>
         </form>
       </Box>
