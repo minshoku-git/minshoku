@@ -12,14 +12,14 @@ export const OrderSearchSchema = z
   .object({
     /** 配達日(FROM) */
     deliveryFrom: z
-      .date()
+      .date(formatString(MSG_INVALID, '配達日(FROM)'))
       .nullable()
       .refine((val) => val === null || !isNaN(val.getTime()), {
         message: formatString(MSG_INVALID, '配達日(FROM)'),
       }),
     /** 配達日(TO) */
     deliveryTo: z
-      .date()
+      .date(formatString(MSG_INVALID, '配達日(TO)'))
       .nullable()
       .refine((val) => val === null || !isNaN(val.getTime()), {
         message: formatString(MSG_INVALID, '配達日(TO)'),
@@ -55,13 +55,13 @@ export const OrderSearchSchema = z
         ctx.issues.push({
           code: 'custom',
           path: ['deliveryFrom'],
-          message: '開始時間は終了時間より早い時間を設定してください。',
+          message: '配達日(FROM)は配達日(TO)より早い時間を設定してください。',
           input: ctx.value,
         });
         ctx.issues.push({
           code: 'custom',
           path: ['deliveryTo'],
-          message: '終了時間は開始時間より遅い時間を設定してください。',
+          message: '配達日(TO)は配達日(FROM)より遅い時間を設定してください。',
           input: ctx.value,
         });
       }
