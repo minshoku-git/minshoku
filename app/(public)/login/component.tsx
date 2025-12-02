@@ -20,7 +20,6 @@ export const LoginComponent = () => {
   /* initialize
   ------------------------------------------------------------------ */
   const router = useRouter();
-  const { openSnackbar } = useSnackBar();
 
   /* useState
   ------------------------------------------------------------------ */

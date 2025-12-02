@@ -46,7 +46,7 @@ export async function updateSession(request: NextRequest) {
     return redirectToLogin(request);
   }
 
-  // セッションありの場合に t_user を確認
+  // セッションありの場合に t_administrator を確認
   if (session && user) {
     const userEmail = user.email;
     const { data: userData, error } = await supabase
@@ -57,11 +57,14 @@ export async function updateSession(request: NextRequest) {
 
     if (error || !userData) {
       console.log('userEmail', userEmail);
-      console.error('Failed to fetch user from t_user:', error);
+      console.error('Failed to fetch user from t_administrator:', error ?? 'userdata none');
       // MEMO: セッション有り&ユーザー情報がないパターンが存在するので、強制ログアウトする。
       // マスタ管理でログインした後にユーザー画面を開いた場合、セッションは維持されるし、管理者はユーザー情報を持たない。
       await supabase.auth.signOut();
-      return redirectToLogin(request);
+      // 認証チェックロジックに任せるため、未認証ユーザーの公開パスである '/' に戻す
+      const url = request.nextUrl.clone();
+      url.pathname = '/';
+      return NextResponse.redirect(url);
     }
 
     // 利用ステータスが利用不可の場合は強制ログアウトする。
@@ -70,7 +73,7 @@ export async function updateSession(request: NextRequest) {
       return redirectToLogin(request);
     }
 
-    // 認証済みユーザーが公開パスにアクセスした場合、/orderにリダイレクト
+    // 認証済みユーザーが公開パスにアクセスした場合、/scheduleにリダイレクト
     if (session && (currentPath === '/' || currentPath === '/login')) {
       const url = request.nextUrl.clone();
       url.pathname = '/schedule';

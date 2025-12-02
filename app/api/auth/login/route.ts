@@ -1,8 +1,11 @@
 import { createServerClient } from '@supabase/ssr';
+import { PostgrestSingleResponse } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
+import { t_administrator } from '@/app/_lib/supabase/tableTypes';
 import { ApiRequest, ApiResponse } from '@/app/_types/types';
 import { LoginFormValues } from '@/app/(public)/login/_lib/types';
+import { CustomError } from '@/app/errors/customError';
 import { ErrorCodes } from '@/app/errors/ErrorCodes';
 
 export async function POST(req: NextRequest) {
@@ -32,7 +35,16 @@ export async function POST(req: NextRequest) {
   });
 
   try {
-    // Supabaseでサインインを実行
+    // 1.ユーザー情報取得
+    const query = supabase.from('t_administrator').select('*').eq('email', email).single();
+    const { error } = (await query) as PostgrestSingleResponse<t_administrator>;
+
+    if (error) {
+      // MEMO: メールアドレスの特定を避けるためにサインインエラーと同じエラーを出力
+      throw new CustomError(ErrorCodes.LOGIN_FAILED);
+    }
+
+    // 2.Supabaseでサインインを実行
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -42,20 +54,12 @@ export async function POST(req: NextRequest) {
 
     if (signInError) {
       const raw = signInError?.code;
-      const code: string = typeof raw === 'string' ? raw : ''; // or raw ?? ''
+      const code: string = typeof raw === 'string' ? raw : '';
 
       if (code === 'invalid_credentials') {
-        const result: ApiResponse<null> = {
-          success: false,
-          error: ErrorCodes.INVALID_CREDENTIALS,
-        };
-        return NextResponse.json(result.error, { status: result.error.status });
+        throw new CustomError(ErrorCodes.INVALID_CREDENTIALS);
       } else {
-        const result: ApiResponse<null> = {
-          success: false,
-          error: ErrorCodes.LOGIN_FAILED,
-        };
-        return NextResponse.json(result.error, { status: result.error.status });
+        throw new CustomError(ErrorCodes.LOGIN_FAILED);
       }
     }
 
@@ -69,12 +73,11 @@ export async function POST(req: NextRequest) {
     });
 
     return response;
-  } catch (e) {
-    console.error('予期せぬエラー:', e);
-    const result: ApiResponse<null> = {
-      success: false,
-      error: ErrorCodes.INTERNAL_SERVER_ERROR,
-    };
-    return NextResponse.json(result.error, { status: result.error.status });
+  } catch (e: unknown) {
+    console.error(e);
+    if (e instanceof CustomError) {
+      return NextResponse.json(e, { status: e.status });
+    }
+    return NextResponse.json(ErrorCodes.INTERNAL_SERVER_ERROR, { status: ErrorCodes.INTERNAL_SERVER_ERROR.status });
   }
 }
