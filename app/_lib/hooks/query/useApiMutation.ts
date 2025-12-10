@@ -44,7 +44,7 @@ export const useApiMutation = <TData, TVariables>(options: UseApiMutationOptions
     },
 
     // エラー時の処理
-    onError: (error) => {
+    onError: (error, variables, onMutateResult, context) => {
       // CustomError がインスタンスの場合、スナックバーにエラーメッセージを表示
       if (error instanceof CustomError) {
         // CustomError の場合、エラーメッセージを表示
@@ -55,6 +55,9 @@ export const useApiMutation = <TData, TVariables>(options: UseApiMutationOptions
         showGlobalSnackbar(AlertType.ERROR, MUTATE_FAILURE_MESSAGE);
         console.error('Unexpected Error:', error); // 予期しないエラーをログに出力
       }
+
+      // 呼び出し元 onErrorを呼ぶ
+      options.onError?.(error, variables, onMutateResult, context);
     },
   });
 };

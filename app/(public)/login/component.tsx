@@ -10,7 +10,6 @@ import { TextFieldElement } from 'react-hook-form-mui';
 
 import { useApiMutation } from '@/app/_lib/hooks/query/useApiMutation';
 import { ApiRequest } from '@/app/_types/types';
-import { useSnackBar } from '@/app/_ui/state/snackBar/snackbarContext';
 
 import RequiredMark from '../../_ui/components/atoms/requiredMark';
 import { loginFetcher } from './_lib/fetcher';
@@ -20,7 +19,6 @@ export const LoginComponent = () => {
   /* initialize
   ------------------------------------------------------------------ */
   const router = useRouter();
-  const { openSnackbar } = useSnackBar();
 
   /* useState
   ------------------------------------------------------------------ */
@@ -31,7 +29,7 @@ export const LoginComponent = () => {
   ------------------------------------------------------------------ */
   const { handleSubmit, control, formState: { isDirty }, setValue } = useForm<LoginFormValues>({
     mode: 'onSubmit',
-    reValidateMode: 'onChange',
+    reValidateMode: 'onSubmit',
     resolver: zodResolver(LoginSchema),
     // defaultValues: {
     //   email: 'admin@domain.co.jp', // TODO:実際は空、モック中は値有りで
@@ -83,11 +81,12 @@ export const LoginComponent = () => {
         <form noValidate onSubmit={handleSubmit(loginHandler)}>
           <Box
             sx={{
-              marginTop: 4,
               display: 'flex',
+              height: '100vh',
               flexDirection: 'column',
               alignItems: 'center',
-              minWidth: '852px',
+              justifyContent: 'center',
+              paddingBottom: 5,
             }}
           >
             <Image src="/logo.svg" alt="みんなの社食" width="200" height="52" />
@@ -101,9 +100,10 @@ export const LoginComponent = () => {
               <TextFieldElement
                 control={control}
                 fullWidth
-                size="small"
                 name="email"
                 type="email"
+                size="small"
+                required
                 autoComplete="email"
               />
             </Box>
@@ -115,19 +115,20 @@ export const LoginComponent = () => {
                 <RequiredMark />
               </Box>
               <TextFieldElement
+                control={control}
+                fullWidth
                 name="password"
                 type={showPassword ? 'text' : 'password'}
-                fullWidth
-                required
                 size="small"
-                control={control}
+                required
+                autoComplete="current-password"
                 slotProps={{
                   input: {
                     endAdornment: (
                       <InputAdornment position="end">
                         <IconButton
-                          onClick={() => setShowPassword((prev) => !prev)}
                           edge="end"
+                          onClick={() => setShowPassword((prev) => !prev)}
                         >
                           {showPassword ? <VisibilityOff /> : <Visibility />}
                         </IconButton>
@@ -140,9 +141,9 @@ export const LoginComponent = () => {
             <Button variant="contained" type={'submit'} disabled={!isDirty} sx={{ display: 'flex', mb: 1.5, width: 240 }} loading={loading}>
               <Typography variant="button">ログインする</Typography>
             </Button>
-            <Button variant="contained" color='secondary' sx={{ display: 'flex', mb: 1.5, width: 240 }} loading={loading} onClick={() => kantanLoginHandler()}>
+            {/* <Button variant="contained" color='secondary' sx={{ display: 'flex', mb: 1.5, width: 240 }} loading={loading} onClick={() => kantanLoginHandler()}>
               <Typography variant="button">入力補助ボタン</Typography>
-            </Button>
+            </Button> */}
           </Box>
         </form>
       </Box>

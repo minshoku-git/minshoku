@@ -27,6 +27,11 @@ export const ErrorCodes = {
     message: 'CSVファイルに不正なデータが含まれています。内容を確認してください。',
     status: 400,
   },
+  VALIDATION_ERROR: {
+    code: 'E400-05',
+    message: '入力されたデータに不正な値が含まれています。入力内容を再確認してください。',
+    status: 400,
+  },
 
   // --- 401系: 認証が必要 ---
   INVALID_CREDENTIALS: {
@@ -84,6 +89,11 @@ export const ErrorCodes = {
     status: 500,
   },
   LOGOUT_FAILED: {
+    code: 'E500-04',
+    message: 'ログアウトに失敗しました。時間をおいて再度お試しください。',
+    status: 500,
+  },
+  VALIDATION_ERROR_YOURS: {
     code: 'E500-04',
     message: 'ログアウトに失敗しました。時間をおいて再度お試しください。',
     status: 500,
