@@ -1,4 +1,4 @@
-import { createServerClient } from '@supabase/ssr';
+import { CookieOptions, createServerClient } from '@supabase/ssr';
 import { PostgrestSingleResponse } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
 
   // Supabaseが生成するクッキーを一時的に保存するための配列
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const cookiesToSet: { name: string; value: string; options?: any }[] = [];
+  const cookiesToSet: { name: string; value: string; options?: CookieOptions }[] = [];
 
   // Supabaseクライアントを作成
   // cookies.setAllでクッキーをtempCookies配列に格納
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
       getAll() {
         return req.cookies.getAll();
       },
-      setAll(cookies) {
+      setAll(cookies: { name: string; value: string; options?: CookieOptions }[] = []) {
         cookies.forEach((cookie) => {
           cookiesToSet.push(cookie);
         });

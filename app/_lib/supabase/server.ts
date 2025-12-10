@@ -1,4 +1,4 @@
-import { createServerClient } from '@supabase/ssr';
+import { type CookieOptions, createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { Client } from 'pg';
 
@@ -11,7 +11,7 @@ export async function createClient() {
         // 現在のリクエストのクッキーをすべて取得（ログイン状態を確認するのに必要）。
         return cookieStore.getAll();
       },
-      setAll(cookiesToSet) {
+      setAll(cookiesToSet: { name: string; value: string; options?: CookieOptions }[] = []) {
         // Supabase がセッションを更新した際にクッキーを書き直すために呼ばれる。
         // ただし、Server Component から cookies().set() を呼ぶと例外が出るので、それを try/catch で無視。
         // 通常はこの部分は middleware.ts などがセッション更新を担うため、問題なし。
