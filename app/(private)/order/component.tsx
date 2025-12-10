@@ -7,7 +7,6 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { useQueryClient } from '@tanstack/react-query';
 import { ja } from 'date-fns/locale';
-import { useRouter } from 'next/navigation';
 import { JSX, useEffect, useState } from 'react';
 import React from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
@@ -19,7 +18,7 @@ import { QUERY_KEYS } from '@/app/_lib/hooks/query/queryKeys';
 import { useApiMutation } from '@/app/_lib/hooks/query/useApiMutation';
 import { useApiQuery } from '@/app/_lib/hooks/query/useApiQuery';
 import { downloadCsv } from '@/app/_lib/utils/downloadCsv/downloadCsv';
-import { getLastMonthEndDay, getLastMonthStartDay, getNow, getTodayXHour, getTomorrow, getYesterday } from '@/app/_lib/utils/getDateTime';
+import { getLastMonthEndDay, getLastMonthStartDay, getTodayXHour, getTomorrow, getYesterday } from '@/app/_lib/utils/getDateTime';
 import { AlertType, OrderStatusType, PaymentType, SearchType, SortType } from '@/app/_types/enum';
 import { ApiRequest, ApiResponse, HeaderStatus } from '@/app/_types/types';
 import { ResultsCounter } from '@/app/_ui/components/atoms/resultsCounter';
@@ -30,7 +29,7 @@ import { useSnackBar } from '@/app/_ui/state/snackBar/snackbarContext';
 
 import ItemBase from '../../_ui/components/atoms/itemBase';
 import { orderCancelFetcher, orderListExportCSVFetcher, searchOrderDetailFetcher, searchOrderListFetcher } from './_lib/fetcher';
-import { OrderData, orderDeteilCsvResponseData, orderDeteilResponseData, OrderListSearchResult, OrderSearchFormValues, OrderSearchSchema } from './_lib/types';
+import { orderDeteilCsvResponseData, orderDeteilResponseData, OrderListSearchResult, OrderSearchFormValues, OrderSearchSchema } from './_lib/types';
 import OrderInfoModal from './orderInfoModal';
 
 /* ページ名 */
@@ -67,7 +66,6 @@ const initConditionValues: ApiRequest<OrderSearchFormValues> = {
 export const OrderComponent = (): JSX.Element => {
   /* initialize
   ------------------------------------------------------------------ */
-  const router = useRouter();
   const queryClient = useQueryClient();
   const { openSnackbar } = useSnackBar();
   const { openProcessing, closeProcessing } = useProcessing();
@@ -101,11 +99,11 @@ export const OrderComponent = (): JSX.Element => {
   ------------------------------------------------------------------ */
   const { reset, control, setValue, handleSubmit } = useForm<OrderSearchFormValues>({
     mode: 'onSubmit',
-    reValidateMode: 'onBlur',
+    reValidateMode: 'onSubmit',
     resolver: zodResolver(OrderSearchSchema),
     defaultValues: {
-      deliveryFrom: getNow(),
-      deliveryTo: getNow(),
+      deliveryFrom: getTodayXHour(),
+      deliveryTo: getTodayXHour(),
       user_name: '',
       company_name: '',
       order_status_type: undefined,

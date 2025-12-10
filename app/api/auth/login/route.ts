@@ -3,16 +3,21 @@ import { PostgrestSingleResponse } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { t_administrator } from '@/app/_lib/supabase/tableTypes';
-import { ApiRequest, ApiResponse } from '@/app/_types/types';
-import { LoginFormValues } from '@/app/(public)/login/_lib/types';
+import { validateRequest } from '@/app/_lib/validation';
+import { ApiResponse } from '@/app/_types/types';
+import { LoginFormValues, LoginSchema } from '@/app/(public)/login/_lib/types';
 import { CustomError } from '@/app/errors/customError';
 import { ErrorCodes } from '@/app/errors/ErrorCodes';
 
 export async function POST(req: NextRequest) {
+  // 共通バリデーション
+  const validationResult = await validateRequest(req, LoginSchema);
+  if (!validationResult.success) {
+    throw validationResult.error;
+  }
+
   // ログインフォームのデータ（メールアドレスとパスワード）を取得
-  const {
-    request: { email, password },
-  } = (await req.json()) as ApiRequest<LoginFormValues>;
+  const { email, password } = validationResult.data as LoginFormValues;
 
   // Supabaseが生成するクッキーを一時的に保存するための配列
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -41,7 +46,7 @@ export async function POST(req: NextRequest) {
 
     if (error) {
       // MEMO: メールアドレスの特定を避けるためにサインインエラーと同じエラーを出力
-      throw new CustomError(ErrorCodes.LOGIN_FAILED);
+      throw new CustomError(ErrorCodes.INVALID_CREDENTIALS);
     }
 
     // 2.Supabaseでサインインを実行
