@@ -1,4 +1,4 @@
-import { CookieOptions, createServerClient } from '@supabase/ssr';
+import { type CookieOptions, createServerClient } from '@supabase/ssr';
 import { PostgrestSingleResponse } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -20,7 +20,6 @@ export async function POST(req: NextRequest) {
   const { email, password } = validationResult.data as LoginFormValues;
 
   // Supabaseが生成するクッキーを一時的に保存するための配列
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const cookiesToSet: { name: string; value: string; options?: CookieOptions }[] = [];
 
   // Supabaseクライアントを作成
