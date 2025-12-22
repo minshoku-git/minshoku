@@ -8,22 +8,24 @@ import { PaginateData } from '@/app/_types/types';
 /**
  * 会社一覧 検索条件 Schema
  */
-export const CompanySearchSchema = z.object({
-  /** 会社名 */
-  company_name: z
-    .string()
-    .max(64, formatString(MSG_MAX, '会社名', '64'))
-    .optional(),
-  /** 支店名 */
-  branch_name: z
-    .string()
-    .max(256, formatString(MSG_MAX, '支店名', '256'))
-    .optional(),
-  /** 住所 */
-  address: z.string().optional(),
-  /** 利用ステータス */
-  usage_status: z.enum(UsageStatus).or(z.literal('')).optional(),
-});
+export const CompanySearchSchema = z
+  .object({
+    /** 会社名 */
+    company_name: z
+      .string()
+      .max(64, formatString(MSG_MAX, '会社名', '64'))
+      .optional(),
+    /** 支店名 */
+    branch_name: z
+      .string()
+      .max(256, formatString(MSG_MAX, '支店名', '256'))
+      .optional(),
+    /** 住所 */
+    address: z.string().optional(),
+    /** 利用ステータス */
+    usage_status: z.enum(UsageStatus).or(z.literal('')).optional(),
+  })
+  .strict();
 
 /**
  * 会社一覧 検索条件 FormValues

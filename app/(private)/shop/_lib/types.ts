@@ -6,14 +6,16 @@ import { PaginateData } from '@/app/_types/types';
 /**
  * 店舗一覧 検索条件 スキーマ
  */
-export const ShopSearchSchema = z.object({
-  /** 店舗名 */
-  shop_name: z.string().optional(),
-  /** 都道府県 */
-  address: z.string().optional(),
-  /** 利用ステータス */
-  usage_status: z.enum(UsageStatus).or(z.literal('')).optional(),
-});
+export const ShopSearchSchema = z
+  .object({
+    /** 店舗名 */
+    shop_name: z.string().optional(),
+    /** 都道府県 */
+    address: z.string().optional(),
+    /** 利用ステータス */
+    usage_status: z.enum(UsageStatus).or(z.literal('')).optional(),
+  })
+  .strict();
 
 /**
  * 店舗一覧 検索条件 FormValues

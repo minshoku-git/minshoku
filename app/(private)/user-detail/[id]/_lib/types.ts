@@ -5,12 +5,14 @@ import { UsageStatus } from '@/app/_types/enum';
 /**
  * ユーザー詳細 入力項目 Schema
  */
-export const UserDetailSchema = z.object({
-  /** ステータス */
-  usage_status: z.nativeEnum(UsageStatus),
-  /** メモ */
-  memo: z.string().optional(),
-});
+export const UserDetailSchema = z
+  .object({
+    /** ステータス */
+    usage_status: z.nativeEnum(UsageStatus),
+    /** メモ */
+    memo: z.string().optional(),
+  })
+  .strict();
 
 /**
  * ユーザー詳細 入力項目 FormValues

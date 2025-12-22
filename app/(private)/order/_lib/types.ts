@@ -66,7 +66,8 @@ export const OrderSearchSchema = z
         });
       }
     }
-  });
+  })
+  .strict();
 
 /**
  * オーダー一覧 検索条件 FormValues

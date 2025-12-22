@@ -66,7 +66,8 @@ export const ScheduleSearchSchema = z
         });
       }
     }
-  });
+  })
+  .strict();
 
 /**
  * スケジュール一覧 検索条件 FormValues

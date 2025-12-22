@@ -8,24 +8,26 @@ import { PaginateData } from '@/app/_types/types';
 /**
  * ユーザー一覧 検索条件 FormValues
  */
-export const UserSearchSchema = z.object({
-  /** ユーザー名 */
-  user_name: z.string().optional(),
-  /** 会社名 */
-  company_name: z
-    .string()
-    .max(64, formatString(MSG_MAX, '会社名', '64'))
-    .optional(),
-  /** 支店名 */
-  branch_name: z
-    .string()
-    .max(64, formatString(MSG_MAX, '支店名', '64'))
-    .optional(),
-  /** 利用ステータス */
-  usage_status: z.enum(UsageStatus).or(z.literal('')).optional(),
-  /** ユーザー登録ステータス */
-  user_registration_status: z.enum(UserRegistrationStatus).or(z.literal('')).optional(),
-});
+export const UserSearchSchema = z
+  .object({
+    /** ユーザー名 */
+    user_name: z.string().optional(),
+    /** 会社名 */
+    company_name: z
+      .string()
+      .max(64, formatString(MSG_MAX, '会社名', '64'))
+      .optional(),
+    /** 支店名 */
+    branch_name: z
+      .string()
+      .max(64, formatString(MSG_MAX, '支店名', '64'))
+      .optional(),
+    /** 利用ステータス */
+    usage_status: z.enum(UsageStatus).or(z.literal('')).optional(),
+    /** ユーザー登録ステータス */
+    user_registration_status: z.enum(UserRegistrationStatus).or(z.literal('')).optional(),
+  })
+  .strict();
 
 /**
  * ユーザー一覧 検索条件 FormValues

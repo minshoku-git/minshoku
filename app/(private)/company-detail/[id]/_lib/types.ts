@@ -277,7 +277,8 @@ export const CompanyDetailSchema = z
   .refine((data) => !(data.optional_item_title_2 === '' && data.optional_item_notes_2 !== ''), {
     path: ['optional_item_title_2'],
     message: '項目名を入力してください。',
-  });
+  })
+  .strict();
 
 /**
  * 会社詳細 検索条件 FormValues
