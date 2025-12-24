@@ -284,7 +284,7 @@ export const ShopComponent = (): JSX.Element => {
         </Grid>
         <Divider />
         <Box sx={{ m: 3 }}>
-          <form onSubmit={handleSubmit(editMode ? updateHandler : insertHandler)} noValidate>
+          <form noValidate onSubmit={handleSubmit(editMode ? updateHandler : insertHandler)}>
             <Grid container rowSpacing={2} columnSpacing={{ xs: 1, sm: 2, md: 3 }} direction="column">
               {editMode && (
                 <ItemBase name={'店舗ID'} isRequired={2}>

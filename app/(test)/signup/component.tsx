@@ -77,7 +77,7 @@ export const SignUpComponent = () => {
   return (
     <Container maxWidth="md">
       <Box>
-        <form onSubmit={handleSubmit(singUpHandler)}>
+        <form noValidate onSubmit={handleSubmit(singUpHandler)}>
           <Box
             sx={{
               marginTop: 4,

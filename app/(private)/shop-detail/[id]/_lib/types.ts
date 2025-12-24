@@ -59,10 +59,8 @@ export const ShopDetailSchema = z
       .max(11, formatString(MSG_MAX, '電話番号', '11')),
     /** メールアドレス */
     email: z
-      .string()
-      .nonempty({ message: formatString(MSG_INVALID, 'メールアドレス') })
       .email(formatString(MSG_EMAIL, 'メールアドレス'))
-      .max(256, formatString(MSG_MAX, '電話番号', '11')),
+      .nonempty({ message: formatString(MSG_REQUIRED, 'メールアドレス') }),
     /** 店舗URL */
     tabelog_url: z.string().url('URL形式ではありません').or(z.literal('')),
     /** 店舗紹介文 */

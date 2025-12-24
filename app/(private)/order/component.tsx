@@ -365,7 +365,7 @@ export const OrderComponent = (): JSX.Element => {
         </Grid>
         <Divider />
         <Box sx={{ m: 3 }}>
-          <form onSubmit={handleSubmit(searchHandler)}>
+          <form noValidate onSubmit={handleSubmit(searchHandler)}>
             <Grid container rowSpacing={2} columnSpacing={{ xs: 1 }} direction="column" sx={{ alignContent: 'center' }}>
               <ItemBase name={'配達日'} isRequired={2}>
                 <Box

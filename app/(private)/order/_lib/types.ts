@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { MSG_INVALID, MSG_MAX } from '@/app/_config/constants';
 import { formatString } from '@/app/_lib/utils/utils';
 import { OrderStatusType } from '@/app/_types/enum';
+import { SortItemsSchema } from '@/app/_types/schema';
 import { PaginateData } from '@/app/_types/types';
 
 /**
@@ -66,6 +67,23 @@ export const OrderSearchSchema = z
         });
       }
     }
+  })
+  .strict();
+
+// API用バリデーションスキーマ
+export const OrderSearchApiSchema = z
+  .object({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    request: z.preprocess((val: any) => {
+      if (!val) return val;
+      // 日付文字列を Date オブジェクトに変換して、内側のスキーマに渡す
+      return {
+        ...val,
+        order_datetime: val.offer_time_from ? new Date(val.order_datetime) : val.order_datetime,
+        cancel_datetime: val.offer_time_to ? new Date(val.cancel_datetime) : val.cancel_datetime,
+      };
+    }, OrderSearchSchema),
+    sortItems: SortItemsSchema.optional(),
   })
   .strict();
 

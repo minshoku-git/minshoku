@@ -15,7 +15,24 @@ import { formatString } from '@/app/_lib/utils/utils';
 import { UsageStatus } from '@/app/_types/enum';
 
 /**
- * 会社詳細 検索条件 Schema
+ * 初期表示 入力用バリデーションスキーマ
+ */
+export const CompanyDetailInitSchema = z.object({
+  id: z.number(),
+});
+/**
+ * 初期表示 API用バリデーションスキーマ
+ */
+export const CompanyDetailInitApiSchema = z
+  .object({
+    request: CompanyDetailInitSchema,
+  })
+  .strict();
+// 初期表示 FormValues
+export type CompanyDetailInitValues = z.infer<typeof CompanyDetailInitSchema>;
+
+/**
+ * 会社登録更新 入力用バリデーションスキーマ
  */
 export const CompanyDetailSchema = z
   .object({
@@ -61,10 +78,8 @@ export const CompanyDetailSchema = z
       .max(128, formatString(MSG_MAX, '建物名', '128')),
     /** メールアドレス */
     email: z
-      .string()
-      .nonempty({ message: formatString(MSG_REQUIRED, 'メールアドレス') })
       .email(formatString(MSG_EMAIL, 'メールアドレス'))
-      .max(256, formatString(MSG_MAX, 'メールアドレス', '256')),
+      .nonempty({ message: formatString(MSG_REQUIRED, 'メールアドレス') }),
     /** 連絡先・メモ */
     memo: z.string().optional(),
     /** 部署情報(Array) */
@@ -279,9 +294,27 @@ export const CompanyDetailSchema = z
     message: '項目名を入力してください。',
   })
   .strict();
-
 /**
- * 会社詳細 検索条件 FormValues
+ * 会社新規登録・会社更新 API用バリデーションスキーマ
+ */
+export const CompanyDetailApiSchema = z
+  .object({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    request: z.preprocess((val: any) => {
+      if (!val) return val;
+      // 日付文字列を Date オブジェクトに変換して、内側のスキーマに渡す
+      return {
+        ...val,
+        offer_time_from: val.offer_time_from ? new Date(val.offer_time_from) : val.offer_time_from,
+        offer_time_to: val.offer_time_to ? new Date(val.offer_time_to) : val.offer_time_to,
+        order_period_time: val.order_period_time ? new Date(val.order_period_time) : val.order_period_time,
+        cancel_period_time: val.cancel_period_time ? new Date(val.cancel_period_time) : val.cancel_period_time,
+      };
+    }, CompanyDetailSchema),
+  })
+  .strict();
+/**
+ * 会社新規登録・会社更新 FormValues
  */
 export type CompanyDetailFormValues = z.infer<typeof CompanyDetailSchema>;
 

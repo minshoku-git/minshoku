@@ -95,7 +95,7 @@ export const ErrorCodes = {
   },
   VALIDATION_ERROR_YOURS: {
     code: 'E500-04',
-    message: 'ログアウトに失敗しました。時間をおいて再度お試しください。',
+    message: '不正なリクエスト形式です。',
     status: 500,
   },
 } as const;

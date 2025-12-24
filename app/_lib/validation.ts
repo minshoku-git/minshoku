@@ -22,7 +22,7 @@ export const validateRequest = async <T extends z.ZodTypeAny>(
     const reqBody = await req.json();
 
     // バリデーションはreqBody.requestに対して実行（APIRequestの構造を想定）
-    const parsed = schema.safeParse(reqBody.request);
+    const parsed = schema.safeParse(reqBody);
 
     if (!parsed.success) {
       console.error('Validation Error:', parsed.error);

@@ -27,13 +27,15 @@ import {
  * @param {ApiRequest<OrderSearchFormValues>} values - 検索条件
  * @returns {Promise<ApiResponse<OrderListSearchResult>>} 検索結果
  */
-export const _searchOrderList = async (
+export const searchOrderList = async (
   values: ApiRequest<OrderSearchFormValues>
 ): Promise<ApiResponse<OrderListSearchResult>> => {
   const supabase = await createClient();
   const req = values.request;
   const sortItems = values.sortItems;
   const { startRange, endRange } = getRange(sortItems?.nextPage ?? 0);
+
+  console.log('values.', values);
 
   try {
     /* 件数取得
@@ -294,11 +296,12 @@ const applyFilters = (query: any, req: OrderSearchFormValues) => {
   }
   // 納品日
   if (req.deliveryFrom && req.deliveryTo) {
-    query = query.gte('delivery_day', req.deliveryFrom).lte('delivery_day', req.deliveryTo);
+    console.log(req.deliveryFrom.toISOString());
+    query = query.gte('delivery_day', req.deliveryFrom.toISOString()).lte('delivery_day', req.deliveryTo.toISOString());
   } else if (req.deliveryFrom) {
-    query = query.gte('delivery_day', req.deliveryFrom);
+    query = query.gte('delivery_day', req.deliveryFrom.toISOString());
   } else if (req.deliveryTo) {
-    query = query.lte('delivery_day', req.deliveryTo);
+    query = query.lte('delivery_day', req.deliveryTo.toISOString());
   }
   // 注文ステータス
   if (req.order_status_type) {

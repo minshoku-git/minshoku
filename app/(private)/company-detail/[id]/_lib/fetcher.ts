@@ -1,7 +1,7 @@
 import { fetcher } from '@/app/_lib/fetcher';
 import { ApiRequest, ApiResponse } from '@/app/_types/types';
 
-import { CompanyDetailFormValues } from './types';
+import { CompanyDetailFormValues, CompanyDetailInitValues } from './types';
 
 /**
  * searchCompanyDetail
@@ -9,7 +9,7 @@ import { CompanyDetailFormValues } from './types';
  * @returns {Promise<any>}
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const searchCompanyDetail = (req: ApiRequest<number>): Promise<any> => {
+export const searchCompanyDetail = (req: ApiRequest<CompanyDetailInitValues>): Promise<any> => {
   return fetcher<ApiResponse<number>>('/api/company-detail/search', {
     method: 'POST',
     body: JSON.stringify(req),
@@ -29,7 +29,7 @@ export const insertCompanyDetail = (data: ApiRequest<CompanyDetailFormValues>) =
   });
 };
 
-export const updateCompanyDetail = (data: CompanyDetailFormValues) => {
+export const updateCompanyDetail = (data: ApiRequest<CompanyDetailFormValues>) => {
   return fetcher('/api/company-detail/update', {
     method: 'POST',
     body: JSON.stringify(data),

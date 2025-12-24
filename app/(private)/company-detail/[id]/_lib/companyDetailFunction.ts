@@ -11,7 +11,7 @@ import { ApiRequest, ApiResponse, DepartmentData, EmploymentData } from '@/app/_
 import { CustomError } from '@/app/errors/customError';
 import { ErrorCodes } from '@/app/errors/ErrorCodes';
 
-import { CompanyDetailFormValues, CompanyDetailResult, CompanyDetailToken } from './types';
+import { CompanyDetailFormValues, CompanyDetailInitValues, CompanyDetailResult, CompanyDetailToken } from './types';
 
 export type usageData = {
   id: number;
@@ -23,12 +23,14 @@ export type usageData = {
  * _searchComponyDetail
  * IDに一致する会社情報を取得する。
  *
- * @param {ApiRequest<number>} values - 検索条件
+ * @param {ApiRequest<CompanyDetailInitValues>} values - 検索条件
  * @returns {Promise<ApiResponse<CompanyDetailResult>>} 検索結果
  */
-export const searchCompanyDetail = async (values: ApiRequest<number>): Promise<ApiResponse<CompanyDetailResult>> => {
+export const searchCompanyDetail = async (
+  values: ApiRequest<CompanyDetailInitValues>
+): Promise<ApiResponse<CompanyDetailResult>> => {
   const supabase = await createClient();
-  const id = values.request;
+  const id = values.request.id;
 
   try {
     /* 0.暗号化
@@ -380,8 +382,10 @@ export const insertComponyDetail = async (
  * @param {ApiRequest<CompanyDetailFormValues>} values - 入力内容
  * @returns {Promise<ApiResponse<number>>} 会社ID
  */
-export const updateComponyDetail = async (values: CompanyDetailFormValues): Promise<ApiResponse<number>> => {
-  const req = values;
+export const updateComponyDetail = async (
+  values: ApiRequest<CompanyDetailFormValues>
+): Promise<ApiResponse<number>> => {
+  const req = values.request;
   const timestamp = getNow();
 
   // connection Start

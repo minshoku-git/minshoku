@@ -225,7 +225,7 @@ export const CompanyComponent = (): JSX.Element => {
         </Grid>
         <Divider />
         <Box sx={{ m: 3 }}>
-          <form onSubmit={handleSubmit(searchHandler)}>
+          <form noValidate onSubmit={handleSubmit(searchHandler)}>
             <Grid
               container
               rowSpacing={2}
