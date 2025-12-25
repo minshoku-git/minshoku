@@ -82,7 +82,7 @@ export const ShopComponent = (): JSX.Element => {
     data,
     isLoading,
     refetch,
-  } = useApiQuery<t_shops>({
+  } = useApiQuery<shopDeteilResponseData>({
     queryKey: [QUERY_KEYS.SHOP_DETAIL_INIT, id],
     queryFn: searchShopDetailFetch,
     enabled: editMode,

@@ -4,7 +4,7 @@ import { MSG_EMAIL, MSG_REQUIRED } from '@/app/_config/constants';
 import { formatString } from '@/app/_lib/utils/utils';
 
 /**
- * ログイン Schema
+ * ログイン 入力用バリデーションスキーマ
  */
 export const LoginSchema = z
   .object({
@@ -14,6 +14,15 @@ export const LoginSchema = z
       .nonempty({ message: formatString(MSG_REQUIRED, 'メールアドレス') }),
     /** パスワード */
     password: z.string().nonempty({ message: formatString(MSG_REQUIRED, 'パスワード') }),
+  })
+  .strict();
+
+/**
+ * ログイン API用バリデーションスキーマ
+ */
+export const LoginApiSchema = z
+  .object({
+    request: LoginSchema,
   })
   .strict();
 

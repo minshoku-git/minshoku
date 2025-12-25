@@ -5,19 +5,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { t_administrator } from '@/app/_lib/supabase/tableTypes';
 import { validateRequest } from '@/app/_lib/validation';
 import { ApiResponse } from '@/app/_types/types';
-import { LoginFormValues, LoginSchema } from '@/app/(public)/login/_lib/types';
+import { LoginApiSchema, LoginFormValues, LoginSchema } from '@/app/(public)/login/_lib/types';
 import { CustomError } from '@/app/errors/customError';
 import { ErrorCodes } from '@/app/errors/ErrorCodes';
 
 export async function POST(req: NextRequest) {
   // 共通バリデーション
-  const validationResult = await validateRequest(req, LoginSchema);
+  const validationResult = await validateRequest(req, LoginApiSchema);
   if (!validationResult.success) {
     throw validationResult.error;
   }
 
   // ログインフォームのデータ（メールアドレスとパスワード）を取得
-  const { email, password } = validationResult.data as LoginFormValues;
+  const { email, password } = validationResult.data.request;
 
   // Supabaseが生成するクッキーを一時的に保存するための配列
   const cookiesToSet: { name: string; value: string; options?: CookieOptions }[] = [];
