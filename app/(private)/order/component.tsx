@@ -29,7 +29,7 @@ import { useSnackBar } from '@/app/_ui/state/snackBar/snackbarContext';
 
 import ItemBase from '../../_ui/components/atoms/itemBase';
 import { orderCancelFetcher, orderListExportCSVFetcher, searchOrderDetailFetcher, searchOrderListFetcher } from './_lib/fetcher';
-import { orderDeteilCsvResponseData, orderDeteilResponseData, OrderListSearchResult, OrderSearchFormValues, OrderSearchSchema } from './_lib/types';
+import { OrderCancelValues, OrderDetailInitValues, orderDeteilCsvResponseData, orderDeteilResponseData, OrderListSearchResult, OrderSearchFormValues, OrderSearchSchema } from './_lib/types';
 import OrderInfoModal from './orderInfoModal';
 
 /* ページ名 */
@@ -84,7 +84,7 @@ export const OrderComponent = (): JSX.Element => {
   const [condition, setCondition] = useState<ApiRequest<OrderSearchFormValues> | null>(null);
   const [result, setResult] = useState<OrderListSearchResult | null>(null);
   /* 明細情報検索条件 */
-  const [conditionDetail, setConditionDetail] = useState<ApiRequest<number> | null>(null);
+  const [conditionDetail, setConditionDetail] = useState<ApiRequest<OrderDetailInitValues> | null>(null);
 
   // 明細画面モーダル
   const [open, setOpen] = React.useState(false);
@@ -154,7 +154,7 @@ export const OrderComponent = (): JSX.Element => {
   } = useApiQuery<orderDeteilResponseData>({
     // queryKeyにIDを含める
     queryKey: [QUERY_KEYS.ORDER_DETAIL_INIT, conditionDetail],
-    queryFn: () => searchOrderDetailFetcher(conditionDetail as ApiRequest<number>),
+    queryFn: () => searchOrderDetailFetcher(conditionDetail as ApiRequest<OrderDetailInitValues>),
     enabled: !!conditionDetail,
   });
 
@@ -265,7 +265,7 @@ export const OrderComponent = (): JSX.Element => {
   const openModal = (id: number) => {
     console.log('id--------------', id);
     // IDを更新するだけで、useQueryが自動で再取得を開始する
-    setConditionDetail({ request: id });
+    setConditionDetail({ request: { id: Number(id) } });
     setOpen(true); // モーダルを開く
   };
 
@@ -284,7 +284,7 @@ export const OrderComponent = (): JSX.Element => {
   const orderCancelMutate = useApiMutation({
     mutationFn: async (id: number) => {
       openProcessing();
-      const req: ApiRequest<number> = { request: id };
+      const req: ApiRequest<OrderCancelValues> = { request: { id: Number(id) } };
       return orderCancelFetcher(req);
     },
     onSuccess: async (res: ApiResponse<number>) => {

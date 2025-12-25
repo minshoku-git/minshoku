@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   // --- 2. データ取得・加工 ---
   const result = await insertComponyDetail(validationResult.data);
 
-  // --- 3. レスポンス返却 ---ぬ
+  // --- 3. レスポンス返却 ---
   if (result.success) {
     return NextResponse.json(result);
   }

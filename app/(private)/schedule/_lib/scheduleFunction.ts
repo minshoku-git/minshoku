@@ -157,11 +157,11 @@ const applyFilters = (query: any, req: ScheduleSearchFormValues) => {
   }
   // 納品日
   if (req.deliveryFrom && req.deliveryTo) {
-    query = query.gte('delivery_day', req.deliveryFrom).lte('delivery_day', req.deliveryTo);
+    query = query.gte('delivery_day', req.deliveryFrom.toISOString()).lte('delivery_day', req.deliveryTo.toISOString());
   } else if (req.deliveryFrom) {
-    query = query.gte('delivery_day', req.deliveryFrom);
+    query = query.gte('delivery_day', req.deliveryFrom.toISOString());
   } else if (req.deliveryTo) {
-    query = query.lte('delivery_day', req.deliveryTo);
+    query = query.lte('delivery_day', req.deliveryTo.toISOString());
   }
 
   return query;

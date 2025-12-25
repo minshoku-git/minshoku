@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { UsageStatus } from '@/app/_types/enum';
+import { SortItemsSchema } from '@/app/_types/schema';
 import { PaginateData } from '@/app/_types/types';
 
 /**
@@ -14,6 +15,16 @@ export const ShopSearchSchema = z
     address: z.string().optional(),
     /** 利用ステータス */
     usage_status: z.enum(UsageStatus).or(z.literal('')).optional(),
+  })
+  .strict();
+
+/**
+ * 店舗一覧 API用バリデーションスキーマ
+ */
+export const ShopSearchApiSchema = z
+  .object({
+    request: ShopSearchSchema,
+    sortItems: SortItemsSchema,
   })
   .strict();
 

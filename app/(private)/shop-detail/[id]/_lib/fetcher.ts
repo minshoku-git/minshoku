@@ -1,14 +1,16 @@
 import { fetcher } from '@/app/_lib/fetcher';
 import { ApiRequest, ApiResponse } from '@/app/_types/types';
 
+import { ShopDetailInitValues, shopDeteilResponseData } from './types';
+
 /**
  * searchShopDetail
- * @param {ApiRequest<number>} req
+ * @param {ApiRequest<ShopDetailInitValues>} req
  * @returns {Promise<any>}
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const searchShopDetailFetcher = (req: ApiRequest<number>): Promise<any> => {
-  return fetcher<ApiResponse<number>>('/api/shop-detail/search', {
+export const searchShopDetailFetcher = (req: ApiRequest<ShopDetailInitValues>): Promise<any> => {
+  return fetcher<ApiResponse<shopDeteilResponseData>>('/api/shop-detail/search', {
     method: 'POST',
     body: JSON.stringify(req),
     headers: {

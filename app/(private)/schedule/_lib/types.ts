@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { MSG_INVALID, MSG_MAX } from '@/app/_config/constants';
 import { formatString } from '@/app/_lib/utils/utils';
+import { SortItemsSchema } from '@/app/_types/schema';
 import { PaginateData } from '@/app/_types/types';
 
 /**
@@ -66,6 +67,25 @@ export const ScheduleSearchSchema = z
         });
       }
     }
+  })
+  .strict();
+
+/**
+ * スケジュール一覧 API用バリデーションスキーマ
+ */
+export const ScheduleSearchApiSchema = z
+  .object({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    request: z.preprocess((val: any) => {
+      if (!val) return val;
+      // 日付文字列を Date オブジェクトに変換して、内側のスキーマに渡す
+      return {
+        ...val,
+        deliveryFrom: val.deliveryFrom ? new Date(val.deliveryFrom) : val.deliveryFrom,
+        deliveryTo: val.deliveryTo ? new Date(val.deliveryTo) : val.deliveryTo,
+      };
+    }, ScheduleSearchSchema),
+    sortItems: SortItemsSchema,
   })
   .strict();
 

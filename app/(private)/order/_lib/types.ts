@@ -7,6 +7,34 @@ import { SortItemsSchema } from '@/app/_types/schema';
 import { PaginateData } from '@/app/_types/types';
 
 /**
+ * 注文ID 入力用バリデーションスキーマ
+ */
+export const OrderIdSchema = z.object({
+  id: z.number(),
+});
+/**
+ * 注文詳細初期表示 API用バリデーションスキーマ
+ */
+export const OrderDetailInitApiSchema = z
+  .object({
+    request: OrderIdSchema,
+  })
+  .strict();
+// 注文詳細初期表示 FormValues
+export type OrderDetailInitValues = z.infer<typeof OrderIdSchema>;
+
+/**
+ * 注文キャンセル API用バリデーションスキーマ
+ */
+export const OrderCancelApiSchema = z
+  .object({
+    request: OrderIdSchema,
+  })
+  .strict();
+// 注文キャンセル FormValues
+export type OrderCancelValues = z.infer<typeof OrderIdSchema>;
+
+/**
  * オーダー一覧 検索条件 Schema
  */
 export const OrderSearchSchema = z
@@ -70,7 +98,9 @@ export const OrderSearchSchema = z
   })
   .strict();
 
-// API用バリデーションスキーマ
+/**
+ * オーダー一覧 API用バリデーションスキーマ
+ */
 export const OrderSearchApiSchema = z
   .object({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -83,7 +113,7 @@ export const OrderSearchApiSchema = z
         cancel_datetime: val.offer_time_to ? new Date(val.cancel_datetime) : val.cancel_datetime,
       };
     }, OrderSearchSchema),
-    sortItems: SortItemsSchema.optional(),
+    sortItems: SortItemsSchema,
   })
   .strict();
 
@@ -201,7 +231,7 @@ export type orderDeteilResponseData = {
 /** 取得結果 オーダー詳細 */
 export type orderDeteilCsvResponseData = {
   /** id */
-  id?: string;
+  id?: number;
   /** 納品日 */
   delivery_day?: string | Date;
   /** 個数 */

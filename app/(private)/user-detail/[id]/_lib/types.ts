@@ -3,6 +3,23 @@ import { z } from 'zod';
 import { UsageStatus } from '@/app/_types/enum';
 
 /**
+ * 初期表示 入力用バリデーションスキーマ
+ */
+export const UserDetailInitSchema = z.object({
+  id: z.number(),
+});
+/**
+ * 初期表示 API用バリデーションスキーマ
+ */
+export const UserDetailInitApiSchema = z
+  .object({
+    request: UserDetailInitSchema,
+  })
+  .strict();
+// 初期表示 FormValues
+export type UserDetailInitValues = z.infer<typeof UserDetailInitSchema>;
+
+/**
  * ユーザー詳細 入力項目 Schema
  */
 export const UserDetailSchema = z
@@ -15,15 +32,36 @@ export const UserDetailSchema = z
   .strict();
 
 /**
+ * 会社新規登録・会社更新 API用バリデーションスキーマ
+ */
+export const UserDetailApiSchema = z
+  .object({
+    request: z.object({
+      ...UserDetailInitSchema.shape,
+      ...UserDetailSchema.shape,
+    }),
+  })
+  .strict();
+
+/**
+ * 会社新規登録・会社更新 API用バリデーションスキーマ
+ */
+export const UserDetailDisapprovalApiSchema = z
+  .object({
+    request: UserDetailInitSchema,
+  })
+  .strict();
+
+/** ユーザーID情報 */
+export type UpdateUserData = z.infer<typeof UserDetailDisapprovalApiSchema>['request'];
+
+/**
  * ユーザー詳細 入力項目 FormValues
  */
 export type UserDetailFormValues = z.infer<typeof UserDetailSchema>;
 
 /** ユーザー詳細 リクエスト */
-export type UserDataDetailRequest = {
-  /** ID */
-  id: number;
-} & UserDetailFormValues;
+export type UserDataDetailRequest = z.infer<typeof UserDetailApiSchema>['request'];
 
 /** 取得結果 ユーザー詳細 */
 export type UserDataDetailResult = {
@@ -70,10 +108,4 @@ export type UserDataDetailResult = {
     /** 雇用形態名 */
     employment_status_name?: string;
   };
-};
-
-/** ユーザーID情報 */
-export type UpdateUserData = {
-  /** ID */
-  id: string;
 };

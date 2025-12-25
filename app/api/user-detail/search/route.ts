@@ -1,10 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { validateRequest } from '@/app/_lib/validation';
+import { UserDetailInitApiSchema } from '@/app/(private)/user-detail/[id]/_lib/types';
 import { searchUserDetail } from '@/app/(private)/user-detail/[id]/_lib/userDetailFuction';
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
-  const result = await searchUserDetail(body);
+  // --- 1. リクエスト検証 ---
+  const validationResult = await validateRequest(req, UserDetailInitApiSchema);
+
+  if (!validationResult.success) {
+    return NextResponse.json(validationResult.error, { status: validationResult.error.status });
+  }
+
+  // --- 2. データ取得・加工 ---
+  const result = await searchUserDetail(validationResult.data);
+
+  // --- 3. レスポンス返却 ---
   if (result.success) {
     return NextResponse.json(result);
   }

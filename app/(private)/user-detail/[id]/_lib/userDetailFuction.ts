@@ -11,7 +11,13 @@ import { ApiRequest, ApiResponse, SignUpEncrypt } from '@/app/_types/types';
 import { CustomError } from '@/app/errors/customError';
 import { ErrorCodes } from '@/app/errors/ErrorCodes';
 
-import { UpdateUserData, UserDataDetailRequest, UserDataDetailResult, UserDetailFormValues } from './types';
+import {
+  UpdateUserData,
+  UserDataDetailRequest,
+  UserDataDetailResult,
+  UserDetailFormValues,
+  UserDetailInitValues,
+} from './types';
 
 /* ユーザー詳細
 ------------------------------------------------------------------ */
@@ -20,11 +26,14 @@ import { UpdateUserData, UserDataDetailRequest, UserDataDetailResult, UserDetail
  * get_userDetail
  * IDに一致するユーザー情報を取得する。
  *
- * @param {ApiRequest<number>} values - 検索条件
+ * @param {ApiRequest<UserDetailInitValues>} values - 検索条件
  * @returns {Promise<ApiResponse<UserDataDetailResult>>} 検索結果
  */
-export const searchUserDetail = async (values: ApiRequest<number>): Promise<ApiResponse<UserDataDetailResult>> => {
+export const searchUserDetail = async (
+  values: ApiRequest<UserDetailInitValues>
+): Promise<ApiResponse<UserDataDetailResult>> => {
   const supabase = await createClient();
+  const id: number = values.request.id;
 
   try {
     const query = supabase
@@ -53,7 +62,7 @@ export const searchUserDetail = async (values: ApiRequest<number>): Promise<ApiR
         employment_status_name
       )`
       )
-      .eq('id', values.request)
+      .eq('id', id)
       .single();
 
     const { data, error } = (await query) as PostgrestSingleResponse<UserDataDetailResult>;

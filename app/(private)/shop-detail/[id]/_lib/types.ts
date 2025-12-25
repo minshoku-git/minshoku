@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
 import {
+  IMAGE_TYPES,
   MSG_EMAIL,
-  MSG_INVALID,
   MSG_MAX,
   MSG_POSTALCODE,
   MSG_REQUIRED,
@@ -11,6 +11,23 @@ import {
 } from '@/app/_config/constants';
 import { formatString } from '@/app/_lib/utils/utils';
 import { UsageStatus } from '@/app/_types/enum';
+
+/**
+ * 初期表示 入力用バリデーションスキーマ
+ */
+export const ShopDetailInitSchema = z.object({
+  id: z.number(),
+});
+/**
+ * 初期表示 API用バリデーションスキーマ
+ */
+export const ShopDetailInitApiSchema = z
+  .object({
+    request: ShopDetailInitSchema,
+  })
+  .strict();
+// 初期表示 FormValues
+export type ShopDetailInitValues = z.infer<typeof ShopDetailInitSchema>;
 
 /**
  * 店舗詳細 検索条件 Schema
@@ -42,7 +59,6 @@ export const ShopDetailSchema = z
       .nonempty({ message: formatString(MSG_REQUIRED, '郵便番号') })
       .min(4, formatString(MSG_MAX, '郵便番号', '4'))
       .regex(new RegExp(REG_HANKAKU_NUM), formatString(MSG_POSTALCODE, '郵便番号', '4')),
-
     /** 住所 */
     shop_address: z.string().nonempty({ message: formatString(MSG_REQUIRED, '都道府県') }),
     /** 番地 */
@@ -75,6 +91,29 @@ export const ShopDetailSchema = z
   .strict();
 
 /**
+ * 会社新規登録・会社更新 添付ファイル用バリデーションスキーマ
+ */
+export const ShopImageFileSchema = z
+  .object({
+    shop_image_file_data: z.file().nullable(),
+    shop_image_file_name: z.string().optional(),
+    shop_image_file_bytesize: z.number(),
+  })
+  .strict();
+
+/**
+ * 会社新規登録・会社更新 API用バリデーションスキーマ
+ */
+export const ShopDetailApiSchema = z
+  .object({
+    request: z.object({
+      ...ShopDetailSchema.shape,
+      ...ShopImageFileSchema.shape,
+    }),
+  })
+  .strict();
+
+/**
  * 店舗詳細 検索条件 FormValues
  */
 export type ShopDetailFormValues = z.infer<typeof ShopDetailSchema>;
@@ -82,14 +121,7 @@ export type ShopDetailFormValues = z.infer<typeof ShopDetailSchema>;
 /**
  * 店舗詳細 RequestData
  */
-export type shopDeteilRequestData = {
-  /** 店舗イメージ_ファイル名 */
-  shop_image_file_name?: string;
-  /** 店舗イメージ_ファイルデータ */
-  shop_image_file_data?: File;
-  /** 店舗イメージ_ファイルサイズ(byte) */
-  shop_image_file_bytesize: number;
-} & ShopDetailFormValues;
+export type shopDeteilRequestData = z.infer<typeof ShopDetailApiSchema>['request'];
 
 /**
  * 店舗詳細 ResponseData

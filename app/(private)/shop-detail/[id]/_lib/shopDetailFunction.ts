@@ -14,21 +14,23 @@ import { ApiRequest, ApiResponse } from '@/app/_types/types';
 import { CustomError } from '@/app/errors/customError';
 import { ErrorCodes } from '@/app/errors/ErrorCodes';
 
-import { shopDeteilRequestData, shopDeteilResponseData } from './types';
+import { ShopDetailInitValues, shopDeteilRequestData, shopDeteilResponseData } from './types';
 
 /* 店舗詳細
 ------------------------------------------------------------------ */
 
 /**
- * _searchShopDetail
+ * searchShopDetail
  * IDに一致する店舗情報を取得する。
  *
- * @param {ApiRequest<number>} values - 検索条件
+ * @param {ApiRequest<ShopDetailInitValues>} values - 検索条件
  * @returns {Promise<ApiResponse<shopDeteilResponseData>>} 検索結果
  */
-export const searchShopDetail = async (values: ApiRequest<number>): Promise<ApiResponse<shopDeteilResponseData>> => {
+export const searchShopDetail = async (
+  values: ApiRequest<ShopDetailInitValues>
+): Promise<ApiResponse<shopDeteilResponseData>> => {
   const supabase = await createClient();
-  const id = values.request;
+  const id = values.request.id;
 
   try {
     const query = supabase.from('t_shops').select('*').eq('id', id).single();
@@ -104,7 +106,7 @@ export const searchShopDetail = async (values: ApiRequest<number>): Promise<ApiR
  * @param {shopDeteilRequestData} values - 入力情報
  * @returns {Promise<ApiResponse<number>>} 新規登録した店舗情報ID
  */
-export const _insertShopDetail = async (values: shopDeteilRequestData): Promise<ApiResponse<number>> => {
+export const insertShopDetail = async (values: shopDeteilRequestData): Promise<ApiResponse<number>> => {
   const req = values;
   const supabase = await createClient();
 
@@ -258,8 +260,6 @@ export const updateShopDetail = async (values: shopDeteilRequestData): Promise<A
 
     const { columns, values } = getPostgreSqlItems(updateValues);
     const updateCompanyText = `UPDATE t_shops SET ${columns.map((col, index) => `${col} = $${index + 1}`).join(', ')} WHERE id = ${req.id} RETURNING id;`;
-    console.log('-----------------------------------------');
-    console.log(req.id);
 
     // Update
     const result = await pgClient.query(updateCompanyText, values);

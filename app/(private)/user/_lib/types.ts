@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { MSG_MAX } from '@/app/_config/constants';
 import { formatString } from '@/app/_lib/utils/utils';
 import { UsageStatus, UserRegistrationStatus } from '@/app/_types/enum';
+import { SortItemsSchema } from '@/app/_types/schema';
 import { PaginateData } from '@/app/_types/types';
 
 /**
@@ -26,6 +27,16 @@ export const UserSearchSchema = z
     usage_status: z.enum(UsageStatus).or(z.literal('')).optional(),
     /** ユーザー登録ステータス */
     user_registration_status: z.enum(UserRegistrationStatus).or(z.literal('')).optional(),
+  })
+  .strict();
+
+/**
+ * ユーザー一覧 API用バリデーションスキーマ
+ */
+export const UserSearchApiSchema = z
+  .object({
+    request: UserSearchSchema,
+    sortItems: SortItemsSchema,
   })
   .strict();
 

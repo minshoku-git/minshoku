@@ -2,7 +2,8 @@ import { fetcher } from '@/app/_lib/fetcher';
 import { ApiRequest, ApiResponse } from '@/app/_types/types';
 
 import {
-  OrderData,
+  OrderCancelValues,
+  OrderDetailInitValues,
   orderDeteilCsvResponseData,
   orderDeteilResponseData,
   OrderListSearchResult,
@@ -28,11 +29,11 @@ export const searchOrderListFetcher = async (
 
 /**
  * searchOrderList
- * @param {ApiRequest<number>} condition
+ * @param {ApiRequest<OrderDetailInitValues>} condition
  * @returns {Promise<ApiResponse<orderDeteilResponseData>>}
  */
 export const searchOrderDetailFetcher = async (
-  condition: ApiRequest<number> | null
+  condition: ApiRequest<OrderDetailInitValues> | null
 ): Promise<ApiResponse<orderDeteilResponseData>> => {
   return fetcher<ApiResponse<orderDeteilResponseData>>('/api/order/searchDetail', {
     method: 'POST',
@@ -45,10 +46,10 @@ export const searchOrderDetailFetcher = async (
 
 /**
  * orderCancel
- * @param {ApiRequest<number>} req
+ * @param {ApiRequest<OrderCancelValues>} req
  * @returns {Promise<ApiResponse<number>>}
  */
-export const orderCancelFetcher = (req: ApiRequest<number>): Promise<ApiResponse<number>> => {
+export const orderCancelFetcher = (req: ApiRequest<OrderCancelValues>): Promise<ApiResponse<number>> => {
   return fetcher<ApiResponse<number>>('/api/order/orderCancel', {
     method: 'PUT',
     body: JSON.stringify(req),
