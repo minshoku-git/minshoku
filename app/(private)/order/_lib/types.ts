@@ -109,8 +109,8 @@ export const OrderSearchApiSchema = z
       // 日付文字列を Date オブジェクトに変換して、内側のスキーマに渡す
       return {
         ...val,
-        order_datetime: val.offer_time_from ? new Date(val.order_datetime) : val.order_datetime,
-        cancel_datetime: val.offer_time_to ? new Date(val.cancel_datetime) : val.cancel_datetime,
+        deliveryFrom: val.deliveryFrom ? new Date(val.deliveryFrom) : val.deliveryFrom,
+        deliveryTo: val.deliveryTo ? new Date(val.deliveryTo) : val.deliveryTo,
       };
     }, OrderSearchSchema),
     sortItems: SortItemsSchema,

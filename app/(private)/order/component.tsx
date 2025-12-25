@@ -380,12 +380,14 @@ export const OrderComponent = (): JSX.Element => {
                     <DatePickerElement
                       control={control}
                       name={'deliveryFrom'}
+                      slotProps={{
+                        field: { clearable: true },
+                      }}
                       sx={{
-                        minWidth: '150px',
+                        width: '300px',
                         '& .MuiInputBase-root': {
                           height: '40px',
                           textAlign: 'center',
-                          verticalAlign: 'center',
                           padding: '0 15px',
                         },
                         '& input': {
@@ -399,12 +401,14 @@ export const OrderComponent = (): JSX.Element => {
                     <DatePickerElement
                       control={control}
                       name={'deliveryTo'}
+                      slotProps={{
+                        field: { clearable: true },
+                      }}
                       sx={{
-                        minWidth: '150px',
+                        width: '300px',
                         '& .MuiInputBase-root': {
                           height: '40px',
                           textAlign: 'center',
-                          verticalAlign: 'center',
                           padding: '0 15px',
                         },
                         '& input': {
