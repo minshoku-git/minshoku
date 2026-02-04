@@ -1,16 +1,22 @@
 import { fetcher } from '@/app/_lib/fetcher';
 import { ApiRequest, ApiResponse } from '@/app/_types/types';
 
-import { UpdateUserData, UserDataDetailRequest, UserDetailFormValues } from './types';
+import {
+  UpdateUserData,
+  UserDataDetailRequest,
+  UserDataDetailResult,
+  UserDetailFormValues,
+  UserDetailInitValues,
+} from './types';
 
 /**
  * ユーザー詳細情報取得
- * @param {ApiRequest<number>} req
- * @returns {Promise<any>}
+ * @param {ApiRequest<UserDetailInitValues>} req
+ * @returns {Promise<UserDataDetailResult>}
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const searchUserDetail = (req: ApiRequest<number>): Promise<any> => {
-  return fetcher<ApiResponse<number>>('/api/user-detail/search', {
+export const searchUserDetail = (req: ApiRequest<UserDetailInitValues>): Promise<ApiResponse<UserDataDetailResult>> => {
+  return fetcher<ApiResponse<UserDataDetailResult>>('/api/user-detail/search', {
     method: 'POST',
     body: JSON.stringify(req),
     headers: {

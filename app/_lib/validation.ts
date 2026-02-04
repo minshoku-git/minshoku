@@ -17,23 +17,41 @@ export const validateRequest = async <T extends z.ZodTypeAny>(
   schema: T
 ): Promise<ApiResponse<z.infer<T>>> => {
   try {
-    // リクエストボディを取得
-    // NOTE: この処理でリクエストボディは消費されます
-    const reqBody = await req.json();
+    const contentType = req.headers.get('content-type') || '';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let reqBody: any;
 
-    // バリデーションはreqBody.requestに対して実行（APIRequestの構造を想定）
-    const parsed = schema.safeParse(reqBody.request);
+    if (contentType.includes('multipart/form-data')) {
+      // --- FormData の場合の処理 ---
+      const formData = await req.formData();
+      // 基本的な値を取得
+      const formValues = formData.get('formValues') as string;
+      const data = formValues ? JSON.parse(formValues) : {};
+
+      // 画像などのファイルや数値をマッピング（必要に応じて）
+      reqBody = {
+        request: {
+          ...data,
+          shop_image_file_data: formData.get('shop_image_file_data'),
+          shop_image_file_name: formData.get('shop_image_file_name'),
+          shop_image_file_bytesize: Number(formData.get('shop_image_file_bytesize') || 0),
+        },
+      };
+    } else {
+      // --- 通常の JSON の場合の処理 ---
+      reqBody = await req.json();
+    }
+
+    const parsed = schema.safeParse(reqBody);
 
     if (!parsed.success) {
-      console.error('Validation Error:', parsed.error);
+      console.error('Validation Error:', JSON.stringify(parsed.error.format(), null, 2));
       return {
         success: false,
-        // ErrorCodes.VALIDATION_ERROR_YOURS は、適切な定義に置き換えてください
         error: ErrorCodes.VALIDATION_ERROR_YOURS,
       };
     }
 
-    // バリデーション済みのデータ (parsed.data) を含めて返却
     return { success: true, data: parsed.data };
   } catch (e: unknown) {
     // JSONパース失敗など
@@ -51,4 +69,21 @@ export const validateRequest = async <T extends z.ZodTypeAny>(
       error: ErrorCodes.INTERNAL_SERVER_ERROR,
     };
   }
+};
+
+/**
+ * 既にオブジェクトになっているデータをバリデーションするだけの軽量版
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const validateObject = <T extends z.ZodTypeAny>(data: any, schema: T): ApiResponse<z.infer<T>> => {
+  const parsed = schema.safeParse(data);
+
+  if (!parsed.success) {
+    console.error('Validation Error:', JSON.stringify(parsed.error.format(), null, 2));
+    return {
+      success: false,
+      error: ErrorCodes.VALIDATION_ERROR_YOURS,
+    };
+  }
+  return { success: true, data: parsed.data };
 };

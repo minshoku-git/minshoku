@@ -32,6 +32,16 @@ export const ErrorCodes = {
     message: '入力されたデータに不正な値が含まれています。入力内容を再確認してください。',
     status: 400,
   },
+  PASSWORD_CONFIRMATION_MISMATCH: {
+    code: 'E400-06',
+    message: '新しいパスワードと確認用パスワードが一致しません。',
+    status: 400,
+  },
+  ORDER_EXPIRED: {
+    code: 'E400-07',
+    message: '注文期限を超過しています。再度確認してください。',
+    status: 400,
+  },
 
   // --- 401系: 認証が必要 ---
   INVALID_CREDENTIALS: {
@@ -44,6 +54,16 @@ export const ErrorCodes = {
     message: 'ログインに失敗しました。時間をおいて再度お試しください。',
     status: 401,
   },
+  LOGGED_OUT: {
+    code: 'E401-03',
+    message: 'セッションが存在しません。再度ログインしてください。',
+    status: 401,
+  },
+  CURRENT_PASSWORD_INCORRECT: {
+    code: 'E401-04',
+    message: '現在のパスワードが正しくありません。',
+    status: 401,
+  },
 
   // --- 403系: 権限不足 ---
   ACCOUNT_SUSPENDED: {
@@ -51,9 +71,18 @@ export const ErrorCodes = {
     message: 'このアカウントは現在利用停止状態です。管理者までお問い合わせください。',
     status: 403,
   },
+  COMPANY_SUSPENDED: {
+    code: 'E403-02',
+    message: 'この会社アカウントは現在利用停止状態です。管理者までお問い合わせください。',
+    status: 403,
+  },
 
   // --- 404系: リソース未検出 ---
-  EMAIL_NOT_REGISTERED: { code: 'E404-01', message: '入力されたメールアドレスは登録されていません。', status: 404 },
+  EMAIL_NOT_REGISTERED: {
+    code: 'E404-01',
+    message: '入力されたメールアドレスは登録されていません。',
+    status: 404,
+  },
   FILE_NOT_FOUND: {
     code: 'E404-02',
     message: '指定されたファイルが存在しません。ファイルのパスや名前を確認してください。',
@@ -69,6 +98,11 @@ export const ErrorCodes = {
   EMAIL_ALREADY_REGISTERED: {
     code: 'E409-02',
     message: 'このメールアドレスは既に登録されています。',
+    status: 409,
+  },
+  ORDER_ALREADY_PLACED: {
+    code: 'E409-03',
+    message: 'この注文は既に完了しています。再度確認してください。',
     status: 409,
   },
 
@@ -94,8 +128,8 @@ export const ErrorCodes = {
     status: 500,
   },
   VALIDATION_ERROR_YOURS: {
-    code: 'E500-04',
-    message: 'ログアウトに失敗しました。時間をおいて再度お試しください。',
+    code: 'E500-05',
+    message: '不正なリクエスト形式です。',
     status: 500,
   },
 } as const;

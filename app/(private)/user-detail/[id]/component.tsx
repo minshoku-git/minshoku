@@ -22,7 +22,7 @@ import { useProcessing } from '@/app/_ui/state/processing/processingContext';
 import { useSnackBar } from '@/app/_ui/state/snackBar/snackbarContext';
 
 import { approval, disapproval, pullbackFetcher, searchUserDetail, updateUserDetail } from './_lib/fetcher';
-import { UpdateUserData, UserDataDetailRequest, UserDataDetailResult, UserDetailFormValues, UserDetailSchema } from './_lib/types';
+import { UpdateUserData, UserDataDetailRequest, UserDataDetailResult, UserDetailFormValues, UserDetailInitValues, UserDetailSchema } from './_lib/types';
 
 /** ページ名 */
 const pageName = 'ユーザー詳細';
@@ -75,7 +75,7 @@ export const UserDetailComponent = (): JSX.Element => {
   /* useQuery
   ------------------------------------------------------------------ */
   const searchUserDetailFetch = async () => {
-    const req: ApiRequest<number> = { request: Number(id) };
+    const req: ApiRequest<UserDetailInitValues> = { request: { id: Number(id) } };
     return searchUserDetail(req);
   };
 
@@ -190,7 +190,7 @@ export const UserDetailComponent = (): JSX.Element => {
   const disapprovalMutate = useApiMutation({
     mutationFn: async () => {
       openProcessing();
-      const req: ApiRequest<UpdateUserData> = { request: { id } }
+      const req: ApiRequest<UpdateUserData> = { request: { id: Number(id) } }
       return disapproval(req) as unknown as ApiResponse<number>;
     },
     onSuccess: () => {
@@ -221,7 +221,7 @@ export const UserDetailComponent = (): JSX.Element => {
   const approvalMutate = useApiMutation({
     mutationFn: async () => {
       openProcessing();
-      const req: ApiRequest<UpdateUserData> = { request: { id } }
+      const req: ApiRequest<UpdateUserData> = { request: { id: Number(id) } }
       return approval(req) as unknown as ApiResponse<number>;
     },
     onSuccess: (res: ApiResponse<number>) => {
@@ -291,7 +291,7 @@ export const UserDetailComponent = (): JSX.Element => {
         <Divider />
         <Box sx={{ m: 3 }}>
           {dataLoaded && userData && (
-            <form onSubmit={handleSubmit(updateHandler)}>
+            <form noValidate onSubmit={handleSubmit(updateHandler)}>
               <Grid container rowSpacing={2} columnSpacing={{ xs: 1, sm: 2, md: 3 }} direction="column">
                 <ItemBase name={'ユーザーID'} isRequired={2}>
                   <TextField

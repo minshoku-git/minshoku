@@ -1,10 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { validateRequest } from '@/app/_lib/validation';
+import { UserDetailApiSchema } from '@/app/(private)/user-detail/[id]/_lib/types';
 import { updateUserDetail } from '@/app/(private)/user-detail/[id]/_lib/userDetailFuction';
 
 export async function PUT(req: NextRequest) {
-  const body = await req.json();
-  const result = await updateUserDetail(body);
+  // --- 1. リクエスト検証 ---
+  const validationResult = await validateRequest(req, UserDetailApiSchema);
+
+  if (!validationResult.success) {
+    return NextResponse.json(validationResult.error, { status: validationResult.error.status });
+  }
+  // --- 2. データ取得・加工 ---
+  const result = await updateUserDetail(validationResult.data);
+
+  // --- 3. レスポンス返却 ---
   if (result.success) {
     return NextResponse.json(result);
   }

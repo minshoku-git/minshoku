@@ -31,7 +31,7 @@ import { useProcessing } from '@/app/_ui/state/processing/processingContext';
 import { useSnackBar } from '@/app/_ui/state/snackBar/snackbarContext';
 
 import { insertCompanyDetail, searchCompanyDetail, updateCompanyDetail } from './_lib/fetcher';
-import { CompanyDetailFormValues, CompanyDetailResult, CompanyDetailSchema } from './_lib/types';
+import { CompanyDetailFormValues, CompanyDetailInitValues, CompanyDetailResult, CompanyDetailSchema } from './_lib/types';
 
 /** ページ名 */
 const pageName = '会社詳細';
@@ -85,7 +85,7 @@ export const CompanyComponent = (): JSX.Element => {
   /* useQuery
   ------------------------------------------------------------------ */
   const searchCompanyDetailFetch = async () => {
-    const req: ApiRequest<number> = { request: Number(id) };
+    const req: ApiRequest<CompanyDetailInitValues> = { request: { id: Number(id) } };
     return searchCompanyDetail(req);
   };
 
@@ -260,7 +260,7 @@ export const CompanyComponent = (): JSX.Element => {
   const updateMutate = useApiMutation({
     mutationFn: async (data: CompanyDetailFormValues) => {
       openProcessing();
-      return updateCompanyDetail({ ...data, id: id }) as unknown as ApiResponse<number>;
+      return updateCompanyDetail({ request: { ...data, id: id } }) as unknown as ApiResponse<number>;
     },
     onSuccess: () => {
       openSnackbar(AlertType.SUCCESS, '会社情報の更新が完了しました。');
@@ -372,7 +372,7 @@ export const CompanyComponent = (): JSX.Element => {
         )}
         <Box sx={{ m: 3 }}>
           {dataLoaded && (
-            <form onSubmit={handleSubmit(editMode ? updateHandler : insertHandler)}>
+            <form noValidate onSubmit={handleSubmit(editMode ? updateHandler : insertHandler)}>
               <Grid container rowSpacing={2} columnSpacing={{ xs: 1, sm: 2, md: 3 }} direction="column">
                 {editMode && (
                   <>

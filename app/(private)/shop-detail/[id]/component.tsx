@@ -27,7 +27,7 @@ import { useProcessing } from '@/app/_ui/state/processing/processingContext';
 import { useSnackBar } from '@/app/_ui/state/snackBar/snackbarContext';
 
 import { insertShopDetailFetcher, searchShopDetailFetcher, updateShopDetailFetcher } from './_lib/fetcher';
-import { ShopDetailFormValues, ShopDetailSchema, shopDeteilResponseData } from './_lib/types';
+import { ShopDetailFormValues, ShopDetailInitValues, ShopDetailSchema, shopDeteilResponseData } from './_lib/types';
 /** ページ名 */
 const pageName = '店舗詳細';
 
@@ -74,7 +74,7 @@ export const ShopComponent = (): JSX.Element => {
   /* useQuery
   ------------------------------------------------------------------ */
   const searchShopDetailFetch = async () => {
-    const req: ApiRequest<number> = { request: Number(id) };
+    const req: ApiRequest<ShopDetailInitValues> = { request: { id: Number(id) } };
     return searchShopDetailFetcher(req);
   };
 
@@ -82,7 +82,7 @@ export const ShopComponent = (): JSX.Element => {
     data,
     isLoading,
     refetch,
-  } = useApiQuery<t_shops>({
+  } = useApiQuery<shopDeteilResponseData>({
     queryKey: [QUERY_KEYS.SHOP_DETAIL_INIT, id],
     queryFn: searchShopDetailFetch,
     enabled: editMode,
@@ -98,14 +98,15 @@ export const ShopComponent = (): JSX.Element => {
       return;
     }
     else {
-      console.log(data);
-      const initData: Partial<shopDeteilResponseData> = {
+      const req: Partial<shopDeteilResponseData> = {
         ...data,
         id: id,
         usage_status: data?.usage_status as UsageStatus,
       };
-      if (data.shop_image_file_name) {
-        setFileName(data.shop_image_file_name);
+      // MEMO: shop_image_file_name, shop_image_urlを除外
+      const { shop_image_file_name, shop_image_url, ...initData } = req
+      if (shop_image_file_name) {
+        setFileName(shop_image_file_name);
       }
       reset(initData);
     }
@@ -284,7 +285,7 @@ export const ShopComponent = (): JSX.Element => {
         </Grid>
         <Divider />
         <Box sx={{ m: 3 }}>
-          <form onSubmit={handleSubmit(editMode ? updateHandler : insertHandler)} noValidate>
+          <form noValidate onSubmit={handleSubmit(editMode ? updateHandler : insertHandler)}>
             <Grid container rowSpacing={2} columnSpacing={{ xs: 1, sm: 2, md: 3 }} direction="column">
               {editMode && (
                 <ItemBase name={'店舗ID'} isRequired={2}>

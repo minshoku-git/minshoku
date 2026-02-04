@@ -1,26 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { _insertShopDetail } from '@/app/(private)/shop-detail/[id]/_lib/shopDetailFunction';
-import { ShopDetailFormValues, shopDeteilRequestData } from '@/app/(private)/shop-detail/[id]/_lib/types';
+import { validateObject } from '@/app/_lib/validation';
+import { insertShopDetail } from '@/app/(private)/shop-detail/[id]/_lib/shopDetailFunction';
+import { ShopDetailApiSchema } from '@/app/(private)/shop-detail/[id]/_lib/types';
 
 export async function PUT(req: NextRequest) {
+  // --- 0. リクエスト変換 ---
   const formData = await req.formData();
 
   const formValues = formData.get('formValues') as string;
-  const shop_image_file_data = formData.get('shop_image_file_data') as File | undefined;
-  const shop_image_file_name = formData.get('shop_image_file_name') as string;
-  const shop_image_file_bytesize = formData.get('shop_image_file_bytesize') as unknown as number;
+  const data = JSON.parse(formValues);
 
-  const data: ShopDetailFormValues = await JSON.parse(formValues);
-
-  const request: shopDeteilRequestData = {
-    ...data,
-    shop_image_file_data: shop_image_file_data ?? undefined,
-    shop_image_file_name: shop_image_file_name,
-    shop_image_file_bytesize: shop_image_file_bytesize ?? 0,
+  const payload = {
+    request: {
+      ...data,
+      shop_image_file_data: formData.get('shop_image_file_data'),
+      shop_image_file_name: formData.get('shop_image_file_name') || '',
+      shop_image_file_bytesize: Number(formData.get('shop_image_file_bytesize') || 0),
+    },
   };
 
-  const result = await _insertShopDetail(request);
+  // --- 1. リクエスト検証 ---
+  const validationResult = validateObject(payload, ShopDetailApiSchema);
+  if (!validationResult.success) {
+    return NextResponse.json(validationResult.error, { status: validationResult.error.status });
+  }
 
-  return NextResponse.json(result);
+  // --- 2. データ取得・加工 ---
+  const result = await insertShopDetail(validationResult.data.request);
+
+  // --- 3. レスポンス返却 ---
+  if (result.success) {
+    return NextResponse.json(result);
+  }
+  return NextResponse.json(result.error, { status: result.error.status });
 }

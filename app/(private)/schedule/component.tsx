@@ -217,7 +217,7 @@ export const ScheduleComponent = (): JSX.Element => {
         </Grid>
         <Divider />
         <Box sx={{ m: 3 }}>
-          <form onSubmit={handleSubmit(searchHandler)}>
+          <form noValidate onSubmit={handleSubmit(searchHandler)}>
             <Grid
               container
               rowSpacing={2}
@@ -238,8 +238,11 @@ export const ScheduleComponent = (): JSX.Element => {
                     <DatePickerElement
                       control={control}
                       name={'deliveryFrom'}
+                      slotProps={{
+                        field: { clearable: true },
+                      }}
                       sx={{
-                        minWidth: '150px',
+                        width: '300px',
                         '& .MuiInputBase-root': {
                           height: '40px',
                           textAlign: 'center',
@@ -256,23 +259,14 @@ export const ScheduleComponent = (): JSX.Element => {
                     <DatePickerElement
                       control={control}
                       name={'deliveryTo'}
-                      // slotProps={{
-                      //   actionBar: {
-                      //     actions: ['today', 'clear', 'cancel', 'accept'],
-                      //     sx: {
-                      //       '& .MuiButton-root': {
-                      //         color: 'contained',
-                      //       },
-                      //     },
-                      //   },
-                      // }}
-                      // closeOnSelect={false}
+                      slotProps={{
+                        field: { clearable: true },
+                      }}
                       sx={{
-                        minWidth: '150px',
+                        width: '300px',
                         '& .MuiInputBase-root': {
                           height: '40px',
                           textAlign: 'center',
-                          verticalAlign: 'center',
                           padding: '0 15px',
                         },
                         '& input': {

@@ -10,7 +10,9 @@ import { CustomError } from '@/app/errors/customError';
 import { ErrorCodes } from '@/app/errors/ErrorCodes';
 
 import {
+  OrderCancelValues,
   OrderData,
+  OrderDetailInitValues,
   orderDeteilCsvResponseData,
   orderDeteilResponseData,
   OrderListSearchResult,
@@ -27,13 +29,15 @@ import {
  * @param {ApiRequest<OrderSearchFormValues>} values - 検索条件
  * @returns {Promise<ApiResponse<OrderListSearchResult>>} 検索結果
  */
-export const _searchOrderList = async (
+export const searchOrderList = async (
   values: ApiRequest<OrderSearchFormValues>
 ): Promise<ApiResponse<OrderListSearchResult>> => {
   const supabase = await createClient();
   const req = values.request;
   const sortItems = values.sortItems;
   const { startRange, endRange } = getRange(sortItems?.nextPage ?? 0);
+
+  console.log('values.', values);
 
   try {
     /* 件数取得
@@ -251,7 +255,7 @@ export const createOrderListCsvData = async (
     ------------------------------------------------------------------ */
     const res: orderDeteilCsvResponseData[] = dataDetail.map((m) => ({
       ...m,
-      id: m.id!.toString(),
+      id: m.id!,
       delivery_day: getDateString(new Date(m.delivery_day!)),
     }));
 
@@ -294,11 +298,12 @@ const applyFilters = (query: any, req: OrderSearchFormValues) => {
   }
   // 納品日
   if (req.deliveryFrom && req.deliveryTo) {
-    query = query.gte('delivery_day', req.deliveryFrom).lte('delivery_day', req.deliveryTo);
+    console.log(req.deliveryFrom.toISOString());
+    query = query.gte('delivery_day', req.deliveryFrom.toISOString()).lte('delivery_day', req.deliveryTo.toISOString());
   } else if (req.deliveryFrom) {
-    query = query.gte('delivery_day', req.deliveryFrom);
+    query = query.gte('delivery_day', req.deliveryFrom.toISOString());
   } else if (req.deliveryTo) {
-    query = query.lte('delivery_day', req.deliveryTo);
+    query = query.lte('delivery_day', req.deliveryTo.toISOString());
   }
   // 注文ステータス
   if (req.order_status_type) {
@@ -359,12 +364,14 @@ const applySorts = (query: any, sortItems: SortItems | undefined) => {
  * _searchOrderList
  * IDに一致するオーダー情報を取得する。
  *
- * @param {ApiRequest<number>} values - 検索条件
+ * @param {ApiRequest<OrderDetailInitValues>} values - 検索条件
  * @returns {Promise<ApiResponse<orderDeteilResponseData>>} 検索結果
  */
-export const _searchOrderDetail = async (values: ApiRequest<number>): Promise<ApiResponse<orderDeteilResponseData>> => {
+export const searchOrderDetail = async (
+  values: ApiRequest<OrderDetailInitValues>
+): Promise<ApiResponse<orderDeteilResponseData>> => {
   const supabase = await createClient();
-  const id = values.request;
+  const id = values.request.id;
 
   try {
     const query = supabase
@@ -530,15 +537,15 @@ export const _searchOrderDetail = async (values: ApiRequest<number>): Promise<Ap
 };
 
 /**
- * _orderCancel
+ * orderCancel
  * IDに一致するオーダー情報をキャンセルする。
  *
- * @param {ApiRequest<number>} values - 検索条件
+ * @param {ApiRequest<OrderCancelValues>} values - 検索条件
  * @returns {Promise<ApiResponse<orderDeteilResponseData>>} 検索結果
  */
-export const _orderCancel = async (values: ApiRequest<number>): Promise<ApiResponse<number>> => {
+export const orderCancel = async (values: ApiRequest<OrderCancelValues>): Promise<ApiResponse<number>> => {
   const timestamp = getNow();
-  const id = values.request;
+  const id = values.request.id;
 
   // connection Start
   const client = await createPgClient();
