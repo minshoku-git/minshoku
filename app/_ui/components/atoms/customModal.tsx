@@ -6,8 +6,6 @@ import Typography from '@mui/material/Typography';
 import * as React from 'react';
 import { JSX } from 'react';
 
-/** test */
-
 const ModalStyle = {
   position: 'absolute' as const,
   top: '50%',
