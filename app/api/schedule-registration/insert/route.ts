@@ -19,15 +19,20 @@ export async function POST(req: Request): Promise<Response> {
     }
 
     const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+
+    // Shift-JISでデコードを行う
+    // 日本語Windows環境のExcelなどで作成されたCSVに対応する場合、'shift-jis' もしくは 'windows-31j' を指定します
+    const decoder = new TextDecoder('shift-jis');
+    const decodedText = decoder.decode(arrayBuffer);
 
     const scheduleDatas: ScheduleCsvValues[] = [];
 
-    // CSVパース処理（Promise化）
+    // CSVパース処理（decodedText を stream に変換して渡す）
     await new Promise<void>((resolve, reject) => {
       const parser = csv.parse({ columns: true, skip_empty_lines: true });
 
-      Readable.from(buffer)
+      // Buffer の代わりに デコード済みの文字列(decodedText) を流し込む
+      Readable.from(decodedText)
         .pipe(parser)
         .on('data', (row: ScheduleCsvValues) => {
           const parsed = ScheduleCsvSchema.safeParse(row);

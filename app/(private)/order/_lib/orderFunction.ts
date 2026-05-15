@@ -4,11 +4,12 @@ import { createClient, createPgClient } from '@/app/_lib/supabase/server';
 import { rollbackWithLog } from '@/app/_lib/supabase/transaction';
 import { getDateString, getDatetimeString, getNow } from '@/app/_lib/utils/getDateTime';
 import { getPagenationsItems, getRange } from '@/app/_lib/utils/utils';
-import { OrderStatusType } from '@/app/_types/enum';
+import { OrderStatusType, PaymentType } from '@/app/_types/enum';
 import { ApiRequest, ApiResponse, SortItems } from '@/app/_types/types';
 import { CustomError } from '@/app/errors/customError';
 import { ErrorCodes } from '@/app/errors/ErrorCodes';
 
+import { alterTranGmo } from './gmoApi';
 import {
   OrderCancelValues,
   OrderData,
@@ -299,12 +300,17 @@ const applyFilters = (query: any, req: OrderSearchFormValues) => {
   // 納品日
   if (req.deliveryFrom && req.deliveryTo) {
     console.log(req.deliveryFrom.toISOString());
-    query = query.gte('delivery_day', req.deliveryFrom.toISOString()).lte('delivery_day', req.deliveryTo.toISOString());
+    const endOfDay = new Date(req.deliveryTo);
+    endOfDay.setHours(23, 59, 59, 999);
+    query = query.gte('delivery_day', req.deliveryFrom.toISOString()).lte('delivery_day', endOfDay.toISOString());
   } else if (req.deliveryFrom) {
     query = query.gte('delivery_day', req.deliveryFrom.toISOString());
   } else if (req.deliveryTo) {
-    query = query.lte('delivery_day', req.deliveryTo.toISOString());
+    const endOfDay = new Date(req.deliveryTo);
+    endOfDay.setHours(23, 59, 59, 999);
+    query = query.lte('delivery_day', endOfDay.toISOString());
   }
+
   // 注文ステータス
   if (req.order_status_type) {
     query = query.eq('order_status_type', req.order_status_type);
@@ -555,25 +561,68 @@ export const orderCancel = async (values: ApiRequest<OrderCancelValues>): Promis
     await client.query('BEGIN');
 
     // 楽観排他処理
-    const selectSql = `SELECT id FROM t_order WHERE id = $1 AND order_status_type = $2`;
+    const selectSql = `SELECT 
+        id, 
+        payment_type, 
+        order_status_type, 
+        credit_access_id, 
+        credit_access_password 
+      FROM t_order 
+      WHERE id = $1 AND order_status_type = $2 FOR UPDATE`;
     const resultSelect = await client.query(selectSql, [id, OrderStatusType.VALID]);
 
     if (resultSelect.rowCount === 0) {
       throw new CustomError(ErrorCodes.CONFLICT);
     }
 
+    const order = resultSelect.rows[0];
+
+    /* GMO-PG 決済取消 (クレジットカードの場合)
+  　------------------------------------------------------------------ */
+    if (Number(order.payment_type) === Number(PaymentType.CREDITCARD)) {
+      // 必要なIDが揃っているかチェック
+      if (!order.credit_access_id || !order.credit_access_password) {
+        throw new CustomError(
+          ErrorCodes.INTERNAL_SERVER_ERROR.code,
+          'GMOの決済情報(AccessID/Pass)がDBに見つかりません。',
+          500
+        );
+      }
+
+      // GMO API 呼び出し
+      const gmoRes = await alterTranGmo(order.credit_access_id, order.credit_access_password);
+
+      if (!gmoRes.success) {
+        // GMO側でエラーが発生した場合は、DBの更新を行わずに例外を投げる（ロールバックされる）
+        throw new CustomError(
+          ErrorCodes.INTERNAL_SERVER_ERROR.code,
+          `GMO決済取消に失敗しました。ErrInfo: ${gmoRes.errInfo}`,
+          500
+        );
+      }
+      console.log('GMO AlterTran Success:', id);
+    }
+
     /* Update - t_order
   　------------------------------------------------------------------ */
     // UpdateData setting
-    const updateSql = `UPDATE t_order SET order_status_type = $1, updated_at = $2, cancel_datetime = $3 WHERE id = $4 AND order_status_type = $5;`;
+    const updateSql = `
+      UPDATE t_order 
+      SET 
+        order_status_type = $1, 
+        updated_at = $2, 
+        cancel_datetime = $3 
+      WHERE id = $4 
+      RETURNING id;
+    `;
     // Update
     const result = await client.query(updateSql, [
       Number(OrderStatusType.SYSTEM_CANCEL),
       timestamp,
       timestamp,
       id,
-      Number(OrderStatusType.VALID),
     ]);
+
     if (result.rowCount === 0) {
       throw new CustomError({
         ...ErrorCodes.DB_QUERY_FAILED,
@@ -581,11 +630,6 @@ export const orderCancel = async (values: ApiRequest<OrderCancelValues>): Promis
       });
     }
     const updatedId = result.rows[0]?.id;
-
-    /* Update - GMO
-  　------------------------------------------------------------------ */
-
-    // TASK: GMO連携後に処理追加予定
 
     /* --------------------------------------------------------------- */
     // Commit
