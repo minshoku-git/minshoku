@@ -211,14 +211,14 @@ export const disapprovalUserRegistrationStatus = async (
 };
 
 /**
- * _disapprovalUserRegistrationStatus
+ * _pullBackUserRegistrationStatus
  * IDに一致するユーザー情報を引き戻し(承認)する。
  *
  * @param {ApiRequest<UserDataDetailRequest>} values - 検索条件
  * @returns {Promise<ApiResponse<null>>} 検索結果
  */
 export const pullBackUserRegistrationStatus = async (
-  values: ApiRequest<UserDataDetailRequest>
+  values: ApiRequest<UpdateUserData> 
 ): Promise<ApiResponse<null>> => {
   const req = values.request;
   const timestamp = getNow();
@@ -325,14 +325,14 @@ export const pullBackUserRegistrationStatus = async (
 };
 
 /**
- * _disapprovalUserRegistrationStatus
+ * _approvalUserRegistrationStatus
  * IDに一致するユーザー情報を承認する。
  *
  * @param {ApiRequest<UserDataDetailRequest>} values - 検索条件
  * @returns {Promise<ApiResponse<null>> } 検索結果
  */
 export const approvalUserRegistrationStatus = async (
-  values: ApiRequest<UserDataDetailRequest>
+  values: ApiRequest<UpdateUserData>
 ): Promise<ApiResponse<null>> => {
   const req = values.request;
   const timestamp = getNow();
