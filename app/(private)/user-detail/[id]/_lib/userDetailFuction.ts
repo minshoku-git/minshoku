@@ -211,14 +211,14 @@ export const disapprovalUserRegistrationStatus = async (
 };
 
 /**
- * _pullBackUserRegistrationStatus
+ * pullBackUserRegistrationStatus
  * IDに一致するユーザー情報を引き戻し(承認)する。
  *
- * @param {ApiRequest<UserDataDetailRequest>} values - 検索条件
+ * @param {ApiRequest<UpdateUserData>} values - 検索条件
  * @returns {Promise<ApiResponse<null>>} 検索結果
  */
 export const pullBackUserRegistrationStatus = async (
-  values: ApiRequest<UpdateUserData> 
+  values: ApiRequest<UpdateUserData>
 ): Promise<ApiResponse<null>> => {
   const req = values.request;
   const timestamp = getNow();
@@ -253,15 +253,19 @@ export const pullBackUserRegistrationStatus = async (
       user_registration_status: UserRegistrationStatus.WAITING_EMAIL_VERIFICATION,
       updated_at: timestamp,
     };
-    const { columns, values } = getPostgreSqlItems(updateValues);
+    
+    // 引数 values との競合を避けるために dbValues にリネーム
+    const { columns, values: dbValues } = getPostgreSqlItems(updateValues);
+    
     const updateSql = `
       UPDATE t_user
         SET ${columns.map((col, index) => `${col} = $${index + 1}`).join(', ')}
         WHERE id = ${req.id}
         AND usage_status = ${UsageStatus.DEACTIVATION} 
-        AND user_registration_status = ${UserRegistrationStatus.DISAPPROVAL}`;
+        AND user_registration_status = ${UserRegistrationStatus.DISAPPROVAL}
+        RETURNING id;`; // RETURNING id; を追加
 
-    const result = await pgClient.query(updateSql, values);
+    const result = await pgClient.query(updateSql, dbValues);
     if (result.rowCount === 0) {
       throw new CustomError(
         ErrorCodes.DB_QUERY_FAILED.code,
@@ -325,10 +329,10 @@ export const pullBackUserRegistrationStatus = async (
 };
 
 /**
- * _approvalUserRegistrationStatus
+ * approvalUserRegistrationStatus
  * IDに一致するユーザー情報を承認する。
  *
- * @param {ApiRequest<UserDataDetailRequest>} values - 検索条件
+ * @param {ApiRequest<UpdateUserData>} values - 検索条件
  * @returns {Promise<ApiResponse<null>> } 検索結果
  */
 export const approvalUserRegistrationStatus = async (
@@ -369,7 +373,10 @@ export const approvalUserRegistrationStatus = async (
       signup_password: '',
       updated_at: timestamp,
     };
-    const { columns, values } = getPostgreSqlItems(updateValues);
+    
+    // 引数 values との競合を避けるために dbValues にリネーム
+    const { columns, values: dbValues } = getPostgreSqlItems(updateValues);
+    
     const updateSql = `
       UPDATE t_user
         SET ${columns.map((col, index) => `${col} = $${index + 1}`).join(', ')}
@@ -378,7 +385,7 @@ export const approvalUserRegistrationStatus = async (
         AND user_registration_status = ${UserRegistrationStatus.WAITING_APPROVAL} 
         RETURNING id;`;
 
-    const result = await pgClient.query(updateSql, values);
+    const result = await pgClient.query(updateSql, dbValues);
     if (result.rowCount === 0) {
       throw new CustomError(
         ErrorCodes.DB_QUERY_FAILED.code,
