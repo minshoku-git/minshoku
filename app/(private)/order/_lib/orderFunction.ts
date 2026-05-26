@@ -20,6 +20,68 @@ import {
   OrderSearchFormValues,
 } from './types';
 
+// Supabaseクエリから取得される、ネストされた生データ用の型定義
+interface OrderCsvDbRow {
+  id: number;
+  delivery_day: string;
+  count: number;
+  list_price: number;
+  amount: number;
+  companies_burden_amount: number;
+  user_burden_amount: number;
+  payment_type: string | number;
+  order_status_type: string;
+  order_datetime: string;
+  cancel_datetime: string | null;
+  t_menu_schedule: {
+    menu_name: string;
+  };
+  t_shops: {
+    shop_name: string;
+  };
+  t_user: {
+    id: number;
+    user_name: string;
+    user_name_kana: string;
+    user_email: string;
+    optional_item_answer_1: string | null;
+    optional_item_answer_2: string | null;
+  };
+  t_companies: {
+    id: number;
+    company_name: string;
+    branch_name: string;
+    optional_item_title_1: string | null;
+    optional_item_title_2: string | null;
+  };
+  t_companies_department: {
+    department_name: string;
+  };
+  t_companies_employment_status: {
+    employment_status_name: string;
+  };
+}
+
+// 決済方法区分名をわかりやすい名称に変換
+const getPaymentTypeName = (type: string | number | undefined | null): string => {
+  if (type === undefined || type === null) return '';
+  const strType = String(type);
+  if (strType === String(PaymentType.SALAEY_DEDUCTIONS)) return '会社清算';
+  if (strType === String(PaymentType.CREDITCARD)) return 'クレジットカード';
+  if (strType === String(PaymentType.PAYPAY)) return 'PayPay';
+  return strType;
+};
+
+// 注文ステータス名をわかりやすい名称に変換
+const getOrderStatusName = (status: string | number | undefined | null): string => {
+  if (status === undefined || status === null) return '';
+  const strStatus = String(status);
+  if (strStatus === String(OrderStatusType.VALID)) return '有効';
+  if (strStatus === String(OrderStatusType.USER_CANCEL)) return 'キャンセル(ユーザー)';
+  if (strStatus === String(OrderStatusType.SYSTEM_CANCEL)) return 'キャンセル(システム)';
+  return strStatus;
+};
+
 /* オーダー一覧
 ------------------------------------------------------------------ */
 
@@ -239,8 +301,10 @@ export const createOrderListCsvData = async (
         `
       )
       .in('id', ids);
+    
+    // ネストデータを保持した DBRow として取得
     const { data: dataDetail, error: errorDetail } = (await detailQuery) as PostgrestSingleResponse<
-      orderDeteilCsvResponseData[]
+      OrderCsvDbRow[]
     >;
 
     if (errorDetail) {
@@ -252,12 +316,35 @@ export const createOrderListCsvData = async (
       );
     }
 
-    /* 返却
+    /* 返却 (ネストデータを排除し、完全に平坦化してマッピングします)
     ------------------------------------------------------------------ */
     const res: orderDeteilCsvResponseData[] = dataDetail.map((m) => ({
-      ...m,
-      id: m.id!,
-      delivery_day: getDateString(new Date(m.delivery_day!)),
+      id: m.id,
+      delivery_day: getDateString(new Date(m.delivery_day)),
+      count: m.count ?? 0,
+      list_price: m.list_price ?? 0,
+      amount: m.amount ?? 0,
+      companies_burden_amount: m.companies_burden_amount ?? 0,
+      user_burden_amount: m.user_burden_amount ?? 0,
+      payment_type: getPaymentTypeName(m.payment_type),
+      order_status_type: getOrderStatusName(m.order_status_type),
+      order_datetime: m.order_datetime ? getDatetimeString(new Date(m.order_datetime)) : '',
+      cancel_datetime: m.cancel_datetime ? getDatetimeString(new Date(m.cancel_datetime)) : '',
+      menu_name: m.t_menu_schedule?.menu_name ?? '',
+      shop_name: m.t_shops?.shop_name ?? '',
+      user_id: m.t_user?.id ?? '',
+      user_name: m.t_user?.user_name ?? '',
+      user_name_kana: m.t_user?.user_name_kana ?? '',
+      user_email: m.t_user?.user_email ?? '',
+      optional_item_answer_1: m.t_user?.optional_item_answer_1 ?? '',
+      optional_item_answer_2: m.t_user?.optional_item_answer_2 ?? '',
+      company_id: m.t_companies?.id ?? '',
+      company_name: m.t_companies?.company_name ?? '',
+      branch_name: m.t_companies?.branch_name ?? '',
+      optional_item_title_1: m.t_companies?.optional_item_title_1 ?? '',
+      optional_item_title_2: m.t_companies?.optional_item_title_2 ?? '',
+      department_name: m.t_companies_department?.department_name ?? '',
+      employment_status_name: m.t_companies_employment_status?.employment_status_name ?? '',
     }));
 
     return {

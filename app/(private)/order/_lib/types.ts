@@ -228,76 +228,32 @@ export type orderDeteilResponseData = {
   };
 };
 
-/** 取得結果 オーダー詳細 */
+/** 取得結果 オーダー詳細 (CSV出力用：完全なフラット構造) */
 export type orderDeteilCsvResponseData = {
-  /** id */
-  id?: number;
-  /** 納品日 */
-  delivery_day?: string | Date;
-  /** 個数 */
-  count?: number;
-  /** 定価 */
-  list_price?: number;
-  /** 総額 */
-  amount?: number;
-  /** 企業負担額 */
-  companies_burden_amount?: number;
-  /** 個人負担額 */
-  user_burden_amount?: number;
-  /** 支払い種別 */
-  payment_type?: string | number;
-  /** オーダーステータス */
-  order_status_type?: string;
-  /** 注文日時 */
-  order_datetime?: string | Date;
-  /** キャンセル日時 */
-  cancel_datetime?: string | Date;
-  /** スケジュール */
-  t_menu_schedule: {
-    /** メニュー名 */
-    menu_name?: string;
-  };
-  /** 店舗テーブル */
-  t_shops: {
-    /** 店舗名 */
-    shop_name?: string;
-  };
-  /** ユーザーテーブル */
-  t_user: {
-    /** ユーザーID */
-    id?: number;
-    /** ユーザー名 */
-    user_name?: string;
-    /** ユーザー名カナ */
-    user_name_kana?: string;
-    /** メールアドレス */
-    user_email?: string;
-    /** 任意項目_回答1 */
-    optional_item_answer_1?: string;
-    /** 任意項目_回答2 */
-    optional_item_answer_2?: string;
-  };
-  /** 会社テーブル */
-  t_companies: {
-    /** ユーザーID */
-    id?: number;
-    /** 会社名 */
-    company_name?: string;
-    /** 支店名 */
-    branch_name?: string;
-    /** 任意項目_項目名1 */
-    optional_item_title_1?: string;
-    /** 任意項目_項目名2 */
-    optional_item_title_2?: string;
-  };
-  /** 企業部署情報テーブル */
-  t_companies_department: {
-    /** 部署名 */
-    department_name?: string;
-  };
-  /** 企業雇用形態テーブル */
-  t_companies_employment_status: {
-    /** 雇用形態名 */
-    employment_status_name?: string;
-  };
+  id: number;
+  delivery_day: string;
+  count: number;
+  list_price: number;
+  amount: number;
+  companies_burden_amount: number;
+  user_burden_amount: number;
+  payment_type: string;
+  order_status_type: string;
+  order_datetime: string;
+  cancel_datetime: string;
+  menu_name: string;
+  shop_name: string;
+  user_id: number | string;
+  user_name: string;
+  user_name_kana: string;
+  user_email: string;
+  optional_item_answer_1: string;
+  optional_item_answer_2: string;
+  company_id: number | string;
+  company_name: string;
+  branch_name: string;
+  optional_item_title_1: string;
+  optional_item_title_2: string;
+  department_name: string;
+  employment_status_name: string;
 };
