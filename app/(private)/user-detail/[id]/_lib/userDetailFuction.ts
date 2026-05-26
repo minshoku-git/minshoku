@@ -222,12 +222,14 @@ export const pullBackUserRegistrationStatus = async (
 ): Promise<ApiResponse<null>> => {
   const req = values.request;
   const timestamp = getNow();
-  const supabase = await createClient(); //signUp用
+  console.log('[pullBackUserRegistrationStatus] Start. req:', req);
 
   // connection Start
   const pgClient = await createPgClient();
 
   try {
+    const supabase = await createClient(); // signUp用
+    
     // Transaction Start
     await pgClient.query('BEGIN');
 
@@ -240,12 +242,45 @@ export const pullBackUserRegistrationStatus = async (
       From
         t_user
       Where
-        id = ${req.id};`;
+        id = $1;`;
 
-    // Insert
-    const emailAndPassword = await pgClient.query(selectSql);
+    const emailAndPassword = await pgClient.query(selectSql, [req.id]);
+    
+    // 【修正箇所】ErrorCodes.NOT_FOUND を使わずに直接コードを指定
+    if (emailAndPassword.rowCount === 0) {
+      throw new CustomError('E404-01', '対象のユーザー情報が見つかりません。', 404);
+    }
+
     const email: string = emailAndPassword.rows[0]?.user_email;
-    const password: string = emailAndPassword.rows[0]?.signup_password;
+    const password = emailAndPassword.rows[0]?.signup_password;
+
+    console.log('[pullBackUserRegistrationStatus] Found user:', { email, hasPassword: !!password });
+
+    // バリデーションガード
+    if (!email) {
+      throw new CustomError(ErrorCodes.DB_QUERY_FAILED.code, 'メールアドレスが登録されていません。', 400);
+    }
+    if (!password) {
+      throw new CustomError(
+        ErrorCodes.DB_QUERY_FAILED.code,
+        '一時パスワード(signup_password)がありません。すでに登録が完了している可能性があります。',
+        400
+      );
+    }
+
+    /* 復号化
+    ------------------------------------------------------------------ */
+    let decryptPassword = '';
+    try {
+      decryptPassword = decrypt(password);
+    } catch (decryptErr) {
+      console.error('[pullBackUserRegistrationStatus] Decryption failed:', decryptErr);
+      throw new CustomError(
+        ErrorCodes.INTERNAL_SERVER_ERROR.code,
+        'パスワードの復号化に失敗しました。暗号鍵の設定、またはDBの暗号化データを確認してください。',
+        500
+      );
+    }
 
     /* Update - t_user
   　------------------------------------------------------------------ */
@@ -254,73 +289,88 @@ export const pullBackUserRegistrationStatus = async (
       updated_at: timestamp,
     };
     
-    // 引数 values との競合を避けるために dbValues にリネーム
     const { columns, values: dbValues } = getPostgreSqlItems(updateValues);
     
     const updateSql = `
       UPDATE t_user
         SET ${columns.map((col, index) => `${col} = $${index + 1}`).join(', ')}
-        WHERE id = ${req.id}
-        AND usage_status = ${UsageStatus.DEACTIVATION} 
-        AND user_registration_status = ${UserRegistrationStatus.DISAPPROVAL}
-        RETURNING id;`; // RETURNING id; を追加
+        WHERE id = $${columns.length + 1}
+        AND usage_status = $${columns.length + 2} 
+        AND user_registration_status = $${columns.length + 3}
+        RETURNING id;`;
 
-    const result = await pgClient.query(updateSql, dbValues);
+    const result = await pgClient.query(updateSql, [
+      ...dbValues,
+      req.id,
+      Number(UsageStatus.DEACTIVATION),
+      Number(UserRegistrationStatus.DISAPPROVAL)
+    ]);
+
     if (result.rowCount === 0) {
       throw new CustomError(
         ErrorCodes.DB_QUERY_FAILED.code,
-        'ユーザー情報の引き戻し承認' + ErrorCodes.DB_QUERY_FAILED.message,
-        ErrorCodes.DB_QUERY_FAILED.status
+        'ユーザー情報の引き戻し承認に失敗しました(対象レコードの状態が不適切です)。',
+        400
       );
     }
 
     const updateId: number = result.rows[0]?.id;
 
-    /* 復号化
-    ------------------------------------------------------------------ */
-    const decryptPassword: string = decrypt(password);
-
     /* 暗号化
     ------------------------------------------------------------------ */
-    const signUpEncrypt: SignUpEncrypt = { id: updateId };
-    const signUpEncryptReq: string = encrypt(JSON.stringify(signUpEncrypt));
+    let signUpEncryptReq = '';
+    try {
+      const signUpEncrypt: SignUpEncrypt = { id: updateId };
+      signUpEncryptReq = encrypt(JSON.stringify(signUpEncrypt));
+    } catch (encryptErr) {
+      console.error('[pullBackUserRegistrationStatus] Encryption failed:', encryptErr);
+      throw new CustomError(ErrorCodes.INTERNAL_SERVER_ERROR.code, 'リダイレクトURL用トークンの暗号化に失敗しました。', 500);
+    }
 
     /* signUp
   　------------------------------------------------------------------ */
+    const redirectUrl = (process.env.APP_URL_DEV || '') + '/pre-registration/' + signUpEncryptReq;
+    console.log('[pullBackUserRegistrationStatus] Supabase SignUp Executed. RedirectURL:', redirectUrl);
+
     const { error: signUpError } = await supabase.auth.signUp({
       email,
       password: decryptPassword,
-      options: { emailRedirectTo: process.env.APP_URL_DEV + '/pre-registration/' + signUpEncryptReq },
+      options: { emailRedirectTo: redirectUrl },
     });
 
     if (signUpError) {
-      console.error('Error signing up:', signUpError);
+      console.error('[pullBackUserRegistrationStatus] Supabase Auth Error:', signUpError);
       throw new CustomError(
         ErrorCodes.DB_QUERY_FAILED.code,
-        '認証メール送信' + ErrorCodes.DB_QUERY_FAILED.message,
-        ErrorCodes.DB_QUERY_FAILED.status
+        `Supabase認証エラー: ${signUpError.message}`,
+        signUpError.status || 500
       );
     }
 
     /* --------------------------------------------------------------- */
     // Commit
     await pgClient.query('COMMIT');
+    console.log('[pullBackUserRegistrationStatus] Transaction success. ID:', updateId);
 
     return { success: true, data: null };
   } catch (e: unknown) {
-    console.error('Transaction failed:', e);
+    console.error('[pullBackUserRegistrationStatus] Transaction failed:', e);
     // Rollback
     await rollbackWithLog(pgClient);
 
     if (e instanceof CustomError) {
-      return {
-        success: false,
-        error: e,
-      };
+      return { success: false, error: e };
     }
+    
+    // システムの生のスタックトレースメッセージを引き出して返す
+    const errorDetails = e instanceof Error ? e.message : 'Unknown error';
     return {
       success: false,
-      error: ErrorCodes.INTERNAL_SERVER_ERROR,
+      error: new CustomError(
+        ErrorCodes.INTERNAL_SERVER_ERROR.code,
+        `内部エラー: ${errorDetails}`,
+        500
+      )
     };
   } finally {
     // Transaction End
@@ -340,12 +390,14 @@ export const approvalUserRegistrationStatus = async (
 ): Promise<ApiResponse<null>> => {
   const req = values.request;
   const timestamp = getNow();
-  const supabase = await createClient(); //signUp用
+  console.log('[approvalUserRegistrationStatus] Start. req:', req);
 
   // connection Start
   const pgClient = await createPgClient();
 
   try {
+    const supabase = await createClient(); // signUp用
+    
     // Transaction Start
     await pgClient.query('BEGIN');
 
@@ -358,90 +410,136 @@ export const approvalUserRegistrationStatus = async (
       From
         t_user
       Where
-        id = ${req.id};`;
+        id = $1;`;
 
-    // Insert
-    const emailAndPassword = await pgClient.query(selectSql);
+    const emailAndPassword = await pgClient.query(selectSql, [req.id]);
+    
+    // 【修正箇所】ErrorCodes.NOT_FOUND を使わずに直接コードを指定
+    if (emailAndPassword.rowCount === 0) {
+      throw new CustomError('E404-01', '対象のユーザー情報が見つかりません。', 404);
+    }
+
     const email: string = emailAndPassword.rows[0]?.user_email;
-    const password: string = emailAndPassword.rows[0]?.signup_password;
+    const password = emailAndPassword.rows[0]?.signup_password;
+
+    console.log('[approvalUserRegistrationStatus] Found user:', { email, hasPassword: !!password });
+
+    // バリデーションガード
+    if (!email) {
+      throw new CustomError(ErrorCodes.DB_QUERY_FAILED.code, 'メールアドレスが登録されていません。', 400);
+    }
+    if (!password) {
+      throw new CustomError(
+        ErrorCodes.DB_QUERY_FAILED.code,
+        '一時パスワード(signup_password)がありません。すでに登録が完了している可能性があります。',
+        400
+      );
+    }
+
+    /* 復号化
+    ------------------------------------------------------------------ */
+    let decryptPassword = '';
+    try {
+      decryptPassword = decrypt(password);
+    } catch (decryptErr) {
+      console.error('[approvalUserRegistrationStatus] Decryption failed:', decryptErr);
+      throw new CustomError(
+        ErrorCodes.INTERNAL_SERVER_ERROR.code,
+        'パスワードの復号化に失敗しました。暗号鍵の設定、またはDBの一時パスワードデータを確認してください。',
+        500
+      );
+    }
 
     /* Update - t_user
   　------------------------------------------------------------------ */
-    // UpdateData setting
     const updateValues: Pick<t_user, 'user_registration_status' | 'signup_password' | 'updated_at'> = {
       user_registration_status: UserRegistrationStatus.WAITING_EMAIL_VERIFICATION,
       signup_password: '',
       updated_at: timestamp,
     };
     
-    // 引数 values との競合を避けるために dbValues にリネーム
     const { columns, values: dbValues } = getPostgreSqlItems(updateValues);
     
     const updateSql = `
       UPDATE t_user
         SET ${columns.map((col, index) => `${col} = $${index + 1}`).join(', ')}
-        WHERE id = ${req.id}
-        AND usage_status = ${UsageStatus.DEACTIVATION} 
-        AND user_registration_status = ${UserRegistrationStatus.WAITING_APPROVAL} 
+        WHERE id = $${columns.length + 1}
+        AND usage_status = $${columns.length + 2} 
+        AND user_registration_status = $${columns.length + 3} 
         RETURNING id;`;
 
-    const result = await pgClient.query(updateSql, dbValues);
+    const result = await pgClient.query(updateSql, [
+      ...dbValues,
+      req.id,
+      Number(UsageStatus.DEACTIVATION),
+      Number(UserRegistrationStatus.WAITING_APPROVAL)
+    ]);
+
     if (result.rowCount === 0) {
       throw new CustomError(
         ErrorCodes.DB_QUERY_FAILED.code,
-        'ユーザー情報の承認' + ErrorCodes.DB_QUERY_FAILED.message,
-        ErrorCodes.DB_QUERY_FAILED.status
+        'ユーザー情報の承認に失敗しました(対象レコードの状態が不適切です)。',
+        400
       );
     }
 
     const updateId: number = result.rows[0]?.id;
 
-    /* 復号化
-    ------------------------------------------------------------------ */
-    const decryptPassword: string = decrypt(password);
-
     /* 暗号化
     ------------------------------------------------------------------ */
-    const signUpEncrypt: SignUpEncrypt = { id: updateId };
-    const signUpEncryptReq: string = encrypt(JSON.stringify(signUpEncrypt));
+    let signUpEncryptReq = '';
+    try {
+      const signUpEncrypt: SignUpEncrypt = { id: updateId };
+      signUpEncryptReq = encrypt(JSON.stringify(signUpEncrypt));
+    } catch (encryptErr) {
+      console.error('[approvalUserRegistrationStatus] Encryption failed:', encryptErr);
+      throw new CustomError(ErrorCodes.INTERNAL_SERVER_ERROR.code, 'リダイレクトURL用トークンの暗号化に失敗しました。', 500);
+    }
 
     /* signUp
   　------------------------------------------------------------------ */
+    const redirectUrl = (process.env.APP_URL_DEV || '') + '/pre-registration/' + signUpEncryptReq;
+    console.log('[approvalUserRegistrationStatus] Supabase SignUp Executed. RedirectURL:', redirectUrl);
+
     const { error: signUpError } = await supabase.auth.signUp({
       email,
       password: decryptPassword,
-      options: { emailRedirectTo: process.env.APP_URL_DEV + '/pre-registration/' + signUpEncryptReq },
+      options: { emailRedirectTo: redirectUrl },
     });
 
     if (signUpError) {
-      console.error('Error signing up:', signUpError);
+      console.error('[approvalUserRegistrationStatus] Supabase Auth Error:', signUpError);
       throw new CustomError(
         ErrorCodes.DB_QUERY_FAILED.code,
-        '認証メール送信' + ErrorCodes.DB_QUERY_FAILED.message,
-        ErrorCodes.DB_QUERY_FAILED.status
+        `Supabase認証エラー: ${signUpError.message}`,
+        signUpError.status || 500
       );
     }
 
     /* --------------------------------------------------------------- */
     // Commit
     await pgClient.query('COMMIT');
-    console.log('Transaction completed, new company ID:', updateId);
+    console.log('[approvalUserRegistrationStatus] Transaction success. ID:', updateId);
 
     return { success: true, data: null };
   } catch (e: unknown) {
-    console.error('Transaction failed:', e);
+    console.error('[approvalUserRegistrationStatus] Transaction failed:', e);
     // Rollback
     await rollbackWithLog(pgClient);
 
     if (e instanceof CustomError) {
-      return {
-        success: false,
-        error: e,
-      };
+      return { success: false, error: e };
     }
+
+    // システムの生のスタックトレースメッセージを引き出して返す
+    const errorDetails = e instanceof Error ? e.message : 'Unknown error';
     return {
       success: false,
-      error: ErrorCodes.INTERNAL_SERVER_ERROR,
+      error: new CustomError(
+        ErrorCodes.INTERNAL_SERVER_ERROR.code,
+        `内部エラー: ${errorDetails}`,
+        500
+      )
     };
   } finally {
     // Transaction End
