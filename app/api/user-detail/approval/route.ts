@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { validateRequest } from '@/app/_lib/validation';
-import { UserDetailApiSchema } from '@/app/(private)/user-detail/[id]/_lib/types';
+import { UserDetailDisapprovalApiSchema } from '@/app/(private)/user-detail/[id]/_lib/types';
 import { approvalUserRegistrationStatus } from '@/app/(private)/user-detail/[id]/_lib/userDetailFuction';
 
 export async function PUT(req: NextRequest) {
   // --- 1. リクエスト検証 ---
-  const validationResult = await validateRequest(req, UserDetailApiSchema);
+  const validationResult = await validateRequest(req, UserDetailDisapprovalApiSchema);
 
   if (!validationResult.success) {
     return NextResponse.json(validationResult.error, { status: validationResult.error.status });
