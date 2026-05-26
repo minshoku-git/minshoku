@@ -297,17 +297,16 @@ const applyFilters = (query: any, req: OrderSearchFormValues) => {
   if (req.company_name) {
     query = query.or(`company_name.ilike.%${req.company_name}%, branch_name.ilike.%${req.company_name}%`);
   }
-  // 納品日
-  if (req.deliveryFrom && req.deliveryTo) {
-    console.log(req.deliveryFrom.toISOString());
-    const endOfDay = new Date(req.deliveryTo);
-    endOfDay.setHours(23, 59, 59, 999);
-    query = query.gte('delivery_day', req.deliveryFrom.toISOString()).lte('delivery_day', endOfDay.toISOString());
-  } else if (req.deliveryFrom) {
+  
+  // 納品日 (【修正箇所】UTCサーバーを考慮した日付判定)
+  if (req.deliveryFrom) {
     query = query.gte('delivery_day', req.deliveryFrom.toISOString());
-  } else if (req.deliveryTo) {
-    const endOfDay = new Date(req.deliveryTo);
-    endOfDay.setHours(23, 59, 59, 999);
+  }
+
+  if (req.deliveryTo) {
+    // サーバーのタイムゾーン(UTC等)に左右されないよう、
+    // deliveryTo のミリ秒に「24時間引く1ミリ秒」を足して、その日の終わり(23:59:59.999)を表現する
+    const endOfDay = new Date(req.deliveryTo.getTime() + 24 * 60 * 60 * 1000 - 1);
     query = query.lte('delivery_day', endOfDay.toISOString());
   }
 

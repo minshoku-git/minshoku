@@ -168,19 +168,6 @@ const applyFilters = (query: any, req: ScheduleSearchFormValues) => {
     query = query.lte('delivery_day', endOfDay.toISOString());
   }
 
-  // // 納品日
-  // if (req.deliveryFrom && req.deliveryTo) {
-  //   const endOfDay = new Date(req.deliveryTo);
-  //   endOfDay.setHours(23, 59, 59, 999);
-  //   query = query.gte('delivery_day', req.deliveryFrom.toISOString()).lte('delivery_day', endOfDay.toISOString());
-  // } else if (req.deliveryFrom) {
-  //   query = query.gte('delivery_day', req.deliveryFrom.toISOString());
-  // } else if (req.deliveryTo) {
-  //   const endOfDay = new Date(req.deliveryTo);
-  //   endOfDay.setHours(23, 59, 59, 999);
-  //   query = query.lte('delivery_day', endOfDay.toISOString());
-  // }
-
   return query;
 };
 
