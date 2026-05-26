@@ -19,11 +19,20 @@ export async function POST(req: Request): Promise<Response> {
     }
 
     const arrayBuffer = await file.arrayBuffer();
+    let decodedText = '';
 
-    // Shift-JISでデコードを行う
-    // 日本語Windows環境のExcelなどで作成されたCSVに対応する場合、'shift-jis' もしくは 'windows-31j' を指定します
-    const decoder = new TextDecoder('shift-jis');
-    const decodedText = decoder.decode(arrayBuffer);
+    try {
+      // 1. まずは UTF-8 (fatalオプションを有効化) でのデコードを試みる
+      // fatal: true により、Shift-JISのファイルが来た際に例外(TypeError)を発生させます
+      const utf8Decoder = new TextDecoder('utf-8', { fatal: true });
+      decodedText = utf8Decoder.decode(arrayBuffer);
+    } catch (e) {
+      // 2. UTF-8 でエラーが発生した場合は、Shift-JIS (MS932) と判定してデコードする
+      // ※ 'windows-31j' は 'shift-jis' の拡張（Microsoftコードページ932）で、
+      // 丸数字(①)や「株」の合字(株)などの機種依存文字も文字化けせずにパースできます。
+      const sjisDecoder = new TextDecoder('windows-31j');
+      decodedText = sjisDecoder.decode(arrayBuffer);
+    }
 
     const scheduleDatas: ScheduleCsvValues[] = [];
 
@@ -31,14 +40,13 @@ export async function POST(req: Request): Promise<Response> {
     await new Promise<void>((resolve, reject) => {
       const parser = csv.parse({ columns: true, skip_empty_lines: true });
 
-      // Buffer の代わりに デコード済みの文字列(decodedText) を流し込む
       Readable.from(decodedText)
         .pipe(parser)
         .on('data', (row: ScheduleCsvValues) => {
           const parsed = ScheduleCsvSchema.safeParse(row);
           if (!parsed.success) {
-            const message = JSON.stringify(z.treeifyError(parsed.error), null, 2);
-            console.error(message);
+            // z.treeifyError が無いプロジェクトに対応するため .format() を使用
+            console.error(JSON.stringify(parsed.error.format(), null, 2));
             return reject(new CustomError(ErrorCodes.CSV_VALIDATION_FAILED));
           }
           scheduleDatas.push(parsed.data);
