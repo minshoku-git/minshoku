@@ -86,7 +86,7 @@ export const searchScheduleList = async (
     // VIEWにはSUM()が使用不可のため、該当レコードの納品数を取得し、合計数を算出する。
     let orderCountQuery = supabase.from('v_menu_schedule_' + process.env.SUPABASE_DB_SCHEMA).select('stock_count');
     orderCountQuery = applyFilters(orderCountQuery, req);
-    const { data: orderCountData, error: orderCountError } = (await query) as PostgrestSingleResponse<ScheduleData[]>;
+    const { data: orderCountData, error: orderCountError } = (await orderCountQuery) as PostgrestSingleResponse<ScheduleData[]>;
 
     if (orderCountError) {
       console.log('orderAmountError', orderCountError);
@@ -97,7 +97,7 @@ export const searchScheduleList = async (
       );
     }
 
-    const totalOrderCount = orderCountData.reduce((acc, item) => acc + item.stock_count, 0);
+    const totalOrderCount = orderCountData?.reduce((acc, item) => acc + item.stock_count, 0) ?? 0;
 
     console.log('スケジュール一覧納品数合計:', totalOrderCount);
 
@@ -155,18 +155,31 @@ const applyFilters = (query: any, req: ScheduleSearchFormValues) => {
   if (req.shop_name) {
     query = query.or(`shop_name.like.%${req.shop_name}%, shop_name_kana.ilike.%${req.shop_name}%`);
   }
+
   // 納品日
-  if (req.deliveryFrom && req.deliveryTo) {
-    const endOfDay = new Date(req.deliveryTo);
-    endOfDay.setHours(23, 59, 59, 999);
-    query = query.gte('delivery_day', req.deliveryFrom.toISOString()).lte('delivery_day', endOfDay.toISOString());
-  } else if (req.deliveryFrom) {
+  if (req.deliveryFrom) {
     query = query.gte('delivery_day', req.deliveryFrom.toISOString());
-  } else if (req.deliveryTo) {
-    const endOfDay = new Date(req.deliveryTo);
-    endOfDay.setHours(23, 59, 59, 999);
+  }
+
+  if (req.deliveryTo) {
+    // サーバーのタイムゾーン(UTC等)に左右されないよう、
+    // deliveryTo (その日の 00:00) から「24時間引く1ミリ秒」を足して、その日の終わりを作る
+    const endOfDay = new Date(req.deliveryTo.getTime() + 24 * 60 * 60 * 1000 - 1);
     query = query.lte('delivery_day', endOfDay.toISOString());
   }
+
+  // // 納品日
+  // if (req.deliveryFrom && req.deliveryTo) {
+  //   const endOfDay = new Date(req.deliveryTo);
+  //   endOfDay.setHours(23, 59, 59, 999);
+  //   query = query.gte('delivery_day', req.deliveryFrom.toISOString()).lte('delivery_day', endOfDay.toISOString());
+  // } else if (req.deliveryFrom) {
+  //   query = query.gte('delivery_day', req.deliveryFrom.toISOString());
+  // } else if (req.deliveryTo) {
+  //   const endOfDay = new Date(req.deliveryTo);
+  //   endOfDay.setHours(23, 59, 59, 999);
+  //   query = query.lte('delivery_day', endOfDay.toISOString());
+  // }
 
   return query;
 };
