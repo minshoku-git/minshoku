@@ -49,14 +49,12 @@ export const searchShopDetail = async (
     let imageUrl: string = '';
     if (data.shop_image_safe_file_name) {
       const filepath = BUCKET_SHOP_IMAGES + '/' + id + '/' + data.shop_image_safe_file_name;
-      imageUrl = await getImageSignedUrl(supabase, process.env.SUPABASE_STORAGE!, filepath);
-      if (!imageUrl) {
-        console.error(error);
-        throw new CustomError(
-          ErrorCodes.DB_QUERY_FAILED.code,
-          '店舗画像ファイルの取得' + ErrorCodes.DB_QUERY_FAILED.message,
-          ErrorCodes.DB_QUERY_FAILED.status
-        );
+      try {
+        imageUrl = await getImageSignedUrl(supabase, process.env.SUPABASE_STORAGE!, filepath);
+      } catch (imgErr) {
+        // 画像ファイルのロード失敗のみで店舗全体が表示不能になるのを防ぐマイルドな例外ガード
+        console.warn('店舗画像URLの取得に失敗しました。:', imgErr);
+        imageUrl = '';
       }
     }
 
@@ -139,8 +137,8 @@ export const insertShopDetail = async (values: shopDeteilRequestData): Promise<A
       shop_description: req.shop_description,
       memo: req.memo,
       usage_status: req.usage_status,
-      gmo_shop_code: '', // TODO: 店舗新規登録時、何を設定したらいいのか要確認。
-      gmo_shop_password: '', // TODO: 店舗新規登録時、何を設定したらいいのか要確認。
+      gmo_shop_code: '', 
+      gmo_shop_password: '', 
     };
     const { columns, placeholders, values } = getPostgreSqlItems(insertValues);
     const insertShopText = `INSERT INTO t_shops (${columns.join(',')}) VALUES (${placeholders}) RETURNING id;`;
@@ -241,8 +239,8 @@ export const updateShopDetail = async (values: shopDeteilRequestData): Promise<A
       shop_description: req.shop_description,
       memo: req.memo,
       usage_status: req.usage_status,
-      gmo_shop_code: '', // TODO: 店舗新規登録時の値を確認
-      gmo_shop_password: '', // TODO: 店舗新規登録時の値を確認
+      gmo_shop_code: '', 
+      gmo_shop_password: '', 
       updated_at: timestamp,
     };
 
@@ -277,17 +275,19 @@ export const updateShopDetail = async (values: shopDeteilRequestData): Promise<A
 
     const updatedId = result.rows[0]?.id;
 
-    /* Upload / Delete - shop-images
+    /* Upload / Delete - shop-images (【修正箇所】不要な誤爆削除を防ぐよう厳格化)
   　------------------------------------------------------------------ */
-    // 店舗画像ファイル削除
-    // 新規登録の画像ファイルが存在する && 既存ファイル名が値有りの場合
-    if ((req.shop_image_file_data && exSafeFileName) || (!req.shop_image_file_data && exSafeFileName)) {
+    
+    // 既存画像があり、かつ「画像を上書きアップロードする場合」または「ゴミ箱ボタンで明示的に画像を消去した場合」のみ、ストレージから古いファイルを削除
+    const isImageOverwritten = !!req.shop_image_file_data && !!exSafeFileName;
+    const isImageDeleted = !req.shop_image_file_data && req.shop_image_file_name === '' && !!exSafeFileName;
+
+    if (isImageOverwritten || isImageDeleted) {
       const filepath = BUCKET_SHOP_IMAGES + '/' + updatedId + '/' + exSafeFileName;
       await deleteFile(supabase, process.env.SUPABASE_STORAGE!, filepath);
     }
 
-    // 店舗画像ファイル登録
-    // 新規登録の画像ファイルが存在する場合
+    // 新しくアップロードされた画像ファイルをストレージに登録
     if (req.shop_image_file_data) {
       const filepath = BUCKET_SHOP_IMAGES + '/' + updatedId + '/' + safeFileName;
       await uploadFile(supabase, process.env.SUPABASE_STORAGE!, filepath, req.shop_image_file_data);
