@@ -241,10 +241,14 @@ export const CompanyComponent = (): JSX.Element => {
       const req: ApiRequest<CompanyDetailFormValues> = { request: data }
       return insertCompanyDetail(req) as unknown as ApiResponse<number>;
     },
-    onSuccess: (res) => {
+    onSuccess: (res, variables) => {
       openSnackbar(AlertType.SUCCESS, '会社情報の登録が完了しました。');
+      
+      // 【解決箇所】登録成功した値でフォーム状態を初期化し、離脱フラグを完全にクリアする
+      reset(variables);
+      setDirty(false);
+      
       router.push(`/company-detail/${res.data}`);
-
     },
     onSettled: () => {
       closeProcessing();
@@ -262,8 +266,13 @@ export const CompanyComponent = (): JSX.Element => {
       openProcessing();
       return updateCompanyDetail({ request: { ...data, id: id } }) as unknown as ApiResponse<number>;
     },
-    onSuccess: () => {
+    onSuccess: (res, variables) => {
       openSnackbar(AlertType.SUCCESS, '会社情報の更新が完了しました。');
+      
+      // 【解決箇所】更新完了した値でフォーム状態を初期化し、離脱フラグをクリアして確認ダイアログの表示を防ぐ
+      reset(variables);
+      setDirty(false);
+      
       router.push(`/company-detail/${id}`);
     },
     onSettled: () => {
