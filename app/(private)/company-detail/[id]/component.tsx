@@ -66,6 +66,9 @@ export const CompanyComponent = (): JSX.Element => {
 
   const [addressLoading, setAddressLoading] = useState<boolean>(false);
 
+  // 【追加】保存成功後に、リフェッチが完了するまでの間、離脱ダイアログを強制的にバイパスするためのステート
+  const [isSaved, setIsSaved] = useState<boolean>(false);
+
   /* useForm
   ------------------------------------------------------------------ */
   const {
@@ -122,6 +125,8 @@ export const CompanyComponent = (): JSX.Element => {
       reset(getInitData(conversion));
       setUrl(data.url)
       setDataLoaded(true);
+      // DBからの正規データが再ロード・初期化完了したので、保存済みロックを安全に解除する
+      setIsSaved(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
@@ -241,12 +246,15 @@ export const CompanyComponent = (): JSX.Element => {
       const req: ApiRequest<CompanyDetailFormValues> = { request: data }
       return insertCompanyDetail(req) as unknown as ApiResponse<number>;
     },
-    onSuccess: (res, variables) => {
+    onSuccess: (res) => {
       openSnackbar(AlertType.SUCCESS, '会社情報の登録が完了しました。');
       
-      // 【解決箇所】登録成功した値でフォーム状態を初期化し、離脱フラグを完全にクリアする
-      reset(variables);
+      // 保存完了ロックをかけ、ナビゲーションガードを一時的に強制解除する
+      setIsSaved(true);
       setDirty(false);
+
+      // キャッシュを無効化して、親画面(会社検索画面)をリフレッシュする
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMPANY_SEARCH_RESULT] });
       
       router.push(`/company-detail/${res.data}`);
     },
@@ -266,12 +274,16 @@ export const CompanyComponent = (): JSX.Element => {
       openProcessing();
       return updateCompanyDetail({ request: { ...data, id: id } }) as unknown as ApiResponse<number>;
     },
-    onSuccess: (res, variables) => {
+    onSuccess: () => {
       openSnackbar(AlertType.SUCCESS, '会社情報の更新が完了しました。');
       
-      // 【解決箇所】更新完了した値でフォーム状態を初期化し、離脱フラグをクリアして確認ダイアログの表示を防ぐ
-      reset(variables);
+      // 保存完了ロックをかけ、ナビゲーションガードを一時的に強制解除する
+      setIsSaved(true);
       setDirty(false);
+      
+      // キャッシュを明示的に無効化し、正規のJST時刻や部署IDを含むデータをバックグラウンドで最新化させる
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMPANY_DETAIL_INIT, id] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.COMPANY_SEARCH_RESULT] });
       
       router.push(`/company-detail/${id}`);
     },
@@ -319,8 +331,13 @@ export const CompanyComponent = (): JSX.Element => {
   /* dirty
   ------------------------------------------------------------------ */
   useEffect(() => {
-    setDirty(isDirty);
-  }, [isDirty, setDirty]);
+    if (isSaved) {
+      // 保存済みの場合は、isDirtyの判定に関わらず離脱ステートを確実に非活性(false)にする
+      setDirty(false);
+    } else {
+      setDirty(isDirty);
+    }
+  }, [isDirty, isSaved, setDirty]);
 
   useEffect(() => {
     return () => {
