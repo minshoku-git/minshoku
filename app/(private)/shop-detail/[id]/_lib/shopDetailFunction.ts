@@ -136,7 +136,7 @@ export const insertShopDetail = async (values: shopDeteilRequestData): Promise<A
       tabelog_url: req.tabelog_url,
       shop_description: req.shop_description,
       memo: req.memo,
-      usage_status: req.usage_status,
+      usage_status: UsageStatus.AVAILABLE,
       gmo_shop_code: '', 
       gmo_shop_password: '', 
     };
@@ -238,7 +238,7 @@ export const updateShopDetail = async (values: shopDeteilRequestData): Promise<A
       tabelog_url: req.tabelog_url,
       shop_description: req.shop_description,
       memo: req.memo,
-      usage_status: req.usage_status,
+      usage_status: UsageStatus.AVAILABLE,
       gmo_shop_code: '', 
       gmo_shop_password: '', 
       updated_at: timestamp,

@@ -519,6 +519,7 @@ export const ShopComponent = (): JSX.Element => {
                   fullWidth
                 />
               </ItemBase>
+              { /* 利用ステータスの非表示
               <ItemBase name={'利用ステータス'} isRequired={0}>
                 <SelectElement
                   control={control}
@@ -531,6 +532,7 @@ export const ShopComponent = (): JSX.Element => {
                   ]}
                 ></SelectElement>
               </ItemBase>
+              */}
             </Grid>
             <Grid sx={{ mt: 2 }} size={{ xs: 12 }}>
               <Button fullWidth variant="contained" type="submit">
