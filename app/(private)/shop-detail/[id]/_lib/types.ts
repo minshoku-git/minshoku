@@ -72,7 +72,7 @@ export const ShopDetailSchema = z
     tel_no: z
       .string()
       .nonempty({ message: formatString(MSG_REQUIRED, '電話番号') })
-      .max(11, formatString(MSG_MAX, '電話番号', '11')),
+      .max(11, formatString(MSG_MAX, '電話番号', '12')),
     /** メールアドレス */
     email: z
       .email(formatString(MSG_EMAIL, 'メールアドレス'))
