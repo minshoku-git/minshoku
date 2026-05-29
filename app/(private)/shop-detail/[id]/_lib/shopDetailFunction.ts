@@ -249,10 +249,12 @@ export const updateShopDetail = async (values: shopDeteilRequestData): Promise<A
     // 新規登録の画像ファイルが存在する場合
     const safeFileName = getSafeFileName(req.shop_image_file_name ?? '');
     if (req.shop_image_file_data) {
+      // 新しい画像ファイルがアップロードされた場合
       updateValues.shop_image_file_name = req.shop_image_file_name;
       updateValues.shop_image_file_bytesize = req.shop_image_file_bytesize ?? 0;
       updateValues.shop_image_safe_file_name = safeFileName;
-    } else if (!req.shop_image_file_data && exSafeFileName) {
+    } else if (req.shop_image_file_name === '' && exSafeFileName) {
+      // ユーザーが画像を削除した場合（ファイルがなく、名前が空文字で送られてきた場合）
       updateValues.shop_image_file_name = '';
       updateValues.shop_image_file_bytesize = 0;
       updateValues.shop_image_safe_file_name = '';

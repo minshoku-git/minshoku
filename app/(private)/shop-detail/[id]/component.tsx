@@ -164,6 +164,9 @@ export const ShopComponent = (): JSX.Element => {
       const formData = new FormData();
       formData.append('formValues', JSON.stringify({ ...data, id: id }));
 
+      // 修正: ファイルの有無に関わらず、現在のファイル名（既存 or 削除済み空文字）を送信する
+      formData.append('shop_image_file_name', fileName);
+      
       if (file) {
         formData.append('shop_image_file_name', file?.name ?? '');
         formData.append('shop_image_file_bytesize', file.size.toString());
