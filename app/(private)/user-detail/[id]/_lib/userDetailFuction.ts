@@ -284,7 +284,7 @@ export const pullBackUserRegistrationStatus = async (
 
     /* Update - t_user
   　------------------------------------------------------------------ */
-    const updateValues: Pick<t_user, 'user_registration_status' | 'signup_password' | 'updated_at'> = {
+    const updateValues: Pick<t_user, 'user_registration_status' | 'updated_at'> = {
       user_registration_status: UserRegistrationStatus.WAITING_EMAIL_VERIFICATION,
       updated_at: timestamp,
     };
@@ -452,9 +452,8 @@ export const approvalUserRegistrationStatus = async (
 
     /* Update - t_user
   　------------------------------------------------------------------ */
-    const updateValues: Pick<t_user, 'user_registration_status' | 'signup_password' | 'updated_at'> = {
+    const updateValues: Pick<t_user, 'user_registration_status' | 'updated_at'> = {
       user_registration_status: UserRegistrationStatus.WAITING_EMAIL_VERIFICATION,
-      signup_password: '',
       updated_at: timestamp,
     };
     
