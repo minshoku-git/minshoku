@@ -272,12 +272,42 @@ export const orderCancel = async (values: ApiRequest<OrderCancelValues>): Promis
 
   try {
     await client.query('BEGIN');
-    const selectSql = `SELECT id, payment_type, order_status_type, credit_access_id, credit_access_password FROM t_order WHERE id = $1 FOR UPDATE`;
+    const selectSql = `
+      SELECT 
+        o.id, 
+        o.payment_type, 
+        o.order_status_type, 
+        o.credit_access_id, 
+        o.credit_access_password,
+        s.shop_name,
+        s.gmo_shop_code,
+        s.gmo_shop_password
+      FROM t_order o
+      INNER JOIN t_shops s ON o.t_shops_id = s.id
+      WHERE o.id = $1 
+      FOR UPDATE`;
     const resultSelect = await client.query(selectSql, [id]);
     const order = resultSelect.rows[0];
 
+    if (!order) {
+      throw new CustomError(ErrorCodes.DB_QUERY_FAILED.code, '対象の注文情報が見つかりません。', 404);
+    }
+
     if (Number(order.payment_type) === Number(PaymentType.CREDITCARD)) {
-      const gmoRes = await alterTranGmo(order.credit_access_id, order.credit_access_password);
+      if (!order.gmo_shop_code || !order.gmo_shop_password) {
+        throw new CustomError(
+          ErrorCodes.INTERNAL_SERVER_ERROR.code,
+          `店舗「${order.shop_name}」のGMO IDまたはGMO PASSが設定されていません。マスタ設定を確認してください。`,
+          400
+        );
+      }
+
+      const gmoRes = await alterTranGmo(
+        order.credit_access_id, 
+        order.credit_access_password,
+        order.gmo_shop_code,
+        order.gmo_shop_password
+      );
       if (!gmoRes.success) throw new CustomError(ErrorCodes.INTERNAL_SERVER_ERROR.code, `GMO失敗: ${gmoRes.errInfo}`, 500);
     }
 

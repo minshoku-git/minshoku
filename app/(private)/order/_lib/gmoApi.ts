@@ -80,17 +80,20 @@ export const execTranGmo = async (
  * ⑦ 取引状態変更 (AlterTran)
  * 決済済みの取引を取り消します（キャンセル・返金）。
  */
-export const alterTranGmo = async (accessId: string, accessPass: string) => {
+export const alterTranGmo = async (
+    accessId: string, 
+    accessPass: string, 
+    shopId: string, 
+    shopPass: string
+  ) => {
   const baseUrl = 'https://pt01.mul-pay.jp';
-  const shopId = 'tshop00076633';
-  const shopPass = 'as5fkaw2';
-
   const params = new URLSearchParams();
+
   params.append('ShopID', shopId);
   params.append('ShopPass', shopPass);
   params.append('AccessID', accessId);
   params.append('AccessPass', accessPass);
-  params.append('JobCd', 'VOID'); // 取消を指定
+  params.append('JobCd', 'VOID');
 
   try {
     const response = await fetch(`${baseUrl}/payment/AlterTran.idPass`, {
