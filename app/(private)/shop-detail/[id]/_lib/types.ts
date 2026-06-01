@@ -77,6 +77,16 @@ export const ShopDetailSchema = z
     email: z
       .email(formatString(MSG_EMAIL, 'メールアドレス'))
       .nonempty({ message: formatString(MSG_REQUIRED, 'メールアドレス') }),
+    /** GMO ID */
+    gmo_shop_code: z
+      .string()
+      .max(64, formatString(MSG_MAX, 'GMO ID', '64'))
+      .optional(),
+    /** GMO PASS */
+    gmo_shop_password: z
+      .string()
+      .max(64, formatString(MSG_MAX, 'GMO PASS', '64'))
+      .optional(),
     /** 店舗URL */
     tabelog_url: z.string().url('URL形式ではありません').or(z.literal('')),
     /** 店舗紹介文 */

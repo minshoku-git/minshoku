@@ -437,6 +437,26 @@ export const ShopComponent = (): JSX.Element => {
                   slotProps={{ htmlInput: { maxLength: 256 } }}
                 />
               </ItemBase>
+              <ItemBase name={'GMO ID'} isRequired={1}>
+                <TextFieldElement
+                  control={control}
+                  size="small"
+                  color={'primary'}
+                  name="gmo_shop_code"
+                  fullWidth
+                  slotProps={{ htmlInput: { maxLength: 64 } }}
+                />
+              </ItemBase>
+              <ItemBase name={'GMO PASS'} isRequired={1}>
+                <TextFieldElement
+                  control={control}
+                  size="small"
+                  color={'primary'}
+                  name="gmo_shop_password"
+                  fullWidth
+                  slotProps={{ htmlInput: { maxLength: 64 } }}
+                />
+              </ItemBase>
               <ItemBase name={'店舗イメージ'} isRequired={1}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   {!fileName ? (
@@ -558,6 +578,8 @@ const defalutData: ShopDetailFormValues = {
   shop_building_name: '',
   tel_no: '',
   email: '',
+  gmo_shop_code: '',
+  gmo_shop_password: '',
   tabelog_url: '',
   shop_description: '',
   specified_commercial_transaction_act: '',

@@ -69,6 +69,8 @@ export const searchShopDetail = async (
       shop_building_name: data.shop_building_name ?? '',
       tel_no: data.tel_no ?? '',
       email: data.email ?? '',
+      gmo_shop_code: data.gmo_shop_code ?? '',
+      gmo_shop_password: data.gmo_shop_password ?? '',
       specified_commercial_transaction_act: data.specified_commercial_transaction_act ?? '',
       memo: data.memo ?? '',
       usage_status: (data.usage_status as UsageStatus) ?? UsageStatus.AVAILABLE,
@@ -137,8 +139,8 @@ export const insertShopDetail = async (values: shopDeteilRequestData): Promise<A
       shop_description: req.shop_description,
       memo: req.memo,
       usage_status: UsageStatus.AVAILABLE,
-      gmo_shop_code: '', 
-      gmo_shop_password: '', 
+      gmo_shop_code: req.gmo_shop_code, 
+      gmo_shop_password: req.gmo_shop_password, 
     };
     const { columns, placeholders, values } = getPostgreSqlItems(insertValues);
     const insertShopText = `INSERT INTO t_shops (${columns.join(',')}) VALUES (${placeholders}) RETURNING id;`;
@@ -239,8 +241,8 @@ export const updateShopDetail = async (values: shopDeteilRequestData): Promise<A
       shop_description: req.shop_description,
       memo: req.memo,
       usage_status: UsageStatus.AVAILABLE,
-      gmo_shop_code: '', 
-      gmo_shop_password: '', 
+      gmo_shop_code: req.gmo_shop_code ?? '',
+      gmo_shop_password: req.gmo_shop_password ?? '',
       updated_at: timestamp,
     };
 
