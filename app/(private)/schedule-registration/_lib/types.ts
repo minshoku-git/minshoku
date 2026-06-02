@@ -31,3 +31,17 @@ export const ScheduleCsvSchema = z
   .strict();
 
 export type ScheduleCsvValues = z.infer<typeof ScheduleCsvSchema>;
+
+/** 登録・更新対象外となった行のデータ型 */
+export type FailedScheduleRow = {
+  delivery_day: string;
+  t_companies_id: number;
+  t_shops_id: number;
+  menu_name: string;
+};
+
+/** CSV一括処理全体のレスポンス型 */
+export type ScheduleRegistrationResult = {
+  successCount: number;
+  failedRows: FailedScheduleRow[];
+};

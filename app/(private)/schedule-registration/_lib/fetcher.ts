@@ -1,15 +1,17 @@
 import { fetcher } from '@/app/_lib/fetcher';
 import { ApiResponse } from '@/app/_types/types';
+import { ScheduleRegistrationResult } from './types';
 
 /**
- * searchShopDetail
+ * upsertScheduleFetcher
  * @param {FormData} formData
- * @returns {Promise<ApiResponse<number>>}
+ * @returns {Promise<ApiResponse<ScheduleRegistrationResult>>} ★型を変更
  */
-export const upsertScheduleFetcher = (formData: FormData): Promise<ApiResponse<number>> => {
-  return fetcher<ApiResponse<number>>('/api/schedule-registration/insert', {
+export const upsertScheduleFetcher = (
+  formData: FormData
+): Promise<ApiResponse<ScheduleRegistrationResult>> => {
+  return fetcher<ApiResponse<ScheduleRegistrationResult>>('/api/schedule-registration/insert', {
     method: 'POST',
     body: formData,
-    //  headers.Content-Typeは指定しない。
   });
 };

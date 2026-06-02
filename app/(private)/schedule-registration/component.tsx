@@ -30,6 +30,7 @@ export const ScheduleRegistrationComponent = (): JSX.Element => {
   ------------------------------------------------------------------ */
   /* fileUpload */
   const [file, setFile] = useState<File>();
+  const [failedRows, setFailedRows] = useState<any[]>([]);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   /* functions - Insert
@@ -44,16 +45,32 @@ export const ScheduleRegistrationComponent = (): JSX.Element => {
       openProcessing();
       const formData = new FormData();
       formData.append('csvFile', file!);
-      return upsertScheduleFetcher(formData) as unknown as ApiResponse<number>;
+      return upsertScheduleFetcher(formData) as unknown as ApiResponse<any>; // ★型をany(Result)で受ける
     },
-    onSuccess: (res: ApiResponse<number>) => {
+    onSuccess: (res: ApiResponse<any>) => {
       setFile(undefined);
-      openSnackbar(AlertType.SUCCESS, 'スケジュールを登録しました。');
+
+      // 1. まず型ガードで「処理自体が成功していること」を確定させます
+      if (res.success) {
+        // ここを通ることで、TypeScriptが res.data の存在を安全だと認識します
+        if (res.data && res.data.failedRows && res.data.failedRows.length > 0) {
+          setFailedRows(res.data.failedRows);
+          openSnackbar(AlertType.WARNING, '一部のデータに重複エラーがあり、登録されませんでした。');
+        } else {
+          setFailedRows([]);
+          openSnackbar(AlertType.SUCCESS, 'スケジュールを登録しました。');
+        }
+      } else {
+        // 2. サーバー側で致命的な例外（システムエラー等）が発生して success: false になった場合
+        setFailedRows([]);
+        openSnackbar(AlertType.ERROR, res.error?.message || 'スケジュールの登録に失敗しました。');
+      }
     },
     onSettled: () => {
       closeProcessing();
     },
   });
+
 
   /* functions - 添付ファイル
   ------------------------------------------------------------------ */
@@ -75,8 +92,8 @@ export const ScheduleRegistrationComponent = (): JSX.Element => {
     setFile(event.target.files?.[0]);
   };
   const fileDelete = () => {
-    console.log('fileDelete click!');
     setFile(undefined);
+    setFailedRows([]); // ★クリア処理を追加
   };
 
   /* JSX.Element
@@ -96,6 +113,21 @@ export const ScheduleRegistrationComponent = (): JSX.Element => {
         </Grid>
         <Divider />
         <Box sx={{ m: 3 }}>
+          {/* ★追加: 登録できなかったデータを画面の上部に分かりやすく出力するコンテナ */}
+          {failedRows.length > 0 && (
+            <Box sx={{ mb: 3, p: 2, bgcolor: '#fdf2f2', border: '1px solid #f5c2c2', borderRadius: 2 }}>
+              <Typography variant="subtitle1" color="error" fontWeight="bold" sx={{ mb: 1 }}>
+                ⚠️ 以下のデータは、同一日に別の店舗が既に登録されているため登録できませんでした：
+              </Typography>
+              <Box component="ul" sx={{ pl: 2, m: 0 }}>
+                {failedRows.map((row, idx) => (
+                  <Typography component="li" variant="body2" key={idx} color="error.main">
+                    {`配達日: ${row.delivery_day} / 会社ID: ${row.t_companies_id} / 店舗ID: ${row.t_shops_id} (${row.menu_name})`}
+                  </Typography>
+                ))}
+              </Box>
+            </Box>
+          )}
           <Grid container rowSpacing={2} columnSpacing={{ xs: 1, sm: 2, md: 3 }} direction="column">
             <ItemBase name={'スケジュールデータ'} isRequired={0}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
