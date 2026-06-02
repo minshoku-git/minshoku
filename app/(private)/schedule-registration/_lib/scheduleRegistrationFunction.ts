@@ -1,7 +1,7 @@
 import { createPgClient } from '@/app/_lib/supabase/server';
 import { t_menu_schedule } from '@/app/_lib/supabase/tableTypes';
 import { rollbackWithLog } from '@/app/_lib/supabase/transaction';
-import { getNow, toUTCDateFromJSTDate } from '@/app/_lib/utils/getDateTime';
+import { getNow } from '@/app/_lib/utils/getDateTime'; // ★不要な toUTCDateFromJSTDate を削除
 import { getPostgreSqlItems } from '@/app/_lib/utils/utils';
 import { ApiResponse } from '@/app/_types/types';
 import { CustomError } from '@/app/errors/customError';
@@ -31,9 +31,17 @@ export const RefreshingScheduleData = async (
     await client.query('BEGIN');
 
     for (const item of req) {
+      /* 日付フォーマットの標準化 (タイムゾーンによるズレを防止)
+      ------------------------------------------------------------------ */
+      // DateオブジェクトからJST上の純粋な「年・月・日」の文字列を生成します。
+      const year = item.delivery_day.getFullYear();
+      const month = String(item.delivery_day.getMonth() + 1).padStart(2, '0');
+      const day = String(item.delivery_day.getDate()).padStart(2, '0');
+      const delivery_day_str = `${year}-${month}-${day}`;
+
       /* Select - t_menu_schedule
     　------------------------------------------------------------------ */
-      // 会社IDと配達日が一致する既存データを一度検索します（店舗ID比較のため）
+      // ★ 修正: $1 にタイムゾーンのブレがない YYYY-MM-DD 文字列を渡すように変更
       const selectSql = `
         SELECT id, t_shops_id
         FROM t_menu_schedule
@@ -42,8 +50,7 @@ export const RefreshingScheduleData = async (
         LIMIT 1;
       `;
 
-      const delivery_day_utc = toUTCDateFromJSTDate(item.delivery_day);
-      const queryValues = [delivery_day_utc, item.t_companies_id];
+      const queryValues = [delivery_day_str, item.t_companies_id];
       const exData = await client.query<t_menu_schedule>(selectSql, queryValues);
       const row = exData.rows[0];
 
@@ -52,7 +59,7 @@ export const RefreshingScheduleData = async (
         if (Number(row.t_shops_id) === Number(item.t_shops_id)) {
           /* 1. 全てが一致する -> UPDATE */
           const updateValues: Omit<t_menu_schedule, 'id' | 't_companies_id' | 't_shops_id' | 'created_at'> = {
-            delivery_day: item.delivery_day,
+            delivery_day: delivery_day_str as any, // ★ DBへの型パースミスを防ぐため文字列で指定
             menu_name: item.menu_name,
             menu_description: item.menu_description,
             allergen_labelling: item.allergen_labelling,
@@ -77,13 +84,8 @@ export const RefreshingScheduleData = async (
           successCount++;
         } else {
           /* 2. 配達日・会社IDは一致するが、店舗IDが違う場合 -> 登録対象外（スキップして画面へ返却） */
-          // 画面に綺麗に表示するため、日付オブジェクトを yyyy-MM-dd 文字列に整形します
-          const dateStr = item.delivery_day instanceof Date
-            ? item.delivery_day.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-')
-            : String(item.delivery_day);
-
           failedRows.push({
-            delivery_day: dateStr,
+            delivery_day: delivery_day_str, // ★ 整形済みの綺麗な文字列をそのまま画面へ返す
             t_companies_id: item.t_companies_id,
             t_shops_id: item.t_shops_id,
             menu_name: item.menu_name,
@@ -92,7 +94,7 @@ export const RefreshingScheduleData = async (
       } else {
         /* 3. 一致するものが何もない場合 -> INSERT */
         const insertValues: Omit<t_menu_schedule, 'id' | 'created_at' | 'updated_at'> = {
-          delivery_day: item.delivery_day,
+          delivery_day: delivery_day_str as any, // ★ インサート時も文字列で安全に登録
           t_companies_id: item.t_companies_id,
           t_shops_id: item.t_shops_id,
           menu_name: item.menu_name,
