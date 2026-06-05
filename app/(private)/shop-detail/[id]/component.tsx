@@ -423,7 +423,7 @@ export const ShopComponent = (): JSX.Element => {
                   size="small"
                   color={'primary'}
                   name="tel_no"
-                  slotProps={{ htmlInput: { maxLength: 12 } }}
+                  slotProps={{ htmlInput: { maxLength: 13 } }}
                   fullWidth
                 />
               </ItemBase>
