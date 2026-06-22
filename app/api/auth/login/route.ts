@@ -39,37 +39,24 @@ export async function POST(req: NextRequest) {
   });
 
   try {
-    // 🔍【DEBUG ①】現在Next.jsが繋ぎにいっているSupabaseのURLを確認
-    console.log('=== [DEBUG ①] 接続先Supabase情報 ===');
-    console.log('URL_DEV:', process.env.SUPABASE_URL_DEV);
-    console.log('=== ============================ ===');
-
     // 1.ユーザー情報取得
-    console.log(`=== [DEBUG ②] t_administrator 検索開始 (Email: ${email}) ===`);
-    // const query = supabase.from('t_administrator').select('*').eq('email', email).single();
-    const query = supabase.from('t_administrator').select('*').single();
-    const { data: adminData, error: dbError } = (await query) as PostgrestSingleResponse<t_administrator>;
+    const query = supabase.from('t_administrator').select('*').eq('email', email).single();
+    const { error } = (await query) as PostgrestSingleResponse<t_administrator>;
 
-    if (dbError) {
-      console.error('❌ [DEBUG ② エラー] テーブルからの管理者取得に失敗しました。');
-      console.error('エラー詳細:', dbError);
+    if (error) {
+      // MEMO: メールアドレスの特定を避けるためにサインインエラーと同じエラーを出力
       throw new CustomError(ErrorCodes.INVALID_CREDENTIALS);
     }
-    console.log('⭕ [DEBUG ② 成功] テーブルに管理者が存在しました:', adminData);
 
     // 2.Supabaseでサインインを実行
-    console.log('=== [DEBUG ③] Supabase Auth サインイン実行 ===');
-    const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
+    const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (signInError) {
-      console.error('❌ [DEBUG ③ エラー] Supabase Authの認証に失敗しました。');
-      console.error('エラーコード (code):', signInError.code);
-      console.error('メッセージ (message):', signInError.message);
-      console.error('エラー詳細 (status):', signInError.status);
+    console.log(signInError);
 
+    if (signInError) {
       const raw = signInError?.code;
       const code: string = typeof raw === 'string' ? raw : '';
 
@@ -79,8 +66,6 @@ export async function POST(req: NextRequest) {
         throw new CustomError(ErrorCodes.LOGIN_FAILED);
       }
     }
-    
-    console.log('🎉 [DEBUG ③ 成功] Auth認証も完全にパスしました！', authData);
 
     // サインイン成功
     const result: ApiResponse<null> = { success: true, data: null };
@@ -92,7 +77,7 @@ export async function POST(req: NextRequest) {
     });
 
     return response;
-  }catch (e: unknown) {
+  } catch (e: unknown) {
     console.error(e);
     if (e instanceof CustomError) {
       return NextResponse.json(e, { status: e.status });
