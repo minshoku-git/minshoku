@@ -46,7 +46,8 @@ export async function POST(req: NextRequest) {
 
     // 1.ユーザー情報取得
     console.log(`=== [DEBUG ②] t_administrator 検索開始 (Email: ${email}) ===`);
-    const query = supabase.from('t_administrator').select('*').eq('email', email).single();
+    // const query = supabase.from('t_administrator').select('*').eq('email', email).single();
+    const query = supabase.from('t_administrator').select('*').single();
     const { data: adminData, error: dbError } = (await query) as PostgrestSingleResponse<t_administrator>;
 
     if (dbError) {
