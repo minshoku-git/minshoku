@@ -3,36 +3,37 @@
  * ⑤ 取引登録 (EntryTran)
  * 決済の枠を作成し、AccessIDを取得します。
  */
-export const entryTranGmo = async (orderId: string, amount: number) => {
-  const baseUrl = 'https://pt01.mul-pay.jp';
-  const shopId = 'tshop00076633';
-  const shopPass = 'as5fkaw2'; // ★ご提示いただいたパスワード
+// export const entryTranGmo = async (orderId: string, amount: number) => {
+//   // const baseUrl = 'https://pt01.mul-pay.jp';
+//   const baseUrl = 'https://p01.mul-pay.jp';
+//   const shopId = 'tshop00076633';
+//   const shopPass = 'as5fkaw2'; // ★ご提示いただいたパスワード
 
-  const params = new URLSearchParams();
-  params.append('ShopID', shopId);
-  params.append('ShopPass', shopPass);
-  params.append('OrderID', orderId);
-  params.append('Amount', String(amount));
-  params.append('JobCd', 'CAPTURE'); // 即時売上
+//   const params = new URLSearchParams();
+//   params.append('ShopID', shopId);
+//   params.append('ShopPass', shopPass);
+//   params.append('OrderID', orderId);
+//   params.append('Amount', String(amount));
+//   params.append('JobCd', 'CAPTURE'); // 即時売上
 
-  try {
-    const response = await fetch(`${baseUrl}/payment/EntryTran.idPass`, {
-      method: 'POST',
-      body: params,
-    });
-    const text = new TextDecoder('shift-jis').decode(await response.arrayBuffer());
-    const resParams = new URLSearchParams(text);
+//   try {
+//     const response = await fetch(`${baseUrl}/payment/EntryTran.idPass`, {
+//       method: 'POST',
+//       body: params,
+//     });
+//     const text = new TextDecoder('shift-jis').decode(await response.arrayBuffer());
+//     const resParams = new URLSearchParams(text);
 
-    return {
-      success: !resParams.get('ErrCode'),
-      accessId: resParams.get('AccessID'),
-      accessPass: resParams.get('AccessPass'),
-      errInfo: resParams.get('ErrInfo'),
-    };
-  } catch (e) {
-    return { success: false, errInfo: 'CONNECTION_ERROR' };
-  }
-};
+//     return {
+//       success: !resParams.get('ErrCode'),
+//       accessId: resParams.get('AccessID'),
+//       accessPass: resParams.get('AccessPass'),
+//       errInfo: resParams.get('ErrInfo'),
+//     };
+//   } catch (e) {
+//     return { success: false, errInfo: 'CONNECTION_ERROR' };
+//   }
+// };
 
 /**
  * ⑥ 決済実行 (ExecTran)
@@ -45,9 +46,16 @@ export const execTranGmo = async (
   memberId: string,
   cardSeq: string
 ) => {
-  const baseUrl = 'https://pt01.mul-pay.jp';
-  const siteId = 'tsite00060950';
-  const sitePass = '2sk628ed';
+
+  // stg環境
+  // const baseUrl = 'https://pt01.mul-pay.jp';
+  // const siteId = 'tsite00060950';
+  // const sitePass = '2sk628ed';
+
+  const baseUrl = 'https://p01.mul-pay.jp';
+  const siteId = 'mst2000042968';
+  const sitePass = '6f565k4e';
+
 
   const params = new URLSearchParams();
   params.append('AccessID', accessId);
@@ -86,7 +94,8 @@ export const alterTranGmo = async (
     shopId: string, 
     shopPass: string
   ) => {
-  const baseUrl = 'https://pt01.mul-pay.jp';
+  // const baseUrl = 'https://pt01.mul-pay.jp';
+  const baseUrl = 'https://p01.mul-pay.jp';
   const params = new URLSearchParams();
 
   params.append('ShopID', shopId);
