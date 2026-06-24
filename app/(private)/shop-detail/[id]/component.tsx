@@ -148,10 +148,14 @@ export const ShopComponent = (): JSX.Element => {
       setDirty(false);
       
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SHOP_SEARCH_RESULT] });
-      refetch();
       
       setFile(undefined);
       openSnackbar(AlertType.SUCCESS, '店舗情報の更新が完了しました。');
+
+      // ⭕ 2. サーバーから戻ってきた新しい店舗IDを使って、その店舗の詳細（編集）画面へ移動させる
+      if (res.success && res.data) {
+        router.push(`/shop-detail/${res.data}`);
+      }
     },
     onSettled: () => {
       closeProcessing();

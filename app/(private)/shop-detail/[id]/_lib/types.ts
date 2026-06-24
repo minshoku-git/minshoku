@@ -35,7 +35,7 @@ export type ShopDetailInitValues = z.infer<typeof ShopDetailInitSchema>;
 export const ShopDetailSchema = z
   .object({
     /** 店舗ID */
-    id: z.string().optional().nullable(),
+    id: z.string().optional(),
     /** 店舗名 */
     shop_name: z
       .string()
