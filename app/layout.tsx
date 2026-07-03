@@ -15,6 +15,12 @@ export const metadata: Metadata = {
     template: '%s | みんなの社食',
   },
   description: 'みんなの社食',
+
+  // 検索エンジンにインデックスさせない設定（noindex, nofollow）
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 /**
