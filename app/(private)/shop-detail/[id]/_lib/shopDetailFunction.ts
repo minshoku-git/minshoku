@@ -277,9 +277,16 @@ export const updateShopDetail = async (values: shopDeteilRequestData): Promise<A
 
     const updatedId = result.rows[0]?.id;
 
-    /* Upload / Delete - shop-images (【修正箇所】不要な誤爆削除を防ぐよう厳格化)
+    /* Upload / Delete - shop-images (【修正箇所】アップロード失敗時に古い画像だけ消えて参照切れになるのを防ぐため、
+       新しい画像のアップロードを先に行い、成功した場合のみ古い画像を削除する)
   　------------------------------------------------------------------ */
-    
+
+    // 新しくアップロードされた画像ファイルをストレージに登録
+    if (req.shop_image_file_data) {
+      const filepath = BUCKET_SHOP_IMAGES + '/' + updatedId + '/' + safeFileName;
+      await uploadFile(supabase, process.env.SUPABASE_STORAGE!, filepath, req.shop_image_file_data);
+    }
+
     // 既存画像があり、かつ「画像を上書きアップロードする場合」または「ゴミ箱ボタンで明示的に画像を消去した場合」のみ、ストレージから古いファイルを削除
     const isImageOverwritten = !!req.shop_image_file_data && !!exSafeFileName;
     const isImageDeleted = !req.shop_image_file_data && req.shop_image_file_name === '' && !!exSafeFileName;
@@ -287,12 +294,6 @@ export const updateShopDetail = async (values: shopDeteilRequestData): Promise<A
     if (isImageOverwritten || isImageDeleted) {
       const filepath = BUCKET_SHOP_IMAGES + '/' + updatedId + '/' + exSafeFileName;
       await deleteFile(supabase, process.env.SUPABASE_STORAGE!, filepath);
-    }
-
-    // 新しくアップロードされた画像ファイルをストレージに登録
-    if (req.shop_image_file_data) {
-      const filepath = BUCKET_SHOP_IMAGES + '/' + updatedId + '/' + safeFileName;
-      await uploadFile(supabase, process.env.SUPABASE_STORAGE!, filepath, req.shop_image_file_data);
     }
 
     /* --------------------------------------------------------------- */
