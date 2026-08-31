@@ -299,10 +299,12 @@ export const orderCancel = async (values: ApiRequest<OrderCancelValues>): Promis
         o.id,
         o.payment_type,
         o.order_status_type,
+        o.amount,
         o.credit_access_id,
         o.credit_access_password,
         o.paypay_access_id,
         o.paypay_access_password,
+        o.gmo_order_id,
         s.shop_name,
         s.gmo_shop_code,
         s.gmo_shop_password
@@ -349,7 +351,9 @@ export const orderCancel = async (values: ApiRequest<OrderCancelValues>): Promis
         order.paypay_access_id,
         order.paypay_access_password,
         order.gmo_shop_code,
-        order.gmo_shop_password
+        order.gmo_shop_password,
+        order.gmo_order_id,
+        order.amount
       );
       if (!paypayRes.success)
         throw new CustomError(ErrorCodes.INTERNAL_SERVER_ERROR.code, `PayPay失敗: ${paypayRes.errInfo}`, 500);
