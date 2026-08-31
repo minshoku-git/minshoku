@@ -299,7 +299,7 @@ export const orderCancel = async (values: ApiRequest<OrderCancelValues>): Promis
         o.id,
         o.payment_type,
         o.order_status_type,
-        o.amount,
+        o.user_burden_amount,
         o.credit_access_id,
         o.credit_access_password,
         o.paypay_access_id,
@@ -347,13 +347,16 @@ export const orderCancel = async (values: ApiRequest<OrderCancelValues>): Promis
         );
       }
 
+      // CancelAmountは注文の合計金額(amount)ではなく、実際にPayPayへ請求した金額
+      // (会社負担分を差し引いたuser_burden_amount)と一致させる必要がある
+      // (GMOテスト環境での実疎通で確認済み。不一致だとM01085011エラーになる)。
       const paypayRes = await paypayCancelReturn(
         order.paypay_access_id,
         order.paypay_access_password,
         order.gmo_shop_code,
         order.gmo_shop_password,
         order.gmo_order_id,
-        order.amount
+        order.user_burden_amount
       );
       if (!paypayRes.success)
         throw new CustomError(ErrorCodes.INTERNAL_SERVER_ERROR.code, `PayPay失敗: ${paypayRes.errInfo}`, 500);
