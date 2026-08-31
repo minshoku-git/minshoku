@@ -46,16 +46,9 @@ export const execTranGmo = async (
   memberId: string,
   cardSeq: string
 ) => {
-
-  // stg環境
-  // const baseUrl = 'https://pt01.mul-pay.jp';
-  // const siteId = 'tsite00060950';
-  // const sitePass = '2sk628ed';
-
-  const baseUrl = 'https://p01.mul-pay.jp';
-  const siteId = 'mst2000042968';
-  const sitePass = '6f565k4e';
-
+  const baseUrl = process.env.GMO_BASE_URL!;
+  const siteId = process.env.GMO_SITE_ID!;
+  const sitePass = process.env.GMO_SITE_PASS!;
 
   const params = new URLSearchParams();
   params.append('AccessID', accessId);
@@ -88,14 +81,8 @@ export const execTranGmo = async (
  * ⑦ 取引状態変更 (AlterTran)
  * 決済済みの取引を取り消します（キャンセル・返金）。
  */
-export const alterTranGmo = async (
-    accessId: string, 
-    accessPass: string, 
-    shopId: string, 
-    shopPass: string
-  ) => {
-  // const baseUrl = 'https://pt01.mul-pay.jp';
-  const baseUrl = 'https://p01.mul-pay.jp';
+export const alterTranGmo = async (accessId: string, accessPass: string, shopId: string, shopPass: string) => {
+  const baseUrl = process.env.GMO_BASE_URL!;
   const params = new URLSearchParams();
 
   params.append('ShopID', shopId);
