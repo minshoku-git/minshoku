@@ -447,7 +447,7 @@ export const CompanyComponent = (): JSX.Element => {
                     size="small"
                     color={'primary'}
                     name="restaurant_name"
-                    slotProps={{ htmlInput: { maxLength: 7 } }}
+                    slotProps={{ htmlInput: { maxLength: 20 } }}
                     fullWidth
                   />
                 </ItemBase>

@@ -51,7 +51,7 @@ export const CompanyDetailSchema = z
     restaurant_name: z
       .string()
       .nonempty({ message: formatString(MSG_REQUIRED, '食堂名') })
-      .max(256, formatString(MSG_MAX, '食堂名', '256')),
+      .max(20, formatString(MSG_MAX, '食堂名', '20')),
     /** 郵便番号(前半) */
     postal_code_prefix: z
       .string()
