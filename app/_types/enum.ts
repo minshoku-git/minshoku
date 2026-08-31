@@ -108,6 +108,8 @@ export enum OrderStatusType {
   USER_CANCEL = '1',
   /** 2:システムキャンセル */
   SYSTEM_CANCEL = '2',
+  /** 3:PayPay決済待ち */
+  PENDING_PAYMENT = '3',
 }
 
 /** ユーザー承認種別 */

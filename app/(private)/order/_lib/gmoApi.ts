@@ -112,3 +112,43 @@ export const alterTranGmo = async (accessId: string, accessPass: string, shopId:
     return { success: false, errInfo: 'CONNECTION_ERROR' };
   }
 };
+
+/**
+ * ⑧ PayPayキャンセル・返金 (PaypayCancelReturn)
+ * PayPay決済済みの取引を取り消します（キャンセル・返金）。
+ * TODO(GMO doc要確認): 当該APIの詳細パラメータページ
+ * (docs.gmo-pg.com/mulpay/apis/protocol-type/idpass/paypay-cancel-return)
+ * がテスト環境アカウント専用で非公開のため、既存のAlterTran(JobCd=VOID)と
+ * 同じ構成をベースラインとしている。GMOテスト環境での実疎通で確認・調整すること。
+ */
+export const paypayCancelReturn = async (accessId: string, accessPass: string, shopId: string, shopPass: string) => {
+  const baseUrl = process.env.GMO_BASE_URL!;
+  const params = new URLSearchParams();
+
+  params.append('ShopID', shopId);
+  params.append('ShopPass', shopPass);
+  params.append('AccessID', accessId);
+  params.append('AccessPass', accessPass);
+  params.append('JobCd', 'VOID'); // TODO(GMO doc要確認): PayPayでのキャンセル/返金時のJobCd値
+
+  try {
+    const response = await fetch(`${baseUrl}/payment/PaypayCancelReturn.idPass`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params.toString(),
+    });
+
+    const text = new TextDecoder('shift-jis').decode(await response.arrayBuffer());
+    const resParams = new URLSearchParams(text);
+
+    if (resParams.get('ErrCode')) {
+      console.error('[paypayCancelReturn] Error:', resParams.get('ErrInfo'));
+      return { success: false, errInfo: resParams.get('ErrInfo') };
+    }
+
+    return { success: true };
+  } catch (e) {
+    console.error('[paypayCancelReturn] Connection Error:', e);
+    return { success: false, errInfo: 'CONNECTION_ERROR' };
+  }
+};

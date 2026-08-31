@@ -9,7 +9,7 @@ import { ApiRequest, ApiResponse, SortItems } from '@/app/_types/types';
 import { CustomError } from '@/app/errors/customError';
 import { ErrorCodes } from '@/app/errors/ErrorCodes';
 
-import { alterTranGmo } from './gmoApi';
+import { alterTranGmo, paypayCancelReturn } from './gmoApi';
 import {
   OrderCancelValues,
   OrderData,
@@ -85,6 +85,7 @@ const getOrderStatusName = (status: string | number | undefined | null): string 
   if (strStatus === String(OrderStatusType.VALID)) return '有効';
   if (strStatus === String(OrderStatusType.USER_CANCEL)) return 'キャンセル(ユーザー)';
   if (strStatus === String(OrderStatusType.SYSTEM_CANCEL)) return 'キャンセル(システム)';
+  if (strStatus === String(OrderStatusType.PENDING_PAYMENT)) return 'PayPay決済待ち';
   return strStatus;
 };
 
@@ -96,15 +97,17 @@ const toJstDateTimeString = (dateVal: Date | string | null | undefined): string 
   const d = typeof dateVal === 'string' ? new Date(dateVal) : dateVal;
   if (isNaN(d.getTime())) return '';
 
-  return d.toLocaleString('ja-JP', {
-    timeZone: 'Asia/Tokyo',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  }).replace(/\//g, '-');
+  return d
+    .toLocaleString('ja-JP', {
+      timeZone: 'Asia/Tokyo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    })
+    .replace(/\//g, '-');
 };
 
 /* オーダー一覧 ------------------------------------------------------------------ */
@@ -132,7 +135,9 @@ export const searchOrderList = async (
 
     let query = supabase
       .from('v_order_' + process.env.SUPABASE_DB_SCHEMA)
-      .select(`id, delivery_day, count, payment_type, order_status_type, company_name, branch_name, user_name, user_name_kana`)
+      .select(
+        `id, delivery_day, count, payment_type, order_status_type, company_name, branch_name, user_name, user_name_kana`
+      )
       .range(startRange, endRange);
     query = applyFilters(query, req);
     query = applySorts(query, sortItems);
@@ -147,7 +152,13 @@ export const searchOrderList = async (
     }));
 
     const { startRow, endRow, totalPage } = getPagenationsItems(startRange, data.length, count ?? 0);
-    return { success: true, data: { orderDatas: res, paginate: { count, startRow, endRow, totalPage, currentPage: sortItems?.nextPage ?? 0 } } };
+    return {
+      success: true,
+      data: {
+        orderDatas: res,
+        paginate: { count, startRow, endRow, totalPage, currentPage: sortItems?.nextPage ?? 0 },
+      },
+    };
   } catch (e: any) {
     return { success: false, error: e instanceof CustomError ? e : ErrorCodes.INTERNAL_SERVER_ERROR };
   }
@@ -170,9 +181,11 @@ export const createOrderListCsvData = async (
     const ids = data.map((m) => m.id);
     const detailQuery = supabase
       .from('t_order')
-      .select(`id, delivery_day, count, list_price, amount, companies_burden_amount, user_burden_amount, payment_type, order_status_type, order_datetime, cancel_datetime, t_menu_schedule!inner(menu_name), t_shops!inner(shop_name), t_user!inner(id, user_name, user_name_kana, user_email, optional_item_answer_1, optional_item_answer_2), t_companies!inner(id, company_name, branch_name, optional_item_title_1, optional_item_title_2), t_companies_department!inner(department_name), t_companies_employment_status!inner(employment_status_name)`)
+      .select(
+        `id, delivery_day, count, list_price, amount, companies_burden_amount, user_burden_amount, payment_type, order_status_type, order_datetime, cancel_datetime, t_menu_schedule!inner(menu_name), t_shops!inner(shop_name), t_user!inner(id, user_name, user_name_kana, user_email, optional_item_answer_1, optional_item_answer_2), t_companies!inner(id, company_name, branch_name, optional_item_title_1, optional_item_title_2), t_companies_department!inner(department_name), t_companies_employment_status!inner(employment_status_name)`
+      )
       .in('id', ids);
-    
+
     const { data: dataDetail, error: errorDetail } = (await detailQuery) as PostgrestSingleResponse<OrderCsvDbRow[]>;
     if (errorDetail) throw new CustomError(ErrorCodes.DB_QUERY_FAILED.code, '詳細取得失敗', 500);
 
@@ -213,8 +226,9 @@ export const createOrderListCsvData = async (
 
 const applyFilters = (query: any, req: OrderSearchFormValues) => {
   if (req.user_name) query = query.or(`user_name.ilike.%${req.user_name}%, user_name_kana.ilike.%${req.user_name}%`);
-  if (req.company_name) query = query.or(`company_name.ilike.%${req.company_name}%, branch_name.ilike.%${req.company_name}%`);
-  
+  if (req.company_name)
+    query = query.or(`company_name.ilike.%${req.company_name}%, branch_name.ilike.%${req.company_name}%`);
+
   if (req.deliveryFrom) query = query.gte('delivery_day', req.deliveryFrom.toISOString());
   if (req.deliveryTo) {
     const endOfDay = new Date(req.deliveryTo.getTime() + 24 * 60 * 60 * 1000 - 1);
@@ -239,13 +253,21 @@ export const searchOrderDetail = async (
   try {
     const query = supabase
       .from('t_order')
-      .select(`id, delivery_day, count, list_price, amount, companies_burden_amount, user_burden_amount, payment_type, order_status_type, order_datetime, cancel_datetime, t_menu_schedule!inner(menu_name), t_shops!inner(shop_name), t_user!inner(id, user_name, user_name_kana, user_email, optional_item_answer_1, optional_item_answer_2), t_companies!inner(id, company_name, branch_name, optional_item_title_1, optional_item_title_2), t_companies_department!inner(department_name), t_companies_employment_status!inner(employment_status_name)`)
+      .select(
+        `id, delivery_day, count, list_price, amount, companies_burden_amount, user_burden_amount, payment_type, order_status_type, order_datetime, cancel_datetime, t_menu_schedule!inner(menu_name), t_shops!inner(shop_name), t_user!inner(id, user_name, user_name_kana, user_email, optional_item_answer_1, optional_item_answer_2), t_companies!inner(id, company_name, branch_name, optional_item_title_1, optional_item_title_2), t_companies_department!inner(department_name), t_companies_employment_status!inner(employment_status_name)`
+      )
       .eq('id', id)
       .single();
     const { data, error } = (await query) as PostgrestSingleResponse<orderDeteilResponseData>;
     if (error || !data) throw new CustomError(ErrorCodes.DB_QUERY_FAILED.code, '詳細取得失敗', 500);
 
-    const queryLastOrder = supabase.from('t_order').select('order_datetime').eq('t_user_id', data.t_user.id).order('order_datetime', { ascending: false }).limit(1).maybeSingle();
+    const queryLastOrder = supabase
+      .from('t_order')
+      .select('order_datetime')
+      .eq('t_user_id', data.t_user.id)
+      .order('order_datetime', { ascending: false })
+      .limit(1)
+      .maybeSingle();
     const { data: lastOrder } = await queryLastOrder;
 
     return {
@@ -273,18 +295,20 @@ export const orderCancel = async (values: ApiRequest<OrderCancelValues>): Promis
   try {
     await client.query('BEGIN');
     const selectSql = `
-      SELECT 
-        o.id, 
-        o.payment_type, 
-        o.order_status_type, 
-        o.credit_access_id, 
+      SELECT
+        o.id,
+        o.payment_type,
+        o.order_status_type,
+        o.credit_access_id,
         o.credit_access_password,
+        o.paypay_access_id,
+        o.paypay_access_password,
         s.shop_name,
         s.gmo_shop_code,
         s.gmo_shop_password
       FROM t_order o
       INNER JOIN t_shops s ON o.t_shops_id = s.id
-      WHERE o.id = $1 
+      WHERE o.id = $1
       FOR UPDATE`;
     const resultSelect = await client.query(selectSql, [id]);
     const order = resultSelect.rows[0];
@@ -303,17 +327,37 @@ export const orderCancel = async (values: ApiRequest<OrderCancelValues>): Promis
       }
 
       const gmoRes = await alterTranGmo(
-        order.credit_access_id, 
+        order.credit_access_id,
         order.credit_access_password,
         order.gmo_shop_code,
         order.gmo_shop_password
       );
-      if (!gmoRes.success) throw new CustomError(ErrorCodes.INTERNAL_SERVER_ERROR.code, `GMO失敗: ${gmoRes.errInfo}`, 500);
+      if (!gmoRes.success)
+        throw new CustomError(ErrorCodes.INTERNAL_SERVER_ERROR.code, `GMO失敗: ${gmoRes.errInfo}`, 500);
+    }
+
+    if (Number(order.payment_type) === Number(PaymentType.PAYPAY)) {
+      if (!order.gmo_shop_code || !order.gmo_shop_password) {
+        throw new CustomError(
+          ErrorCodes.INTERNAL_SERVER_ERROR.code,
+          `店舗「${order.shop_name}」のGMO IDまたはGMO PASSが設定されていません。マスタ設定を確認してください。`,
+          400
+        );
+      }
+
+      const paypayRes = await paypayCancelReturn(
+        order.paypay_access_id,
+        order.paypay_access_password,
+        order.gmo_shop_code,
+        order.gmo_shop_password
+      );
+      if (!paypayRes.success)
+        throw new CustomError(ErrorCodes.INTERNAL_SERVER_ERROR.code, `PayPay失敗: ${paypayRes.errInfo}`, 500);
     }
 
     const updateSql = `UPDATE t_order SET order_status_type = $1, updated_at = $2, cancel_datetime = $3 WHERE id = $4 RETURNING id`;
     const result = await client.query(updateSql, [Number(OrderStatusType.SYSTEM_CANCEL), timestamp, timestamp, id]);
-    
+
     await client.query('COMMIT');
     return { success: true, data: result.rows[0].id };
   } catch (e: any) {
