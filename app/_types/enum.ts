@@ -82,6 +82,8 @@ export enum PaymentType {
   CREDITCARD = '1',
   /** 2:PayPay */
   PAYPAY = '2',
+  /** 3:メルペイ */
+  MERPAY = '3',
 }
 
 /**
@@ -97,6 +99,8 @@ export const convertPaymentTypeName = (value: PaymentType): string => {
       return 'クレジットカード';
     case PaymentType.PAYPAY:
       return 'PayPay';
+    case PaymentType.MERPAY:
+      return 'メルペイ';
   }
 };
 

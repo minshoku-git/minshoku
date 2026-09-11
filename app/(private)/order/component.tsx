@@ -580,7 +580,9 @@ export const OrderComponent = (): JSX.Element => {
                             ? '会社清算'
                             : PaymentType.CREDITCARD === row.payment_type
                               ? 'クレジットカード'
-                              : 'PayPay'}
+                              : PaymentType.PAYPAY === row.payment_type
+                                ? 'PayPay'
+                                : 'メルペイ'}
                         </TableCell>
                         <TableCell>
                           {OrderStatusType.VALID === row.order_status_type

@@ -69,10 +69,13 @@ export const EmploymentInput = (props: Props): JSX.Element => {
                       >
                         {'クレジット\nカード'}
                       </TableCell>
-                      <TableCell align="center" width={'15%'} sx={{ p: 0 }}>
+                      <TableCell align="center" width={'12%'} sx={{ p: 0 }}>
                         PayPay
                       </TableCell>
-                      <TableCell align="center" width={'30%'} sx={{ p: 0 }}>
+                      <TableCell align="center" width={'12%'} sx={{ p: 0 }}>
+                        メルペイ
+                      </TableCell>
+                      <TableCell align="center" width={'21%'} sx={{ p: 0 }}>
                         会社負担額
                       </TableCell>
                       <TableCell align="center" width={'5%'} sx={{ p: 0 }}></TableCell>
@@ -114,6 +117,14 @@ export const EmploymentInput = (props: Props): JSX.Element => {
                           <CheckboxElement
                             control={props.control}
                             name={`employmentStatusInfo.${index}.paypay_flag`}
+                            sx={{ marginLeft: '11px', marginRight: '-16px' }}
+                          />
+                        </TableCell>
+                        {/* メルペイ */}
+                        <TableCell align="center">
+                          <CheckboxElement
+                            control={props.control}
+                            name={`employmentStatusInfo.${index}.merpay_flag`}
                             sx={{ marginLeft: '11px', marginRight: '-16px' }}
                           />
                         </TableCell>

@@ -104,6 +104,8 @@ export type EmploymentData = {
   credit_flag: boolean;
   // 決済方法(PayPay)
   paypay_flag: boolean;
+  // 決済方法(メルペイ)
+  merpay_flag: boolean;
   // 会社負担
   set_meal_burden: string;
   // 編集不可 ※true:編集不可(非活性),false:編集可能(活性)

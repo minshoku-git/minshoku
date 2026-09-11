@@ -9,7 +9,7 @@ import { ApiRequest, ApiResponse, SortItems } from '@/app/_types/types';
 import { CustomError } from '@/app/errors/customError';
 import { ErrorCodes } from '@/app/errors/ErrorCodes';
 
-import { alterTranGmo, paypayCancelReturn } from './gmoApi';
+import { alterTranGmo, merpayCancelReturn, paypayCancelReturn, searchTradeMerpay } from './gmoApi';
 import {
   OrderCancelValues,
   OrderData,
@@ -73,6 +73,7 @@ const getPaymentTypeName = (type: string | number | undefined | null): string =>
   if (strType === String(PaymentType.SALAEY_DEDUCTIONS)) return '会社清算';
   if (strType === String(PaymentType.CREDITCARD)) return 'クレジットカード';
   if (strType === String(PaymentType.PAYPAY)) return 'PayPay';
+  if (strType === String(PaymentType.MERPAY)) return 'メルペイ';
   return strType;
 };
 
@@ -85,7 +86,7 @@ const getOrderStatusName = (status: string | number | undefined | null): string 
   if (strStatus === String(OrderStatusType.VALID)) return '有効';
   if (strStatus === String(OrderStatusType.USER_CANCEL)) return 'キャンセル(ユーザー)';
   if (strStatus === String(OrderStatusType.SYSTEM_CANCEL)) return 'キャンセル(システム)';
-  if (strStatus === String(OrderStatusType.PENDING_PAYMENT)) return 'PayPay決済待ち';
+  if (strStatus === String(OrderStatusType.PENDING_PAYMENT)) return '決済待ち';
   return strStatus;
 };
 
@@ -304,6 +305,8 @@ export const orderCancel = async (values: ApiRequest<OrderCancelValues>): Promis
         o.credit_access_password,
         o.paypay_access_id,
         o.paypay_access_password,
+        o.merpay_access_id,
+        o.merpay_access_password,
         o.gmo_order_id,
         s.shop_name,
         s.gmo_shop_code,
@@ -360,6 +363,37 @@ export const orderCancel = async (values: ApiRequest<OrderCancelValues>): Promis
       );
       if (!paypayRes.success)
         throw new CustomError(ErrorCodes.INTERNAL_SERVER_ERROR.code, `PayPay失敗: ${paypayRes.errInfo}`, 500);
+    }
+
+    if (Number(order.payment_type) === Number(PaymentType.MERPAY)) {
+      if (!order.gmo_shop_code || !order.gmo_shop_password) {
+        throw new CustomError(
+          ErrorCodes.INTERNAL_SERVER_ERROR.code,
+          `店舗「${order.shop_name}」のGMO IDまたはGMO PASSが設定されていません。マスタ設定を確認してください。`,
+          400
+        );
+      }
+
+      // MerpayCancelReturnにはsearchTradeMerpayで事前取得したMerpayInquiryCodeが必須
+      // (GMOテスト環境での実疎通で確認済み。無いとM01005001等の複合エラーになる)。
+      const searchRes = await searchTradeMerpay(order.gmo_shop_code, order.gmo_shop_password, order.gmo_order_id);
+      if (!searchRes.success || !searchRes.merpayInquiryCode) {
+        throw new CustomError(ErrorCodes.INTERNAL_SERVER_ERROR.code, `メルペイ照会失敗: ${searchRes.errInfo}`, 500);
+      }
+
+      // Amountは注文の合計金額(amount)ではなく、実際にメルペイへ請求した金額(user_burden_amount)と
+      // 一致させる想定(PayPayと同様の想定。GMOテスト環境では同額での成功のみ確認済み)。
+      const merpayRes = await merpayCancelReturn(
+        order.merpay_access_id,
+        order.merpay_access_password,
+        order.gmo_shop_code,
+        order.gmo_shop_password,
+        order.gmo_order_id,
+        order.user_burden_amount,
+        searchRes.merpayInquiryCode
+      );
+      if (!merpayRes.success)
+        throw new CustomError(ErrorCodes.INTERNAL_SERVER_ERROR.code, `メルペイ失敗: ${merpayRes.errInfo}`, 500);
     }
 
     const updateSql = `UPDATE t_order SET order_status_type = $1, updated_at = $2, cancel_datetime = $3 WHERE id = $4 RETURNING id`;

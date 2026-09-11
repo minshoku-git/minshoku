@@ -160,3 +160,95 @@ export const paypayCancelReturn = async (
     return { success: false, errInfo: 'CONNECTION_ERROR' };
   }
 };
+
+/**
+ * ⑨ メルペイキャンセル・返金 (MerpayCancelReturn)
+ * メルペイ決済済みの取引を取り消す。
+ * PayPayの PaypayCancelReturn.idPass とはパラメータ形が異なることをGMOテスト環境での実疎通で
+ * 確認済み: 金額は `CancelAmount`/`CancelTax` ではなく `Amount`/`Tax`。さらに
+ * `searchTradeMerpay`(SearchTradeMulti, PayType=43)で事前に取得した `MerpayInquiryCode` の
+ * 指定が必須(無いとM01005001等の複合エラーになる)。AccessID/AccessPassはentryTranMerpay
+ * 時点のものをそのまま使ってよい(minshoku-order/app/(private)/order/_lib/merpayApi.tsと対応)。
+ * @param {string} merpayInquiryCode - searchTradeMerpayのレスポンスに含まれる`MerpayInquiryCode`
+ */
+export const merpayCancelReturn = async (
+  accessId: string,
+  accessPass: string,
+  shopId: string,
+  shopPass: string,
+  orderId: string,
+  amount: number,
+  merpayInquiryCode: string
+) => {
+  const baseUrl = process.env.GMO_BASE_URL!;
+  const params = new URLSearchParams();
+
+  params.append('ShopID', shopId);
+  params.append('ShopPass', shopPass);
+  params.append('OrderID', orderId);
+  params.append('AccessID', accessId);
+  params.append('AccessPass', accessPass);
+  params.append('MerpayInquiryCode', merpayInquiryCode);
+  params.append('Amount', String(amount));
+  params.append('Tax', '0');
+
+  try {
+    const response = await fetch(`${baseUrl}/payment/MerpayCancelReturn.idPass`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params.toString(),
+    });
+
+    const text = new TextDecoder('shift-jis').decode(await response.arrayBuffer());
+    const resParams = new URLSearchParams(text);
+
+    if (resParams.get('ErrCode')) {
+      console.error('[merpayCancelReturn] Error:', resParams.get('ErrInfo'));
+      return { success: false, errInfo: resParams.get('ErrInfo') };
+    }
+
+    return { success: true };
+  } catch (e) {
+    console.error('[merpayCancelReturn] Connection Error:', e);
+    return { success: false, errInfo: 'CONNECTION_ERROR' };
+  }
+};
+
+/**
+ * ⑩ メルペイ取引状態参照 (SearchTradeMulti流用)
+ * PayType=43がメルペイであることをGMOテスト環境での実疎通で確認済み(PayPayは45)。
+ * merpayCancelReturnに必須の`MerpayInquiryCode`を取得するために管理画面のキャンセル処理からも呼ぶ。
+ */
+export const searchTradeMerpay = async (shopId: string, shopPass: string, orderId: string) => {
+  const baseUrl = process.env.GMO_BASE_URL!;
+  const MERPAY_PAY_TYPE = '43';
+
+  const params = new URLSearchParams();
+  params.append('ShopID', shopId);
+  params.append('ShopPass', shopPass);
+  params.append('OrderID', orderId);
+  params.append('PayType', MERPAY_PAY_TYPE);
+
+  try {
+    const response = await fetch(`${baseUrl}/payment/SearchTradeMulti.idPass`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params.toString(),
+    });
+
+    const text = new TextDecoder('shift-jis').decode(await response.arrayBuffer());
+    const resParams = new URLSearchParams(text);
+
+    if (resParams.get('ErrCode')) {
+      return { success: false, errInfo: resParams.get('ErrInfo') };
+    }
+
+    return {
+      success: true,
+      status: resParams.get('Status'),
+      merpayInquiryCode: resParams.get('MerpayInquiryCode'),
+    };
+  } catch (e) {
+    return { success: false, errInfo: 'CONNECTION_ERROR' };
+  }
+};

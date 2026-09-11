@@ -108,6 +108,8 @@ export const CompanyDetailSchema = z
         credit_flag: z.boolean(),
         /** 決済方法(PayPay) */
         paypay_flag: z.boolean(),
+        /** 決済方法(メルペイ) */
+        merpay_flag: z.boolean(),
         /** 会社負担 */
         set_meal_burden: z.string(),
         /** 編集不可 true:編集不可(非活性),false:編集可能(活性) */
@@ -204,7 +206,7 @@ export const CompanyDetailSchema = z
   /** 雇用種別情報 チェックボックスがすべてOFFはOUT */
   .check((ctx) => {
     ctx.value.employmentStatusInfo.forEach((e, index) => {
-      if (!e.employment_status_name && (e.deduction_flag || e.credit_flag || e.paypay_flag)) {
+      if (!e.employment_status_name && (e.deduction_flag || e.credit_flag || e.paypay_flag || e.merpay_flag)) {
         ctx.issues.push({
           code: 'custom',
           path: [`employmentStatusInfo.${index}.employment_status_name`],
@@ -212,7 +214,13 @@ export const CompanyDetailSchema = z
           input: ctx.value,
         });
       }
-      if (e.employment_status_name && !e.deduction_flag && !e.credit_flag && !e.paypay_flag) {
+      if (
+        e.employment_status_name &&
+        !e.deduction_flag &&
+        !e.credit_flag &&
+        !e.paypay_flag &&
+        !e.merpay_flag
+      ) {
         // チェックボックスではメッセージが収まらないので、業務形態名で表示
         ctx.issues.push({
           code: 'custom',
@@ -235,6 +243,12 @@ export const CompanyDetailSchema = z
         ctx.issues.push({
           code: 'custom',
           path: [`employmentStatusInfo.${index}.paypay_flag`],
+          message: '',
+          input: ctx.value,
+        });
+        ctx.issues.push({
+          code: 'custom',
+          path: [`employmentStatusInfo.${index}.merpay_flag`],
           message: '',
           input: ctx.value,
         });

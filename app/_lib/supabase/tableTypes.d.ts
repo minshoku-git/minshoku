@@ -188,6 +188,10 @@ export type t_order = {
   paypay_access_id?: string;
   /** PayPay取引パスワード */
   paypay_access_password?: string;
+  /** メルペイ取引ID */
+  merpay_access_id?: string;
+  /** メルペイ取引パスワード */
+  merpay_access_password?: string;
   /** 登録日時 */
   created_at?: Date;
   /** 更新日時 */
@@ -228,6 +232,8 @@ export type t_companies_employment_status = {
   credit_flag?: string;
   /** PaypayFlag ※0:非/1:可 */
   paypay_flag?: string;
+  /** MerpayFlag ※0:非/1:可 */
+  merpay_flag?: string;
   /** 登録日時 */
   created_at?: DATE;
   /** 更新日時 */

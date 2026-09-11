@@ -221,7 +221,9 @@ const OrderInfoModal = (props: OrderInfoModalProps): React.JSX.Element => {
                             ? '会社清算'
                             : data.payment_type === PaymentType.CREDITCARD
                               ? 'クレジットカード'
-                              : 'PayPay'}
+                              : data.payment_type === PaymentType.PAYPAY
+                                ? 'PayPay'
+                                : 'メルペイ'}
                         </TableCell>
                         <TableCell sx={{ ...styles.tableCell }}>
                           <Box sx={{ display: 'flex', alignItems: 'center' }}>

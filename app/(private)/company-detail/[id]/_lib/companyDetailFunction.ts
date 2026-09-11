@@ -183,6 +183,7 @@ export const searchCompanyDetail = async (
             deduction_flag: m.deduction_flag === SelectType.UNSELECTED ? false : true,
             credit_flag: m.credit_flag === SelectType.UNSELECTED ? false : true,
             paypay_flag: m.paypay_flag === SelectType.UNSELECTED ? false : true,
+            merpay_flag: m.merpay_flag === SelectType.UNSELECTED ? false : true,
             set_meal_burden: m.set_meal_burden ? m.set_meal_burden.toString() : '0',
             delete_flag: false,
           };
@@ -334,6 +335,7 @@ export const insertComponyDetail = async (
           deduction_flag: item.deduction_flag ? SelectType.SELECTED : SelectType.UNSELECTED,
           credit_flag: item.credit_flag ? SelectType.SELECTED : SelectType.UNSELECTED,
           paypay_flag: item.paypay_flag ? SelectType.SELECTED : SelectType.UNSELECTED,
+          merpay_flag: item.merpay_flag ? SelectType.SELECTED : SelectType.UNSELECTED,
           set_meal_burden: Number(item.set_meal_burden),
         };
 
@@ -527,22 +529,24 @@ export const updateComponyDetail = async (
       if (updateList) {
         for (const item of updateList) {
           const updateCompanyText = `
-            UPDATE 
+            UPDATE
               t_companies_employment_status
-            SET 
+            SET
               employment_status_name = $1,
               deduction_flag = $2,
               credit_flag = $3,
               paypay_flag = $4,
-              set_meal_burden = $5,
-              updated_at = $6
-            WHERE 
-              id = $7;`;
+              merpay_flag = $5,
+              set_meal_burden = $6,
+              updated_at = $7
+            WHERE
+              id = $8;`;
           const res = await client.query(updateCompanyText, [
             item.employment_status_name,
             item.deduction_flag ? SelectType.SELECTED : SelectType.UNSELECTED,
             item.credit_flag ? SelectType.SELECTED : SelectType.UNSELECTED,
             item.paypay_flag ? SelectType.SELECTED : SelectType.UNSELECTED,
+            item.merpay_flag ? SelectType.SELECTED : SelectType.UNSELECTED,
             item.set_meal_burden,
             timestamp,
             item.id,
@@ -565,6 +569,7 @@ export const updateComponyDetail = async (
             deduction_flag: item.deduction_flag ? SelectType.SELECTED : SelectType.UNSELECTED,
             credit_flag: item.credit_flag ? SelectType.SELECTED : SelectType.UNSELECTED,
             paypay_flag: item.paypay_flag ? SelectType.SELECTED : SelectType.UNSELECTED,
+            merpay_flag: item.merpay_flag ? SelectType.SELECTED : SelectType.UNSELECTED,
             set_meal_burden: Number(item.set_meal_burden),
           };
           const {
