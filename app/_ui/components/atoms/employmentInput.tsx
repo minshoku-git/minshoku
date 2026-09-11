@@ -50,14 +50,14 @@ export const EmploymentInput = (props: Props): JSX.Element => {
                   {/* header */}
                   <TableHead>
                     <TableRow>
-                      <TableCell align="center" width={'35%'} sx={{ p: 0 }}>
+                      <TableCell align="center" width={'27%'} sx={{ p: 0 }}>
                         雇用形態名
                       </TableCell>
-                      <TableCell align="center" sx={{ whiteSpace: 'nowrap', p: 0 }} width={'15%'}>
+                      <TableCell align="center" sx={{ whiteSpace: 'nowrap', p: 0 }} width={'9%'}>
                         会社清算
                       </TableCell>
                       <TableCell
-                        width={'15%'}
+                        width={'9%'}
                         align="center"
                         sx={{
                           whiteSpace: 'pre-wrap',
@@ -69,13 +69,13 @@ export const EmploymentInput = (props: Props): JSX.Element => {
                       >
                         {'クレジット\nカード'}
                       </TableCell>
-                      <TableCell align="center" width={'12%'} sx={{ p: 0 }}>
+                      <TableCell align="center" width={'9%'} sx={{ p: 0 }}>
                         PayPay
                       </TableCell>
-                      <TableCell align="center" width={'12%'} sx={{ p: 0 }}>
+                      <TableCell align="center" width={'9%'} sx={{ p: 0 }}>
                         メルペイ
                       </TableCell>
-                      <TableCell align="center" width={'21%'} sx={{ p: 0 }}>
+                      <TableCell align="center" width={'32%'} sx={{ p: 0 }}>
                         会社負担額
                       </TableCell>
                       <TableCell align="center" width={'5%'} sx={{ p: 0 }}></TableCell>
