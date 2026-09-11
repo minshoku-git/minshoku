@@ -143,9 +143,11 @@ export const CompanyDetailApiSchema = z.object({                    // API 境�
 
 ### GMO Payment（キャンセル/返金のみ）
 
-管理画面はキャンセル/返金のみ行う（`app/(private)/order/_lib/orderFunction.ts` の `orderCancel`）。クレジットカードは `alterTranGmo`（`JobCd=VOID`）、PayPayは `paypayCancelReturn`。
+管理画面はキャンセル/返金のみ行う（`app/(private)/order/_lib/orderFunction.ts` の `orderCancel`）。クレジットカードは `alterTranGmo`（`JobCd=VOID`）、PayPayは `paypayCancelReturn`、メルペイは `merpayCancelReturn`。
 
 **PayPayのキャンセル/返金APIはクレジットと仕様が異なる**（GMOテスト環境での実疎通で判明、公開ドキュメントに記載なし）。`PaypayCancelReturn.idPass` は `JobCd` ではなく `OrderID` + `CancelAmount`/`CancelTax`（取消/返金する金額を明示指定）で行う。`CancelAmount` は `t_order.amount`（会社負担込みの合計金額）ではなく、実際にPayPayへ請求された `user_burden_amount` と一致させる必要がある（不一致だと `M01085011`）。詳細な調査経緯・他のPayPay API仕様（`EntryTranPaypay`/`ExecTranPaypay`/`SearchTradeMulti`等）は `../minshoku-order/CLAUDE.md` の「PayPay決済」節を参照。
+
+**メルペイのキャンセル/返金APIはPayPayともさらに異なる**（GMOテスト環境での実疎通で判明）。`MerpayCancelReturn.idPass` の金額パラメータは `CancelAmount`/`CancelTax` ではなく `Amount`/`Tax`。さらに、事前に `searchTradeMerpay`（`SearchTradeMulti.idPass`、`PayType=43`）で取得した `MerpayInquiryCode` の指定が必須（無いと `M01005001` 等の複合エラーになる）。`AccessID`/`AccessPass` は `entryTranMerpay` 時点のものをそのまま使ってよい。会社ごとの利用可否は `t_companies_employment_status.merpay_flag`（`paypay_flag` と同じ仕組み、企業詳細画面のチェックボックスで設定）で制御する。詳細な調査経緯・他のメルペイAPI仕様（`EntryTranMerpay`/`ExecTranMerpay`等）は `../minshoku-order/CLAUDE.md` の「メルペイ決済」節を参照。
 
 ### Supabase Storage
 
