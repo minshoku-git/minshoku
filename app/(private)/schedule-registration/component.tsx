@@ -10,6 +10,7 @@ import { ApiResponse } from '@/app/_types/types';
 import ItemBase from '@/app/_ui/components/atoms/itemBase';
 import { useProcessing } from '@/app/_ui/state/processing/processingContext';
 import { useSnackBar } from '@/app/_ui/state/snackBar/snackbarContext';
+import { CustomError } from '@/app/errors/customError';
 
 import { upsertScheduleFetcher } from './_lib/fetcher';
 
@@ -31,6 +32,8 @@ export const ScheduleRegistrationComponent = (): JSX.Element => {
   /* fileUpload */
   const [file, setFile] = useState<File>();
   const [failedRows, setFailedRows] = useState<any[]>([]);
+  /* CSV検証エラー（「○行目：内容」の一覧） */
+  const [csvErrors, setCsvErrors] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   /* functions - Insert
@@ -49,6 +52,7 @@ export const ScheduleRegistrationComponent = (): JSX.Element => {
     },
     onSuccess: (res: ApiResponse<any>) => {
       setFile(undefined);
+      setCsvErrors([]);
 
       // 1. まず型ガードで「処理自体が成功していること」を確定させます
       if (res.success) {
@@ -66,11 +70,15 @@ export const ScheduleRegistrationComponent = (): JSX.Element => {
         openSnackbar(AlertType.ERROR, res.error?.message || 'スケジュールの登録に失敗しました。');
       }
     },
+    onError: (error) => {
+      // エラーメッセージ自体はuseApiMutationがSnackbar表示する。ここでは行ごとの詳細を画面に残す
+      setFailedRows([]);
+      setCsvErrors(error instanceof CustomError ? (error.details ?? []) : []);
+    },
     onSettled: () => {
       closeProcessing();
     },
   });
-
 
   /* functions - 添付ファイル
   ------------------------------------------------------------------ */
@@ -94,6 +102,7 @@ export const ScheduleRegistrationComponent = (): JSX.Element => {
   const fileDelete = () => {
     setFile(undefined);
     setFailedRows([]); // ★クリア処理を追加
+    setCsvErrors([]);
   };
 
   /* JSX.Element
@@ -113,6 +122,21 @@ export const ScheduleRegistrationComponent = (): JSX.Element => {
         </Grid>
         <Divider />
         <Box sx={{ m: 3 }}>
+          {/* CSVの内容に誤りがある場合に、行ごとのエラーを一覧表示する（1件でもあれば全件未登録） */}
+          {csvErrors.length > 0 && (
+            <Box sx={{ mb: 3, p: 2, bgcolor: '#fdf2f2', border: '1px solid #f5c2c2', borderRadius: 2 }}>
+              <Typography variant="subtitle1" color="error" fontWeight="bold" sx={{ mb: 1 }}>
+                {`⚠️ CSVに${csvErrors.length}件のエラーがあるため、登録しませんでした。修正して再度アップロードしてください：`}
+              </Typography>
+              <Box component="ul" sx={{ pl: 2, m: 0, maxHeight: 400, overflowY: 'auto' }}>
+                {csvErrors.map((message, idx) => (
+                  <Typography component="li" variant="body2" key={idx} color="error.main">
+                    {message}
+                  </Typography>
+                ))}
+              </Box>
+            </Box>
+          )}
           {/* ★追加: 登録できなかったデータを画面の上部に分かりやすく出力するコンテナ */}
           {failedRows.length > 0 && (
             <Box sx={{ mb: 3, p: 2, bgcolor: '#fdf2f2', border: '1px solid #f5c2c2', borderRadius: 2 }}>

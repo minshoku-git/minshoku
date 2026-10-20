@@ -1,11 +1,10 @@
-import * as csv from 'csv-parse';
 import { NextResponse } from 'next/server';
-import { Readable } from 'stream';
-import z from 'zod';
 
 import { ApiResponse } from '@/app/_types/types';
-import { RefreshingScheduleData } from '@/app/(private)/schedule-registration/_lib/scheduleRegistrationFunction';
-import { ScheduleCsvSchema, ScheduleCsvValues } from '@/app/(private)/schedule-registration/_lib/types';
+import {
+  parseScheduleCsv,
+  RefreshingScheduleData,
+} from '@/app/(private)/schedule-registration/_lib/scheduleRegistrationFunction';
 import { CustomError } from '@/app/errors/customError';
 import { ErrorCodes } from '@/app/errors/ErrorCodes';
 
@@ -34,29 +33,11 @@ export async function POST(req: Request): Promise<Response> {
       decodedText = sjisDecoder.decode(arrayBuffer);
     }
 
-    const scheduleDatas: ScheduleCsvValues[] = [];
-
-    // CSVパース処理（decodedText を stream に変換して渡す）
-    await new Promise<void>((resolve, reject) => {
-      const parser = csv.parse({ columns: true, skip_empty_lines: true });
-
-      Readable.from(decodedText)
-        .pipe(parser)
-        .on('data', (row: ScheduleCsvValues) => {
-          const parsed = ScheduleCsvSchema.safeParse(row);
-          if (!parsed.success) {
-            // z.treeifyError が無いプロジェクトに対応するため .format() を使用
-            console.error(JSON.stringify(parsed.error.format(), null, 2));
-            return reject(new CustomError(ErrorCodes.CSV_VALIDATION_FAILED));
-          }
-          scheduleDatas.push(parsed.data);
-        })
-        .on('end', () => resolve())
-        .on('error', (err) => reject(err));
-    });
+    // CSVパース・検証（エラーがあれば行番号付きの詳細を CustomError.details に詰めて throw される）
+    const scheduleRows = await parseScheduleCsv(decodedText);
 
     // スケジュール登録
-    const result = await RefreshingScheduleData(scheduleDatas);
+    const result = await RefreshingScheduleData(scheduleRows.map((r) => r.data));
     if (result.success) {
       return NextResponse.json(result);
     }

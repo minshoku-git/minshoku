@@ -59,6 +59,21 @@ export const MSG_POSTALCODE = '{0}は半角数字{1}桁を入力してくださ�
 export const MSG_HANKAKU_NUM = '{0}は半角数字を入力してください。';
 export const MSG_DOMAIN = '有効なドメイン名を入力してください。';
 export const MSG_PASSWORD = 'パスワードは8文字以上の半角英数字の組み合わせで入力してください。';
+export const MSG_INTEGER = '{0}は半角数字（整数）で入力してください。';
+export const MSG_DATE = '{0}は日付（例：2026/10/01）で入力してください。';
+
+/* CSV取込メッセージ
+------------------------------------------------------------------ */
+export const MSG_CSV_ROW = '{0}行目：{1}';
+export const MSG_CSV_INPUT_VALUE = '{0}（入力値：「{1}」）';
+export const MSG_CSV_COLUMN_SHORT = '列数が足りません（{0}列必要ですが{1}列です）。';
+export const MSG_CSV_COLUMN_OVER = '列数が多すぎます（{0}列必要ですが{1}列です）。';
+export const MSG_CSV_HEADER_MISSING = '見出し行に「{0}」列がありません。';
+export const MSG_CSV_HEADER_UNKNOWN = '見出し行の「{0}」は不明な列名です。';
+export const MSG_CSV_NO_DATA = 'データ行がありません。';
+export const MSG_CSV_FORMAT = 'CSVの形式が不正です（ダブルクォート「"」の閉じ忘れなど）。';
+export const MSG_CSV_COMPANY_NOT_FOUND = '会社ID「{0}」は存在しません。';
+export const MSG_CSV_SHOP_NOT_FOUND = '店舗ID「{0}」は存在しません。';
 
 /* 正規表現集
 ------------------------------------------------------------------ */
