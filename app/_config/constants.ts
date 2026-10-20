@@ -11,6 +11,13 @@
 export const PAGE_MAX_COUNT: number = 30;
 
 /**
+ * Supabaseから1回のクエリで取得できる最大件数（PostgRESTの既定上限）
+ * CSV出力など全件取得が必要な処理は、この件数ずつ分割して取得する。
+ * @returns {number} - 1000件
+ */
+export const DB_FETCH_MAX_ROWS: number = 1000;
+
+/**
  * 1KBのByte数(1024Byte)
  * @returns {number} - 1024
  */

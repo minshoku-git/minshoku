@@ -1,5 +1,6 @@
 import { PostgrestSingleResponse } from '@supabase/supabase-js';
 
+import { DB_FETCH_MAX_ROWS } from '@/app/_config/constants';
 import { createClient } from '@/app/_lib/supabase/server';
 import { getPagenationsItems, getRange } from '@/app/_lib/utils/utils';
 import {
@@ -12,7 +13,7 @@ import { ApiRequest, ApiResponse, SortItems } from '@/app/_types/types';
 import { CustomError } from '@/app/errors/customError';
 import { ErrorCodes } from '@/app/errors/ErrorCodes';
 
-import { UserData, UserListSearchResult, UserSearchFormValues } from './types';
+import { UserCsvData, UserCsvDbRow, UserData, UserListSearchResult, UserSearchFormValues } from './types';
 
 /* ユーザー一覧
 ------------------------------------------------------------------ */
@@ -126,6 +127,108 @@ export const searchUserList = async (
         },
       },
     };
+  } catch (e: unknown) {
+    console.error(e);
+    if (e instanceof CustomError) {
+      return {
+        success: false,
+        error: e,
+      };
+    }
+    return {
+      success: false,
+      error: ErrorCodes.INTERNAL_SERVER_ERROR,
+    };
+  }
+};
+
+/* ユーザー一覧 CSV出力
+------------------------------------------------------------------ */
+/**
+ * createUserListCsvData
+ * 検索条件に一致するユーザー情報を全件取得し、CSV出力用の形式に変換する。
+ * ページングに関係なく全件を、一覧と同じ並び順で返す。列はユーザー詳細画面の表示順。
+ *
+ * @param {ApiRequest<UserSearchFormValues>} values - 検索条件
+ * @returns {Promise<ApiResponse<UserCsvData[]>>} - CSV出力データ
+ */
+export const createUserListCsvData = async (
+  values: ApiRequest<UserSearchFormValues>
+): Promise<ApiResponse<UserCsvData[]>> => {
+  const supabase = await createClient();
+  const req = values.request;
+  const sortItems = values.sortItems;
+
+  try {
+    /* 全件取得（PostgRESTの1回あたりの取得上限を超えるため分割して取得）
+    ------------------------------------------------------------------ */
+    const rows: UserCsvDbRow[] = [];
+    for (let start = 0; ; start += DB_FETCH_MAX_ROWS) {
+      let query = supabase
+        .from('t_user')
+        .select(
+          `id,
+          user_name,
+          user_name_kana,
+          user_email,
+          user_registration_status,
+          usage_status,
+          master_memo,
+          optional_item_answer_1,
+          optional_item_answer_2,
+          t_companies!inner(
+            company_name,
+            branch_name,
+            optional_item_title_1,
+            optional_item_title_2
+          ),
+          t_companies_department(
+            department_name
+          ),
+          t_companies_employment_status(
+            employment_status_name
+          )`
+        )
+        .range(start, start + DB_FETCH_MAX_ROWS - 1);
+      query = applyFilters(query, req);
+      query = applySorts(query, sortItems);
+      // 分割取得で行が重複・欠落しないよう、最後にIDで並びを一意にする
+      query = query.order('id', { ascending: true });
+
+      const { data, error } = (await query) as PostgrestSingleResponse<UserCsvDbRow[]>;
+      if (error) {
+        console.error(error);
+        throw new CustomError(
+          ErrorCodes.DB_QUERY_FAILED.code,
+          'ユーザー情報の取得' + ErrorCodes.DB_QUERY_FAILED.message,
+          ErrorCodes.DB_QUERY_FAILED.status
+        );
+      }
+      rows.push(...data);
+      if (data.length < DB_FETCH_MAX_ROWS) break;
+    }
+
+    /* CSV形式に変換
+    ------------------------------------------------------------------ */
+    const csvData: UserCsvData[] = rows.map((m) => ({
+      ユーザーID: String(m.id),
+      ユーザー名: m.user_name ?? '',
+      'ユーザー名(カナ)': m.user_name_kana ?? '',
+      メールアドレス: m.user_email ?? '',
+      会社名: m.t_companies?.company_name ?? '',
+      支店名: m.t_companies?.branch_name ?? '',
+      部署名: m.t_companies_department?.department_name ?? '',
+      雇用形態名: m.t_companies_employment_status?.employment_status_name ?? '',
+      任意項目1_項目名: m.t_companies?.optional_item_title_1 ?? '',
+      任意項目1_回答: m.optional_item_answer_1 ?? '',
+      任意項目2_項目名: m.t_companies?.optional_item_title_2 ?? '',
+      任意項目2_回答: m.optional_item_answer_2 ?? '',
+      登録ステータス: convertUserRegistrationStatusName(m.user_registration_status as UserRegistrationStatus) ?? '',
+      メモ: m.master_memo ?? '',
+      利用ステータス: convertUsageStatusName(m.usage_status as UsageStatus) ?? '',
+    }));
+
+    return { success: true, data: csvData };
   } catch (e: unknown) {
     console.error(e);
     if (e instanceof CustomError) {

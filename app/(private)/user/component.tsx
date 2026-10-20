@@ -1,5 +1,6 @@
 'use client';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Download } from '@mui/icons-material';
 import { Box, Button, Divider, Paper, TableCell, TableRow, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import { useRouter } from 'next/navigation';
@@ -10,6 +11,7 @@ import { SelectElement, TextFieldElement } from 'react-hook-form-mui';
 import { SESSION_STORAGE_KEYS } from '@/app/_config/sessionStorageKeys';
 import { QUERY_KEYS } from '@/app/_lib/hooks/query/queryKeys';
 import { useApiQuery } from '@/app/_lib/hooks/query/useApiQuery';
+import { downloadCsv } from '@/app/_lib/utils/downloadCsv/downloadCsv';
 import { AlertType, SearchType, SortType, UsageStatus, UserRegistrationStatus } from '@/app/_types/enum';
 import { ApiRequest, ApiResponse, HeaderStatus } from '@/app/_types/types';
 import { ResultsCounter } from '@/app/_ui/components/atoms/resultsCounter';
@@ -18,8 +20,8 @@ import { useProcessing } from '@/app/_ui/state/processing/processingContext';
 import { useSnackBar } from '@/app/_ui/state/snackBar/snackbarContext';
 
 import ItemBase from '../../_ui/components/atoms/itemBase';
-import { searchUserListFetcher } from './_lib/fetcher';
-import { UserListSearchResult, UserSearchFormValues, UserSearchSchema } from './_lib/types';
+import { searchUserListFetcher, userListExportCsvFetcher } from './_lib/fetcher';
+import { UserCsvData, UserListSearchResult, UserSearchFormValues, UserSearchSchema } from './_lib/types';
 
 /* ページ名 */
 const pageName = 'ユーザー一覧';
@@ -93,6 +95,14 @@ export const UserComponent = (): JSX.Element => {
   const { data, isFetching, refetch } = useApiQuery<UserListSearchResult>({
     queryKey: [QUERY_KEYS.USER_SEARCH_RESULT, condition],
     queryFn: () => searchUserListFetcher(condition),
+    enabled: false,
+  });
+
+  /* useQuery - CSV出力
+  ------------------------------------------------------------------ */
+  const { isFetching: isFetchingCsv, refetch: refetchCsv } = useApiQuery<UserCsvData[]>({
+    queryKey: [QUERY_KEYS.USER_EXPORT_CSV, condition],
+    queryFn: () => userListExportCsvFetcher(condition),
     enabled: false,
   });
 
@@ -196,6 +206,17 @@ export const UserComponent = (): JSX.Element => {
     };
     setSearchType(SearchType.PAGENATION);
     setCondition(req);
+  };
+
+  /** CSV出力（最後に検索した条件に一致する全件を、一覧と同じ並び順で出力） */
+  const exportCsvHandler = async () => {
+    const { data: csvData } = await refetchCsv();
+    // 取得失敗時のエラー表示はuseApiQueryが行う
+    if (!csvData) return;
+    const result = await downloadCsv(csvData, 'user.csv');
+    if (!result.success) {
+      openSnackbar(AlertType.ERROR, 'CSV出力に失敗しました。');
+    }
   };
 
   // リセットハンドラ
@@ -348,6 +369,15 @@ export const UserComponent = (): JSX.Element => {
                       endRow={result.paginate.endRow}
                       count={result.paginate.count}
                     />
+                    <Box sx={{ flexGrow: 1 }} />
+                    <Button
+                      startIcon={<Download />}
+                      variant="outlined"
+                      onClick={() => exportCsvHandler()}
+                      loading={isFetchingCsv}
+                    >
+                      CSV出力
+                    </Button>
                   </Box>
                 ) : (
                   <></>

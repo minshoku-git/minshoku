@@ -22,7 +22,7 @@ type props = {
  * @returns {JSX.Element}
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const downloadCsv = async (data: any): Promise<{ success: boolean }> => {
+export const downloadCsv = async (data: any, fileName: string = 'order.csv'): Promise<{ success: boolean }> => {
   try {
     // 共通関数でCSV Blobを生成
     const blob = await createCsvBlob(data);
@@ -31,7 +31,7 @@ export const downloadCsv = async (data: any): Promise<{ success: boolean }> => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'order.csv';
+    a.download = fileName;
     a.click();
     URL.revokeObjectURL(url);
 
