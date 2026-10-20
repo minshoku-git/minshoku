@@ -1,13 +1,166 @@
-import { createPgClient } from '@/app/_lib/supabase/server';
+import { CsvError, parse } from 'csv-parse/sync';
+
+import {
+  MSG_CSV_COLUMN_OVER,
+  MSG_CSV_COLUMN_SHORT,
+  MSG_CSV_COMPANY_NOT_FOUND,
+  MSG_CSV_FORMAT,
+  MSG_CSV_HEADER_MISSING,
+  MSG_CSV_HEADER_UNKNOWN,
+  MSG_CSV_INPUT_VALUE,
+  MSG_CSV_NO_DATA,
+  MSG_CSV_ROW,
+  MSG_CSV_SHOP_NOT_FOUND,
+} from '@/app/_config/constants';
+import { createClient, createPgClient } from '@/app/_lib/supabase/server';
 import { t_menu_schedule } from '@/app/_lib/supabase/tableTypes';
 import { rollbackWithLog } from '@/app/_lib/supabase/transaction';
 import { getNow } from '@/app/_lib/utils/getDateTime'; // ★不要な toUTCDateFromJSTDate を削除
-import { getPostgreSqlItems } from '@/app/_lib/utils/utils';
+import { formatString, getPostgreSqlItems } from '@/app/_lib/utils/utils';
 import { ApiResponse } from '@/app/_types/types';
 import { CustomError } from '@/app/errors/customError';
 import { ErrorCodes } from '@/app/errors/ErrorCodes';
 
-import { ScheduleCsvValues, ScheduleRegistrationResult, FailedScheduleRow } from './types';
+import {
+  FailedScheduleRow,
+  SCHEDULE_CSV_COLUMNS,
+  ScheduleCsvRow,
+  ScheduleCsvSchema,
+  ScheduleCsvValues,
+  ScheduleRegistrationResult,
+} from './types';
+
+/* CSV解析・検証
+------------------------------------------------------------------ */
+
+/** 行番号付きのエラー（行順に並べ替えてから表示するため） */
+type CsvLineError = { line: number; message: string };
+
+/**
+ * CSV検証エラーを throw する。
+ * エラーは行番号順に並べ、「○行目：内容」の形式で CustomError.details に詰める。
+ *
+ * @param {CsvLineError[]} errors - 行番号付きのエラー一覧
+ * @returns {never} 常に throw する
+ */
+const throwCsvValidationError = (errors: CsvLineError[]): never => {
+  const details = [...errors]
+    .sort((a, b) => a.line - b.line)
+    .map((e) => (e.line > 0 ? formatString(MSG_CSV_ROW, e.line, e.message) : e.message));
+  throw new CustomError(
+    ErrorCodes.CSV_VALIDATION_FAILED.code,
+    ErrorCodes.CSV_VALIDATION_FAILED.message,
+    ErrorCodes.CSV_VALIDATION_FAILED.status,
+    details
+  );
+};
+
+/**
+ * parseScheduleCsv
+ * スケジュールCSVの文字列を解析・検証し、行番号付きのデータに変換する。
+ * 1件目のエラーで止めずに全行を検証し、エラーがあれば全件をまとめて throw する（1件でもエラーがあれば登録しない）。
+ *
+ * @param {string} text - デコード済みのCSV文字列
+ * @returns {Promise<ScheduleCsvRow[]>} 検証済みのスケジュールデータ（行番号付き）
+ */
+export const parseScheduleCsv = async (text: string): Promise<ScheduleCsvRow[]> => {
+  /* 1.CSVパース
+  ------------------------------------------------------------------ */
+  let records: { record: string[]; info: { lines: number } }[];
+  try {
+    // 改行コードをLFに統一する（CRLFのままだとセル内改行がある場合にcsv-parseの行番号がずれるため）
+    records = parse(text.replace(/\r\n?/g, '\n'), {
+      relax_column_count: true, // 列数の過不足は自前で行番号付きのエラーにする
+      skip_empty_lines: true,
+      skip_records_with_empty_values: true, // Excel出力で末尾に付く「,,,,」だけの行を無視する
+      info: true,
+    });
+  } catch (e: unknown) {
+    if (e instanceof CsvError) {
+      return throwCsvValidationError([{ line: e.lines ?? 0, message: MSG_CSV_FORMAT }]);
+    }
+    throw e;
+  }
+
+  /* 2.見出し行チェック
+  ------------------------------------------------------------------ */
+  const [headerRecord, ...dataRecords] = records;
+  if (!headerRecord || dataRecords.length === 0) {
+    return throwCsvValidationError([{ line: 0, message: MSG_CSV_NO_DATA }]);
+  }
+  const header = headerRecord.record.map((h) => h.trim());
+  const columns: string[] = SCHEDULE_CSV_COLUMNS;
+  const headerErrors: CsvLineError[] = [
+    ...columns.filter((c) => !header.includes(c)).map((c) => formatString(MSG_CSV_HEADER_MISSING, c)),
+    ...header.filter((h) => !columns.includes(h)).map((h) => formatString(MSG_CSV_HEADER_UNKNOWN, h)),
+  ].map((message) => ({ line: headerRecord.info.lines, message }));
+  if (headerErrors.length > 0) {
+    // 見出しが不正だと全行の列がずれるため、データ行の検証はしない
+    return throwCsvValidationError(headerErrors);
+  }
+
+  /* 3.データ行チェック
+  ------------------------------------------------------------------ */
+  const errors: CsvLineError[] = [];
+  const rows: ScheduleCsvRow[] = [];
+  for (const { record, info } of dataRecords) {
+    // info.lines はレコードの最終行のため、セル内改行の分を引いて開始行にする
+    const line = info.lines - record.reduce((n, field) => n + (field.match(/\n/g)?.length ?? 0), 0);
+
+    if (record.length !== header.length) {
+      const msg = record.length < header.length ? MSG_CSV_COLUMN_SHORT : MSG_CSV_COLUMN_OVER;
+      errors.push({ line, message: formatString(msg, header.length, record.length) });
+      continue;
+    }
+
+    const raw: Record<string, string> = Object.fromEntries(header.map((h, i) => [h, record[i]]));
+    const parsed = ScheduleCsvSchema.safeParse(raw);
+    if (!parsed.success) {
+      for (const issue of parsed.error.issues) {
+        const value = raw[String(issue.path[0])]?.trim();
+        const message = value ? formatString(MSG_CSV_INPUT_VALUE, issue.message, value) : issue.message;
+        errors.push({ line, message });
+      }
+      continue;
+    }
+    rows.push({ line, data: parsed.data });
+  }
+
+  /* 4.会社ID・店舗IDの存在チェック
+  ------------------------------------------------------------------ */
+  if (rows.length > 0) {
+    const supabase = await createClient();
+    const companyIds = [...new Set(rows.map((r) => r.data.t_companies_id))];
+    const shopIds = [...new Set(rows.map((r) => r.data.t_shops_id))];
+    const [companies, shops] = await Promise.all([
+      supabase.from('t_companies').select('id').in('id', companyIds),
+      supabase.from('t_shops').select('id').in('id', shopIds),
+    ]);
+    if (companies.error || shops.error) {
+      console.error(companies.error ?? shops.error);
+      throw new CustomError(
+        ErrorCodes.DB_QUERY_FAILED.code,
+        '会社・店舗情報の取得' + ErrorCodes.DB_QUERY_FAILED.message,
+        ErrorCodes.DB_QUERY_FAILED.status
+      );
+    }
+    const existCompanyIds = new Set(companies.data.map((c) => Number(c.id)));
+    const existShopIds = new Set(shops.data.map((s) => Number(s.id)));
+    for (const { line, data } of rows) {
+      if (!existCompanyIds.has(data.t_companies_id)) {
+        errors.push({ line, message: formatString(MSG_CSV_COMPANY_NOT_FOUND, data.t_companies_id) });
+      }
+      if (!existShopIds.has(data.t_shops_id)) {
+        errors.push({ line, message: formatString(MSG_CSV_SHOP_NOT_FOUND, data.t_shops_id) });
+      }
+    }
+  }
+
+  if (errors.length > 0) {
+    return throwCsvValidationError(errors);
+  }
+  return rows;
+};
 
 /* スケジュール登録
 ------------------------------------------------------------------ */
