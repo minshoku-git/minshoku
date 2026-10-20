@@ -65,6 +65,6 @@ export const MSG_PASSWORD = 'パスワードは8文字以上の半角英数字�
 export const REG_POSTALCODE = '^[0-9]{7}';
 export const REG_HANKAKU_EISU = '/^[a-zA-Z0-9]+$/u';
 export const REG_HANKAKU_NUM = '^\\d+$';
-export const REG_ZENKAKU_KANA = '^[\u30A0-\u30FF]+$';
+export const REG_ZENKAKU_KANA = '^(?=.*[ァ-ヺ])[゠-ヿ　 ]+$'; // 全角カタカナ1文字以上必須。全角・半角スペースを許容
 export const REG_DOMAIN = /^(?=.{1,253}$)(?!\-)(?:[a-zA-Z0-9](?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,63}$/;
 export const REG_PASSWORD = /^(?=.*[a-zA-Z])(?=.*\d)[a-zA-Z0-9]{8,}$/;

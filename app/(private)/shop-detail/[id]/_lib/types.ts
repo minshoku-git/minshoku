@@ -44,6 +44,7 @@ export const ShopDetailSchema = z
     /** 店舗名(カナ) */
     shop_name_kana: z
       .string()
+      .trim()
       .nonempty({ message: formatString(MSG_REQUIRED, '店舗名(カナ)') })
       .regex(new RegExp(REG_ZENKAKU_KANA), '全角カナで入力してください。')
       .max(256, formatString(MSG_MAX, '店舗名(カナ)', '256')),
