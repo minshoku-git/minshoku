@@ -74,3 +74,46 @@ export type UserData = {
   /** 利用ステータス */
   usage_status?: string | UsageStatus;
 };
+
+/** CSV出力用 DB取得結果 */
+export type UserCsvDbRow = {
+  id: number;
+  user_name: string;
+  user_name_kana: string;
+  user_email?: string;
+  user_registration_status: string;
+  usage_status?: string;
+  master_memo?: string;
+  optional_item_answer_1?: string;
+  optional_item_answer_2?: string;
+  t_companies: {
+    company_name: string;
+    branch_name: string;
+    optional_item_title_1?: string;
+    optional_item_title_2?: string;
+  };
+  t_companies_department: { department_name?: string } | null;
+  t_companies_employment_status: { employment_status_name?: string } | null;
+};
+
+/**
+ * CSV出力データ（1行分）
+ * キーがそのままCSVの見出しになる。並びはユーザー詳細画面(/user-detail)の表示順に合わせる。
+ */
+export type UserCsvData = {
+  ユーザーID: string;
+  ユーザー名: string;
+  'ユーザー名(カナ)': string;
+  メールアドレス: string;
+  会社名: string;
+  支店名: string;
+  部署名: string;
+  雇用形態名: string;
+  任意項目1_項目名: string;
+  任意項目1_回答: string;
+  任意項目2_項目名: string;
+  任意項目2_回答: string;
+  登録ステータス: string;
+  メモ: string;
+  利用ステータス: string;
+};
