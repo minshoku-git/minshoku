@@ -116,6 +116,14 @@ export enum OrderStatusType {
   PENDING_PAYMENT = '3',
 }
 
+/** スケジュールのキャンセルフラグ */
+export enum ScheduleCancelFlag {
+  /** 0:有効 */
+  ACTIVE = '0',
+  /** 1:キャンセル */
+  CANCELED = '1',
+}
+
 /** ユーザー承認種別 */
 export enum UserApprovalType {
   /** 0:承認 */

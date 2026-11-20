@@ -37,7 +37,7 @@ export async function POST(req: Request): Promise<Response> {
     const scheduleRows = await parseScheduleCsv(decodedText);
 
     // スケジュール登録
-    const result = await RefreshingScheduleData(scheduleRows.map((r) => r.data));
+    const result = await RefreshingScheduleData(scheduleRows);
     if (result.success) {
       return NextResponse.json(result);
     }
