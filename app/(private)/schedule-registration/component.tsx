@@ -13,6 +13,7 @@ import { useSnackBar } from '@/app/_ui/state/snackBar/snackbarContext';
 import { CustomError } from '@/app/errors/customError';
 
 import { upsertScheduleFetcher } from './_lib/fetcher';
+import { FailedScheduleRow } from './_lib/types';
 
 /** ページ名 */
 const pageName = 'スケジュール登録';
@@ -31,7 +32,7 @@ export const ScheduleRegistrationComponent = (): JSX.Element => {
   ------------------------------------------------------------------ */
   /* fileUpload */
   const [file, setFile] = useState<File>();
-  const [failedRows, setFailedRows] = useState<any[]>([]);
+  const [failedRows, setFailedRows] = useState<FailedScheduleRow[]>([]);
   /* CSV検証エラー（「○行目：内容」の一覧） */
   const [csvErrors, setCsvErrors] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -59,7 +60,7 @@ export const ScheduleRegistrationComponent = (): JSX.Element => {
         // ここを通ることで、TypeScriptが res.data の存在を安全だと認識します
         if (res.data && res.data.failedRows && res.data.failedRows.length > 0) {
           setFailedRows(res.data.failedRows);
-          openSnackbar(AlertType.WARNING, '一部のデータに重複エラーがあり、登録されませんでした。');
+          openSnackbar(AlertType.WARNING, '登録できなかったデータがあります。画面の内容を確認してください。');
         } else {
           setFailedRows([]);
           openSnackbar(AlertType.SUCCESS, 'スケジュールを登録しました。');
@@ -141,13 +142,26 @@ export const ScheduleRegistrationComponent = (): JSX.Element => {
           {failedRows.length > 0 && (
             <Box sx={{ mb: 3, p: 2, bgcolor: '#fdf2f2', border: '1px solid #f5c2c2', borderRadius: 2 }}>
               <Typography variant="subtitle1" color="error" fontWeight="bold" sx={{ mb: 1 }}>
-                ⚠️ 以下のデータは、同一日に別の店舗が既に登録されているため登録できませんでした：
+                {`⚠️ 以下の${failedRows.length}件は登録できませんでした（それ以外の行は登録済みです）：`}
               </Typography>
-              <Box component="ul" sx={{ pl: 2, m: 0 }}>
+              <Box component="ul" sx={{ pl: 2, m: 0, maxHeight: 400, overflowY: 'auto' }}>
                 {failedRows.map((row, idx) => (
-                  <Typography component="li" variant="body2" key={idx} color="error.main">
-                    {`配達日: ${row.delivery_day} / 会社ID: ${row.t_companies_id} / 店舗ID: ${row.t_shops_id} (${row.menu_name})`}
-                  </Typography>
+                  <Box component="li" key={idx} sx={{ mb: 1, color: 'error.main' }}>
+                    <Typography variant="body2" fontWeight="bold">
+                      {`${row.line}行目：配達日: ${row.delivery_day} / 会社ID: ${row.t_companies_id} / 店舗ID: ${row.t_shops_id} (${row.menu_name})`}
+                    </Typography>
+                    <Typography variant="body2">{row.reason}</Typography>
+                    {/* キャンセル済みの店舗に残っている有効な注文 */}
+                    {row.orders && row.orders.length > 0 && (
+                      <Box component="ul" sx={{ pl: 2, m: 0 }}>
+                        {row.orders.map((order) => (
+                          <Typography component="li" variant="body2" key={order.id}>
+                            {`注文ID: ${order.id} / ${order.user_name} 様 / ${order.count}個 / 注文日時: ${order.order_datetime}`}
+                          </Typography>
+                        ))}
+                      </Box>
+                    )}
+                  </Box>
                 ))}
               </Box>
             </Box>

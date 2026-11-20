@@ -81,6 +81,14 @@ export const MSG_CSV_NO_DATA = 'データ行がありません。';
 export const MSG_CSV_FORMAT = 'CSVの形式が不正です（ダブルクォート「"」の閉じ忘れなど）。';
 export const MSG_CSV_COMPANY_NOT_FOUND = '会社ID「{0}」は存在しません。';
 export const MSG_CSV_SHOP_NOT_FOUND = '店舗ID「{0}」は存在しません。';
+export const MSG_CSV_CANCEL_FLAG = 'キャンセルフラグは0（有効）か1（キャンセル）で入力してください。';
+export const MSG_CSV_DUPLICATE_ROW = '{0}行目と納品日・会社ID・店舗IDが重複しています。';
+export const MSG_CSV_OTHER_SHOP_ACTIVE =
+  '同じ日に別の店舗（店舗ID：{0}）が登録されています。店舗を変更する場合は、先に元の店舗のキャンセルフラグを1にしてください。';
+export const MSG_CSV_OTHER_SHOP_ACTIVE_REVIVE =
+  '同じ日に別の店舗（店舗ID：{0}）が有効なため、キャンセルを解除できません。';
+export const MSG_CSV_CANCELED_SHOP_HAS_ORDERS =
+  'キャンセル済みの店舗（店舗ID：{0}）に有効な注文が{1}件残っているため登録できません。先に以下の注文をキャンセルしてください。';
 
 /* 正規表現集
 ------------------------------------------------------------------ */
