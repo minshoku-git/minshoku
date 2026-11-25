@@ -36,7 +36,7 @@ export const decision = async (values: ApiRequest<DecisionData>): Promise<ApiRes
       return await approvalUserRegistrationStatus(Number(userId));
     } else if (userApprovalType === UserApprovalType.DISAPPROVAL) {
       // 否認
-      return await approvalUserRegistrationStatus(Number(userId));
+      return await disapprovalUserRegistrationStatus(Number(userId));
     } else {
       // 無効なリンク
       throw new CustomError(ErrorCodes.INVALID_RECOVERY_LINK);
@@ -175,7 +175,7 @@ export const approvalUserRegistrationStatus = async (id: number): Promise<ApiRes
 
 /**
  * _disapprovalUserRegistrationStatus
- * IDに一致する店舗情報を否認する。
+ * IDに一致するユーザーを否認する（承認待ち → 否認）。
  *
  * @param {number} id - ユーザーID
  * @returns {Promise<ApiResponse<DecisionResult>>} 検索結果
@@ -210,9 +210,9 @@ export const disapprovalUserRegistrationStatus = async (id: number): Promise<Api
 
     /* Update - t_user
   　------------------------------------------------------------------ */
-    // UpdateData setting
+    // UpdateData setting（承認待ち → 否認。ユーザー詳細画面の否認と同じ遷移）
     const updateValues: Pick<t_user, 'user_registration_status' | 'updated_at'> = {
-      user_registration_status: UserRegistrationStatus.WAITING_EMAIL_VERIFICATION.toString(),
+      user_registration_status: UserRegistrationStatus.DISAPPROVAL.toString(),
       updated_at: timestamp,
     };
     const { columns, values } = getPostgreSqlItems(updateValues);
@@ -221,7 +221,7 @@ export const disapprovalUserRegistrationStatus = async (id: number): Promise<Api
         SET ${columns.map((col, index) => `${col} = $${index + 1}`).join(', ')}
         WHERE id = ${Number(id)}
         AND usage_status = '${UsageStatus.DEACTIVATION}'
-        AND user_registration_status = '${UserRegistrationStatus.DISAPPROVAL}'
+        AND user_registration_status = '${UserRegistrationStatus.WAITING_APPROVAL}'
         RETURNING id;`;
 
     const result = await pgClient.query(updateSql, values);
