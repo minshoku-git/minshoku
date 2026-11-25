@@ -1,10 +1,15 @@
+// Noto Sans JP はパッケージ同梱のフォントファイルを使う（next/font/google はビルドのたびに
+// Google から取得するため、取得の一時エラーでビルドが失敗していた）。font-family は globals.css の --font-noto-sans-jp。
+import '@fontsource/noto-sans-jp/300.css';
+import '@fontsource/noto-sans-jp/400.css';
+import '@fontsource/noto-sans-jp/500.css';
+import '@fontsource/noto-sans-jp/700.css';
 import './globals.css';
 
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import type { Metadata } from 'next';
 import React from 'react';
 
-import { notoSansJp } from './_config/fonts';
 import { DirtyProvider } from './_ui/state/dirty/dirtyContext';
 import ThemeProvider from './_ui/theme-provider';
 
@@ -33,7 +38,7 @@ const Layout = ({ children }: Readonly<{ children: React.ReactNode }>) => {
   ---------------------------------------------------------------------------------------------------- */
   return (
     <html lang="ja">
-      <body className={notoSansJp.variable}>
+      <body>
         <AppRouterCacheProvider>
           <ThemeProvider>
             <DirtyProvider>{children}</DirtyProvider>

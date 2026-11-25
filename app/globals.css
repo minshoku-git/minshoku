@@ -1,1 +1,6 @@
 /* 必要であれば */
+
+:root {
+  /* 画面全体のフォント（MUIテーマの fontFamily から参照）。フォント本体は layout.tsx で @fontsource/noto-sans-jp を読み込む */
+  --font-noto-sans-jp: 'Noto Sans JP', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', sans-serif;
+}
