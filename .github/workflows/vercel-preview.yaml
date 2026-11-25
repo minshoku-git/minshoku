@@ -31,3 +31,10 @@ jobs:
       - name: Deploy Project Artifacts to Vercel
         id: deploy
         run: echo "url=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})" >> $GITHUB_OUTPUT
+      - name: Assign Staging Domain
+        # v0.0.0 のデプロイにだけステージングの固定ドメインを付ける（ほかの v*.*.* ブランチはプレビューURLのみ）
+        # DNS未設定などで失敗してもデプロイ自体は成功扱いにし、警告だけ出す
+        if: github.ref_name == 'v0.0.0'
+        run: |
+          vercel alias set "${{ steps.deploy.outputs.url }}" stg-master-minshoku.vercel.app --token="${{ secrets.VERCEL_TOKEN }}" \
+            || echo "::warning::stg-master-minshoku.vercel.app の割り当てに失敗しました（DNS設定を確認してください）"
