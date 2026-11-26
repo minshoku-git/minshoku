@@ -19,27 +19,31 @@ import { DecisionData, DecisionResult } from './types';
  */
 export const decision = async (values: ApiRequest<DecisionData>): Promise<ApiResponse<DecisionResult>> => {
   try {
-    // 復号化
+    // 復号化（URLが途中で切れている等で復号できない場合は「予期しないエラー」ではなくリンク不正として返す）
     const token = values.request.token;
     const userApprovalType = values.request.userApprovalType;
-    const decryptedQuery = decrypt(token);
-    const queryObject = JSON.parse(decryptedQuery);
-
-    const userId = queryObject.id as string;
+    let userId: number;
+    try {
+      const queryObject = JSON.parse(decrypt(token)) as Partial<SignUpEncrypt>;
+      userId = Number(queryObject.id);
+    } catch (e) {
+      console.error(`承認・否認リンクの復号化に失敗しました（長さ:${token.length}）`, e);
+      throw new CustomError(ErrorCodes.INVALID_DECISION_LINK);
+    }
 
     if (!userId || !userApprovalType) {
-      throw new CustomError(ErrorCodes.INVALID_RECOVERY_LINK);
+      throw new CustomError(ErrorCodes.INVALID_DECISION_LINK);
     }
 
     if (userApprovalType === UserApprovalType.APPROVAL) {
       // 承認
-      return await approvalUserRegistrationStatus(Number(userId));
+      return await approvalUserRegistrationStatus(userId);
     } else if (userApprovalType === UserApprovalType.DISAPPROVAL) {
       // 否認
-      return await disapprovalUserRegistrationStatus(Number(userId));
+      return await disapprovalUserRegistrationStatus(userId);
     } else {
-      // 無効なリンク
-      throw new CustomError(ErrorCodes.INVALID_RECOVERY_LINK);
+      // 無効なリンク（承認/否認以外の種別）
+      throw new CustomError(ErrorCodes.INVALID_DECISION_LINK);
     }
   } catch (e: unknown) {
     if (e instanceof CustomError) {

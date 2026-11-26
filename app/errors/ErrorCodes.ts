@@ -42,6 +42,11 @@ export const ErrorCodes = {
     message: '注文期限を超過しています。再度確認してください。',
     status: 400,
   },
+  INVALID_DECISION_LINK: {
+    code: 'E400-08',
+    message: '承認・否認用のリンクが正しくありません。承認依頼メールに記載されたURLをもう一度ご確認ください。',
+    status: 400,
+  },
 
   // --- 401系: 認証が必要 ---
   INVALID_CREDENTIALS: {

@@ -10,6 +10,8 @@ import { UserApprovalType } from '@/app/_types/enum';
 import { ApiRequest } from '@/app/_types/types';
 import { useProcessing } from '@/app/_ui/state/processing/processingContext';
 import { useSnackBar } from '@/app/_ui/state/snackBar/snackbarContext';
+import { CustomError } from '@/app/errors/customError';
+import { ErrorCodes } from '@/app/errors/ErrorCodes';
 
 import { decisionFetcher } from './_lib/fetcher';
 import { DecisionData, DecisionResult } from './_lib/types';
@@ -35,6 +37,7 @@ export const DecisiondataComponent = (): JSX.Element => {
 
   const {
     data,
+    error,
     isLoading,
   } = useApiQuery<DecisionResult>({
     queryKey: [QUERY_KEYS.DECISION_INIT],
@@ -116,6 +119,21 @@ export const DecisiondataComponent = (): JSX.Element => {
                   </>
                 )}
               </>
+            )}
+            {/* 処理できなかった場合の案内（エラー内容はSnackbarでも表示される） */}
+            {error != null && (
+              <Box sx={{ px: 3 }}>
+                {error instanceof CustomError && error.code === ErrorCodes.INVALID_DECISION_LINK.code ? (
+                  <>
+                    <Typography sx={{ fontWeight: 'bold', mb: 1 }}>承認・否認用のリンクが正しくありません。</Typography>
+                    <Typography variant="body2">
+                      URLが途中で切れていたり、余計な文字が付いていたりする可能性があります。承認依頼メールに記載されたURLをもう一度ご確認のうえ、そのURLから開き直してください。
+                    </Typography>
+                  </>
+                ) : (
+                  <Typography>処理に失敗しました。時間をおいて、もう一度リンクを開いてください。</Typography>
+                )}
+              </Box>
             )}
           </Box>
           <Box sx={{ m: 3, mt: 5 }}>
